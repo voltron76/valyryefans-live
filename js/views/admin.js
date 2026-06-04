@@ -1,0 +1,1654 @@
+// ============================================================
+// ValyryeFans — Admin Dashboard View
+// Secured admin panel for creator (Valyrye) to manage platform
+// ============================================================
+
+import { getState, uploadContent, showToast } from '../store.js';
+import { navigate } from '../router.js';
+import { supabase } from '../supabase.js';
+
+// ------------------------------------
+// SVG Icons (18x18, stroke-based)
+// ------------------------------------
+const icons = {
+  send: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
+  lock: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  messages: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  content: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+  upload: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>`,
+  dashboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  photo: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+  video: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
+  heart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  users: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  star: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  dollar: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  activity: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  filter: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>`,
+  edit: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  close: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  request: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  file: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+};
+
+// ------------------------------------
+// Helper utilities
+// ------------------------------------
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function getAvatarColor(name) {
+  const colors = [
+    'var(--accent)', 'var(--accent-dark)', '#8b5cf6', '#06b6d4',
+    '#f59e0b', '#ef4444', '#10b981', '#ec4899',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function renderAvatar(name, size = 40) {
+  const color = getAvatarColor(name);
+  return `<div style="width:${size}px;height:${size}px;border-radius:var(--radius-full);background:${color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${Math.round(size * 0.36)}px;color:#fff;flex-shrink:0;">${getInitials(name)}</div>`;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+// ------------------------------------
+// Admin CSS (inline styles object)
+// ------------------------------------
+const adminStyles = `
+  <style id="admin-styles">
+    .admin-pin-overlay {
+      min-height: calc(100vh - var(--nav-height));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-primary);
+    }
+    .admin-pin-card {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-card-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-10);
+      width: 380px;
+      max-width: 90vw;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .admin-pin-card h2 {
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+    }
+    .admin-pin-card p {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-6);
+    }
+    .admin-pin-input {
+      width: 180px;
+      text-align: center;
+      letter-spacing: 12px;
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .admin-pin-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-subtle);
+    }
+    .admin-pin-input.error {
+      border-color: #ef4444;
+      animation: shake 0.4s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: calc(100vh - var(--nav-height));
+      background: var(--bg-primary);
+    }
+
+    /* Sidebar tabs */
+    .admin-sidebar {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid var(--glass-card-border);
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-4) 0;
+    }
+    .admin-sidebar__brand {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--space-2);
+    }
+    .admin-sidebar__brand h3 {
+      color: var(--text-primary);
+      font-size: var(--text-base);
+      margin: 0;
+    }
+    .admin-sidebar__brand span {
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    .admin-tab {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-5);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    .admin-tab:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .admin-tab.active {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+    .admin-tab .tab-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+    }
+    .admin-tab .tab-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      min-width: 18px;
+      text-align: center;
+    }
+    .admin-sidebar__footer {
+      margin-top: auto;
+      padding: var(--space-4) var(--space-5);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Content panel */
+    .admin-content {
+      padding: var(--space-6);
+      overflow-y: auto;
+      max-height: calc(100vh - var(--nav-height));
+    }
+
+    /* Messages tab */
+    .admin-messages-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: calc(100vh - var(--nav-height) - var(--space-12));
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      border: 1px solid var(--glass-card-border);
+      background: var(--bg-card);
+    }
+    .admin-user-list {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid var(--glass-card-border);
+      overflow-y: auto;
+    }
+    .admin-user-list__header {
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-user-list__header h3 {
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin: 0 0 var(--space-2) 0;
+    }
+    .admin-user-list__search {
+      width: 100%;
+      padding: var(--space-2) var(--space-3);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: var(--text-xs);
+      outline: none;
+    }
+    .admin-user-list__search:focus {
+      border-color: var(--accent);
+    }
+    .admin-user-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .admin-user-item:hover {
+      background: var(--bg-hover);
+    }
+    .admin-user-item.active {
+      background: var(--accent-subtle);
+      border-left: 3px solid var(--accent);
+    }
+    .admin-user-item__info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-user-item__name {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .admin-user-item__meta {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .admin-user-item__badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      width: 20px;
+      height: 20px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Chat thread */
+    .admin-chat {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .admin-chat__header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(8px);
+    }
+    .admin-chat__header-info h4 {
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin: 0;
+    }
+    .admin-chat__header-info span {
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    .admin-chat__messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-4) var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .admin-chat__empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    .admin-msg {
+      max-width: 70%;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      position: relative;
+    }
+    .admin-msg--fan {
+      align-self: flex-start;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-bottom-left-radius: var(--radius-sm);
+    }
+    .admin-msg--valyrye {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: var(--radius-sm);
+    }
+    .admin-msg--request {
+      align-self: flex-start;
+      background: linear-gradient(135deg, var(--accent-subtle), transparent);
+      border: 1px solid var(--accent);
+      color: var(--text-primary);
+      border-bottom-left-radius: var(--radius-sm);
+    }
+    .admin-msg--request::before {
+      content: '⭐ Content Request';
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: var(--space-1);
+    }
+    .admin-msg__time {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: var(--space-1);
+    }
+    .admin-msg--valyrye .admin-msg__time {
+      color: rgba(255,255,255,0.7);
+    }
+    .admin-chat__input {
+      padding: var(--space-3) var(--space-4);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: var(--space-2);
+      background: var(--glass-card-bg);
+    }
+    .admin-chat__input textarea {
+      flex: 1;
+      padding: var(--space-2) var(--space-3);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      min-height: 38px;
+      max-height: 100px;
+    }
+    .admin-chat__input textarea:focus {
+      border-color: var(--accent);
+    }
+    .admin-chat__input button {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .admin-chat__input button:hover {
+      opacity: 0.85;
+    }
+
+    /* Content manager */
+    .admin-content-filters {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+      flex-wrap: wrap;
+    }
+    .admin-filter-btn {
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-filter-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .admin-filter-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .admin-content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-4);
+    }
+    .admin-content-card {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-card-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-content-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .admin-content-card__thumb {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      background: var(--bg-elevated);
+      display: block;
+    }
+    .admin-content-card__info {
+      padding: var(--space-3);
+    }
+    .admin-content-card__title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .admin-content-card__meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+
+    /* Edit modal */
+    .admin-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--space-4);
+    }
+    .admin-modal {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-card-border);
+      border-radius: var(--radius-xl);
+      width: 500px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: var(--space-6);
+      box-shadow: var(--shadow-lg);
+    }
+    .admin-modal__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-5);
+    }
+    .admin-modal__header h3 {
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .admin-modal__close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: var(--space-1);
+      border-radius: var(--radius-sm);
+      transition: color 0.2s;
+    }
+    .admin-modal__close:hover {
+      color: var(--text-primary);
+    }
+
+    /* Upload tab */
+    .admin-dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-10) var(--space-6);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: var(--space-5);
+      background: var(--bg-input);
+    }
+    .admin-dropzone:hover, .admin-dropzone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-subtle);
+    }
+    .admin-dropzone__icon {
+      color: var(--text-muted);
+      margin-bottom: var(--space-3);
+    }
+    .admin-dropzone__text {
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+    }
+    .admin-dropzone__text span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .admin-dropzone__file {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+    }
+
+    .admin-radio-group {
+      display: flex;
+      gap: var(--space-3);
+    }
+    .admin-radio-option {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .admin-radio-option input[type="radio"] {
+      accent-color: var(--accent);
+    }
+
+    /* Dashboard tab */
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .admin-stat-card {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-card-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      text-align: center;
+    }
+    .admin-stat-card__icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: var(--accent-subtle);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-3);
+    }
+    .admin-stat-card__value {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .admin-stat-card__label {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-1);
+    }
+
+    /* Activity feed */
+    .admin-activity-feed {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-card-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+    }
+    .admin-activity-feed h4 {
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin: 0 0 var(--space-4) 0;
+    }
+    .admin-activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .admin-activity-item:last-child {
+      border-bottom: none;
+    }
+    .admin-activity-item__content {
+      flex: 1;
+    }
+    .admin-activity-item__text {
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+    }
+    .admin-activity-item__text strong {
+      color: var(--accent);
+    }
+    .admin-activity-item__time {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Chart */
+    .admin-chart {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-card-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+    }
+    .admin-chart h4 {
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin: 0 0 var(--space-4) 0;
+    }
+    .admin-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+    .admin-bar__label {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      width: 80px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .admin-bar__track {
+      flex: 1;
+      height: 24px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .admin-bar__fill {
+      height: 100%;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      padding-left: var(--space-2);
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      transition: width 0.6s ease;
+    }
+
+    /* Dashboard grid */
+    .admin-dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    /* Tier badge in admin */
+    .admin-tier-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .admin-tier-badge--gold {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+    }
+    .admin-tier-badge--free {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+      }
+      .admin-sidebar {
+        display: none;
+      }
+      .admin-messages-layout {
+        grid-template-columns: 1fr;
+      }
+      .admin-user-list {
+        display: none;
+      }
+      .admin-dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+`;
+
+// ------------------------------------
+// PIN Authentication Screen
+// ------------------------------------
+function renderPinScreen() {
+  return `
+    ${adminStyles}
+    <div class="admin-pin-overlay animate-fade-in-up">
+      <div class="admin-pin-card">
+        <div style="color:var(--accent);margin-bottom:var(--space-4);">${icons.lock}</div>
+        <h2 class="font-display">Admin Access</h2>
+        <p>Enter your 4-digit PIN to continue</p>
+        <div style="margin-bottom:var(--space-5);">
+          <input type="password" id="admin-pin-input" class="admin-pin-input"
+                 maxlength="4" inputmode="numeric" pattern="[0-9]*"
+                 placeholder="••••" autocomplete="off" />
+        </div>
+        <button class="btn btn-primary w-full" id="admin-pin-submit" style="max-width:200px;">
+          Unlock Dashboard
+        </button>
+        <p style="margin-top:var(--space-4);font-size:var(--text-xs);color:var(--text-muted);">
+          Secured access for Valyrye only
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+// ------------------------------------
+// Messages Tab
+// ------------------------------------
+function renderMessagesTab() {
+  const state = getState();
+  const users = state.adminUsers || [];
+  const selectedUserId = users.length > 0 ? users[0].id : null;
+
+  const userListHtml = users.map((user, i) => {
+    const isActive = i === 0;
+    return `
+      <div class="admin-user-item${isActive ? ' active' : ''}" data-user-id="${user.id}">
+        ${renderAvatar(user.name, 36)}
+        <div class="admin-user-item__info">
+          <div class="admin-user-item__name">
+            ${escapeHtml(user.name)}
+            <span class="admin-tier-badge admin-tier-badge--${user.tier}">${user.tier}</span>
+          </div>
+          <div class="admin-user-item__meta">${user.lastSeen || 'Unknown'}</div>
+        </div>
+        ${user.unread > 0 ? `<div class="admin-user-item__badge">${user.unread}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="admin-messages-layout" id="admin-messages-layout">
+      <!-- User list -->
+      <div class="admin-user-list">
+        <div class="admin-user-list__header">
+          <h3>Fans</h3>
+          <input type="text" class="admin-user-list__search" id="admin-user-search" placeholder="Search fans..." />
+        </div>
+        <div id="admin-user-list-items">
+          ${userListHtml}
+        </div>
+      </div>
+
+      <!-- Chat thread -->
+      <div class="admin-chat" id="admin-chat">
+        ${selectedUserId ? renderChatThread(selectedUserId) : `
+          <div class="admin-chat__empty">
+            <div style="text-align:center;">
+              <div style="font-size:var(--text-3xl);margin-bottom:var(--space-2);">💬</div>
+              <div>Select a fan to view messages</div>
+            </div>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+function renderChatThread(userId) {
+  const state = getState();
+  const messages = state.adminMessages[userId] || [];
+  const user = state.adminUsers.find(u => u.id === userId);
+  if (!user) return '';
+
+  const messagesHtml = messages.map(msg => {
+    const isValyrye = msg.sender === 'valyrye';
+    const isRequest = msg.type === 'request';
+    let cls = isValyrye ? 'admin-msg--valyrye' : 'admin-msg--fan';
+    if (isRequest) cls = 'admin-msg--request';
+
+    return `
+      <div class="admin-msg ${cls}">
+        <div>${escapeHtml(msg.content)}</div>
+        <div class="admin-msg__time">${msg.time || ''}</div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="admin-chat__header">
+      ${renderAvatar(user.name, 36)}
+      <div class="admin-chat__header-info">
+        <h4>${escapeHtml(user.name)} <span class="admin-tier-badge admin-tier-badge--${user.tier}" style="margin-left:var(--space-2);">${user.tier}</span></h4>
+        <span>Last seen: ${user.lastSeen || 'Unknown'}</span>
+      </div>
+    </div>
+    <div class="admin-chat__messages" id="admin-chat-messages">
+      ${messages.length > 0 ? messagesHtml : `
+        <div class="admin-chat__empty">
+          <div style="text-align:center;">
+            <div style="font-size:var(--text-2xl);margin-bottom:var(--space-2);">📭</div>
+            <div>No messages yet</div>
+          </div>
+        </div>
+      `}
+    </div>
+    <div class="admin-chat__input">
+      <textarea id="admin-reply-input" placeholder="Reply as Valyrye..." rows="1"></textarea>
+      <button id="admin-reply-send" title="Send reply">${icons.send}</button>
+    </div>
+  `;
+}
+
+// ------------------------------------
+// Content Manager Tab
+// ------------------------------------
+function renderContentTab() {
+  const state = getState();
+  const content = state.content || [];
+
+  return `
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);">
+        <h2 class="font-display" style="color:var(--text-primary);margin:0;">Content Manager</h2>
+        <span style="color:var(--text-muted);font-size:var(--text-sm);">${content.length} items</span>
+      </div>
+
+      <!-- Filters -->
+      <div class="admin-content-filters" id="admin-content-filters">
+        <button class="admin-filter-btn active" data-filter="all">All</button>
+        <button class="admin-filter-btn" data-filter="image">${icons.photo} Photos</button>
+        <button class="admin-filter-btn" data-filter="video">${icons.video} Videos</button>
+        <span style="color:var(--border);margin:0 var(--space-1);">|</span>
+        <button class="admin-filter-btn" data-filter="free">Free</button>
+        <button class="admin-filter-btn" data-filter="gold">Gold</button>
+        <span style="color:var(--border);margin:0 var(--space-1);">|</span>
+        <select id="admin-sort" class="form-input" style="padding:var(--space-1) var(--space-3);font-size:var(--text-xs);width:auto;">
+          <option value="newest">Newest</option>
+          <option value="likes">Most Liked</option>
+        </select>
+      </div>
+
+      <!-- Grid -->
+      <div class="admin-content-grid" id="admin-content-grid">
+        ${renderContentGrid(content)}
+      </div>
+    </div>
+
+    <!-- Edit modal container -->
+    <div id="admin-edit-modal"></div>
+  `;
+}
+
+function renderContentGrid(contentList) {
+  return contentList.map(item => `
+    <div class="admin-content-card" data-content-id="${item.id}">
+      <img class="admin-content-card__thumb" src="${item.thumbnail}" alt="${escapeHtml(item.title)}" loading="lazy"
+           onerror="this.style.background='var(--bg-elevated)';this.alt='No preview';" />
+      <div class="admin-content-card__info">
+        <div class="admin-content-card__title">${escapeHtml(item.title)}</div>
+        <div class="admin-content-card__meta">
+          <span style="display:flex;align-items:center;gap:3px;">
+            ${item.type === 'video' ? icons.video : icons.photo}
+            <span class="admin-tier-badge admin-tier-badge--${item.minTier}">${item.minTier}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:3px;">${icons.heart} ${item.likes || 0}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderEditModal(item) {
+  const categories = ['Lingerie', 'Swimwear', 'Casual', 'Studio', 'Behind The Scenes', 'Custom', 'Other'];
+  return `
+    <div class="admin-modal-overlay" id="admin-modal-overlay">
+      <div class="admin-modal animate-fade-in-up">
+        <div class="admin-modal__header">
+          <h3 class="font-display">Edit Content</h3>
+          <button class="admin-modal__close" id="admin-modal-close">${icons.close}</button>
+        </div>
+
+        <!-- Thumbnail preview -->
+        <div style="margin-bottom:var(--space-4);border-radius:var(--radius-md);overflow:hidden;max-height:200px;">
+          <img src="${item.thumbnail}" alt="${escapeHtml(item.title)}" style="width:100%;max-height:200px;object-fit:cover;display:block;"
+               onerror="this.style.display='none';" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-input" id="edit-title" value="${escapeHtml(item.title)}" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="edit-description" rows="3">${escapeHtml(item.description || '')}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-input" id="edit-category">
+            ${categories.map(c => `<option value="${c.toLowerCase()}" ${(item.category || '').toLowerCase() === c.toLowerCase() ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tier</label>
+          <div class="admin-radio-group">
+            <label class="admin-radio-option">
+              <input type="radio" name="edit-tier" value="free" ${item.minTier === 'free' ? 'checked' : ''} /> Free
+            </label>
+            <label class="admin-radio-option">
+              <input type="radio" name="edit-tier" value="gold" ${item.minTier === 'gold' ? 'checked' : ''} /> Gold
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:var(--space-3);justify-content:flex-end;margin-top:var(--space-5);">
+          <button class="btn btn-ghost btn-sm" id="edit-delete" style="color:#ef4444;">
+            ${icons.trash} Delete
+          </button>
+          <button class="btn btn-secondary btn-sm" id="edit-cancel">Cancel</button>
+          <button class="btn btn-primary btn-sm" id="edit-save">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ------------------------------------
+// Upload Tab
+// ------------------------------------
+function renderUploadTab() {
+  const categories = ['Lingerie', 'Swimwear', 'Casual', 'Studio', 'Behind The Scenes', 'Custom', 'Other'];
+
+  return `
+    <div style="max-width:600px;">
+      <h2 class="font-display" style="color:var(--text-primary);margin:0 0 var(--space-1) 0;">Upload Content</h2>
+      <p style="color:var(--text-muted);font-size:var(--text-sm);margin-bottom:var(--space-5);">Add new photos or videos to your page</p>
+
+      <!-- Drag & drop zone -->
+      <div class="admin-dropzone" id="admin-dropzone">
+        <div class="admin-dropzone__icon">${icons.file}</div>
+        <div class="admin-dropzone__text">
+          Drag & drop files here or <span>browse</span>
+        </div>
+        <div class="admin-dropzone__file" id="upload-filename">Supports up to 20 files (JPG, PNG, MP4, MOV)</div>
+        <input type="file" id="upload-file-input" accept="image/*,video/*" multiple max="20" style="display:none;" />
+      </div>
+
+      <!-- File type -->
+      <div class="form-group">
+        <label class="form-label">File Type</label>
+        <div class="admin-radio-group">
+          <label class="admin-radio-option">
+            <input type="radio" name="upload-type" value="image" checked /> ${icons.photo} Photo
+          </label>
+          <label class="admin-radio-option">
+            <input type="radio" name="upload-type" value="video" /> ${icons.video} Video
+          </label>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" class="form-input" id="upload-title" placeholder="Give your content a title..." />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-input" id="upload-description" rows="3" placeholder="Add a description..."></textarea>
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-input" id="upload-category">
+          ${categories.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- Tier -->
+      <div class="form-group">
+        <label class="form-label">Access Tier</label>
+        <div class="admin-radio-group">
+          <label class="admin-radio-option">
+            <input type="radio" name="upload-tier" value="free" checked /> Free
+          </label>
+          <label class="admin-radio-option">
+            <input type="radio" name="upload-tier" value="gold" /> Gold
+          </label>
+        </div>
+      </div>
+
+      <!-- Upload button -->
+      <button class="btn btn-primary btn-lg w-full" id="admin-upload-btn" style="margin-top:var(--space-4);">
+        ${icons.upload} Upload Content
+      </button>
+    </div>
+  `;
+}
+
+// ------------------------------------
+// Dashboard Tab
+// ------------------------------------
+function renderDashboardTab() {
+  const state = getState();
+  const users = state.adminUsers || [];
+  const content = state.content || [];
+  const adminMessages = state.adminMessages || {};
+
+  const totalFans = users.length;
+  const goldSubs = users.filter(u => u.tier === 'gold').length;
+  const totalContent = content.length;
+  const totalMessages = Object.values(adminMessages).reduce((sum, arr) => sum + arr.length, 0);
+  const totalTips = state.totalTips || 0;
+  const revenue = (goldSubs * 14.99).toFixed(2);
+
+  // Content breakdown
+  const photos = content.filter(c => c.type === 'image').length;
+  const videos = content.filter(c => c.type === 'video').length;
+  const freeCount = content.filter(c => c.minTier === 'free').length;
+  const goldCount = content.filter(c => c.minTier === 'gold').length;
+  const maxCount = Math.max(photos, videos, freeCount, goldCount, 1);
+
+  // Recent activity: last 5 messages across all users
+  const allMsgs = [];
+  for (const [userId, msgs] of Object.entries(adminMessages)) {
+    const user = users.find(u => u.id === userId);
+    msgs.forEach(m => allMsgs.push({ ...m, userName: user?.name || 'Unknown' }));
+  }
+  const recentMsgs = allMsgs.slice(-5).reverse();
+
+  return `
+    <div>
+      <h2 class="font-display" style="color:var(--text-primary);margin:0 0 var(--space-1) 0;">Dashboard</h2>
+      <p style="color:var(--text-muted);font-size:var(--text-sm);margin-bottom:var(--space-5);">Platform overview & analytics</p>
+
+      <!-- Stats cards -->
+      <div class="admin-stats-grid animate-fade-in-up">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon">${icons.users}</div>
+          <div class="admin-stat-card__value">${totalFans}</div>
+          <div class="admin-stat-card__label">Total Fans</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.15));color:#f59e0b;">${icons.star}</div>
+          <div class="admin-stat-card__value">${goldSubs}</div>
+          <div class="admin-stat-card__label">Gold Subscribers</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon">${icons.content}</div>
+          <div class="admin-stat-card__value">${totalContent}</div>
+          <div class="admin-stat-card__label">Total Content</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon">${icons.messages}</div>
+          <div class="admin-stat-card__value">${totalMessages}</div>
+          <div class="admin-stat-card__label">Total Messages</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.15));color:#10b981;">${icons.dollar}</div>
+          <div class="admin-stat-card__value">$${totalTips.toFixed(2)}</div>
+          <div class="admin-stat-card__label">Total Tips</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(109,40,217,0.15));color:#8b5cf6;">${icons.dollar}</div>
+          <div class="admin-stat-card__value">$${revenue}</div>
+          <div class="admin-stat-card__label">Revenue</div>
+        </div>
+      </div>
+
+      <!-- Activity feed + chart -->
+      <div class="admin-dashboard-grid">
+        <!-- Recent activity -->
+        <div class="admin-activity-feed animate-fade-in-up stagger-2">
+          <h4>${icons.activity} Recent Activity</h4>
+          ${recentMsgs.length > 0 ? recentMsgs.map(msg => `
+            <div class="admin-activity-item">
+              ${renderAvatar(msg.userName, 28)}
+              <div class="admin-activity-item__content">
+                <div class="admin-activity-item__text">
+                  <strong>${escapeHtml(msg.userName)}</strong>
+                  ${msg.sender === 'valyrye' ? 'received a reply' : msg.type === 'request' ? 'sent a request' : 'sent a message'}
+                </div>
+                <div style="font-size:var(--text-xs);color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">
+                  "${escapeHtml(msg.content.substring(0, 60))}${msg.content.length > 60 ? '...' : ''}"
+                </div>
+                <div class="admin-activity-item__time">${msg.time || ''}</div>
+              </div>
+            </div>
+          `).join('') : `
+            <div style="text-align:center;color:var(--text-muted);padding:var(--space-6);font-size:var(--text-sm);">
+              No recent activity
+            </div>
+          `}
+        </div>
+
+        <!-- Content breakdown -->
+        <div class="admin-chart animate-fade-in-up stagger-3">
+          <h4>${icons.dashboard} Content Breakdown</h4>
+          <div class="admin-bar">
+            <div class="admin-bar__label">Photos</div>
+            <div class="admin-bar__track">
+              <div class="admin-bar__fill" style="width:${(photos / maxCount * 100).toFixed(0)}%;background:var(--accent);">${photos}</div>
+            </div>
+          </div>
+          <div class="admin-bar">
+            <div class="admin-bar__label">Videos</div>
+            <div class="admin-bar__track">
+              <div class="admin-bar__fill" style="width:${Math.max((videos / maxCount * 100), videos > 0 ? 8 : 2).toFixed(0)}%;background:#8b5cf6;">${videos}</div>
+            </div>
+          </div>
+          <div style="height:var(--space-4);"></div>
+          <div class="admin-bar">
+            <div class="admin-bar__label">Free</div>
+            <div class="admin-bar__track">
+              <div class="admin-bar__fill" style="width:${(freeCount / maxCount * 100).toFixed(0)}%;background:#10b981;">${freeCount}</div>
+            </div>
+          </div>
+          <div class="admin-bar">
+            <div class="admin-bar__label">Gold</div>
+            <div class="admin-bar__track">
+              <div class="admin-bar__fill" style="width:${(goldCount / maxCount * 100).toFixed(0)}%;background:#f59e0b;">${goldCount}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ------------------------------------
+// Main Admin Dashboard
+// ------------------------------------
+function renderDashboardLayout(activeTab = 'messages') {
+  const state = getState();
+  const users = state.adminUsers || [];
+  const totalUnread = users.reduce((sum, u) => sum + (u.unread || 0), 0);
+
+  const tabs = [
+    { id: 'messages', label: 'Messages', icon: icons.messages, badge: totalUnread },
+    { id: 'content', label: 'Content', icon: icons.content, badge: 0 },
+    { id: 'upload', label: 'Upload', icon: icons.upload, badge: 0 },
+    { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard, badge: 0 },
+  ];
+
+  let contentHtml = '';
+  switch (activeTab) {
+    case 'messages': contentHtml = renderMessagesTab(); break;
+    case 'content': contentHtml = renderContentTab(); break;
+    case 'upload': contentHtml = renderUploadTab(); break;
+    case 'dashboard': contentHtml = renderDashboardTab(); break;
+  }
+
+  return `
+    ${adminStyles}
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <nav class="admin-sidebar">
+        <div class="admin-sidebar__brand">
+          <h3 class="font-display" style="display:flex;align-items:center;gap:var(--space-2);">
+            <span style="color:var(--accent);">⚡</span> Admin Panel
+          </h3>
+          <span>Valyrye Management</span>
+        </div>
+
+        ${tabs.map(tab => `
+          <button class="admin-tab${tab.id === activeTab ? ' active' : ''}" data-tab="${tab.id}">
+            <span class="tab-icon">${tab.icon}</span>
+            ${tab.label}
+            ${tab.badge > 0 ? `<span class="tab-badge">${tab.badge}</span>` : ''}
+          </button>
+        `).join('')}
+
+        <div class="admin-sidebar__footer">
+          <button class="admin-tab" id="admin-logout" style="border:none;">
+            <span class="tab-icon">${icons.logout}</span>
+            Sign Out
+          </button>
+        </div>
+      </nav>
+
+      <!-- Content -->
+      <div class="admin-content" id="admin-tab-content">
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
+
+// ------------------------------------
+// Exported render function
+// ------------------------------------
+export function renderAdmin() {
+  const isAuthed = sessionStorage.getItem('vf-admin-auth') === 'true';
+  
+  if (!isAuthed) {
+    setTimeout(() => navigate('/admin-login'), 0);
+    return { html: '<div>Redirecting to login...</div>', afterRender() {} };
+  }
+
+  let currentTab = 'messages';
+  let selectedUserId = null;
+
+  // Initial HTML
+  const html = renderDashboardLayout(currentTab);
+
+  return {
+    html,
+    afterRender() {
+
+
+      // --- Dashboard is loaded ---
+      const state = getState();
+
+      // Initialize selected user
+      if (state.adminUsers?.length > 0) {
+        selectedUserId = state.adminUsers[0].id;
+      }
+
+      // Tab switching
+      function switchTab(tabId) {
+        currentTab = tabId;
+        const contentEl = document.getElementById('admin-tab-content');
+        if (!contentEl) return;
+
+        // Update active tab
+        document.querySelectorAll('.admin-tab[data-tab]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+
+        switch (tabId) {
+          case 'messages': contentEl.innerHTML = renderMessagesTab(); wireMessagesTab(); break;
+          case 'content': contentEl.innerHTML = renderContentTab(); wireContentTab(); break;
+          case 'upload': contentEl.innerHTML = renderUploadTab(); wireUploadTab(); break;
+          case 'dashboard': contentEl.innerHTML = renderDashboardTab(); break;
+        }
+      }
+
+      document.querySelectorAll('.admin-tab[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Logout
+      document.getElementById('admin-logout')?.addEventListener('click', () => {
+        sessionStorage.removeItem('vf-admin-auth');
+        showToast('Signed out of admin panel', 'success');
+        navigate('/');
+      });
+
+      // Wire up initial tab
+      if (currentTab === 'messages') wireMessagesTab();
+
+      // =====================
+      // Messages Tab Wiring
+      // =====================
+      function wireMessagesTab() {
+        const userListItems = document.getElementById('admin-user-list-items');
+        const chatContainer = document.getElementById('admin-chat');
+        const searchInput = document.getElementById('admin-user-search');
+
+        // Select user
+        userListItems?.addEventListener('click', (e) => {
+          const item = e.target.closest('.admin-user-item');
+          if (!item) return;
+
+          const userId = item.dataset.userId;
+          selectedUserId = userId;
+
+          // Update active state
+          userListItems.querySelectorAll('.admin-user-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+
+          // Render chat
+          if (chatContainer) {
+            chatContainer.innerHTML = renderChatThread(userId);
+            wireChatInput(userId);
+            scrollChatToBottom();
+          }
+        });
+
+        // Search users
+        searchInput?.addEventListener('input', (e) => {
+          const query = e.target.value.toLowerCase();
+          const items = userListItems?.querySelectorAll('.admin-user-item');
+          items?.forEach(item => {
+            const name = item.querySelector('.admin-user-item__name')?.textContent?.toLowerCase() || '';
+            item.style.display = name.includes(query) ? '' : 'none';
+          });
+        });
+
+        // Wire initial chat
+        if (selectedUserId) {
+          wireChatInput(selectedUserId);
+          scrollChatToBottom();
+        }
+      }
+
+      function wireChatInput(userId) {
+        const input = document.getElementById('admin-reply-input');
+        const sendBtn = document.getElementById('admin-reply-send');
+
+        function sendReply() {
+          const text = input?.value?.trim();
+          if (!text || !userId) return;
+
+          addAdminReply(userId, text);
+          input.value = '';
+
+          // Re-render chat thread
+          const chatContainer = document.getElementById('admin-chat');
+          if (chatContainer) {
+            chatContainer.innerHTML = renderChatThread(userId);
+            wireChatInput(userId);
+            scrollChatToBottom();
+          }
+          showToast('Reply sent! 💬', 'success');
+        }
+
+        sendBtn?.addEventListener('click', sendReply);
+        input?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendReply();
+          }
+        });
+
+        // Auto-resize textarea
+        input?.addEventListener('input', () => {
+          if (input) {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+          }
+        });
+      }
+
+      function scrollChatToBottom() {
+        const msgs = document.getElementById('admin-chat-messages');
+        if (msgs) {
+          requestAnimationFrame(() => { msgs.scrollTop = msgs.scrollHeight; });
+        }
+      }
+
+      // =====================
+      // Content Tab Wiring
+      // =====================
+      function wireContentTab() {
+        const filtersContainer = document.getElementById('admin-content-filters');
+        const gridContainer = document.getElementById('admin-content-grid');
+        const sortSelect = document.getElementById('admin-sort');
+        let activeFilter = 'all';
+
+        function applyFilters() {
+          const state = getState();
+          let filtered = [...state.content];
+
+          // Filter
+          if (activeFilter === 'image') filtered = filtered.filter(c => c.type === 'image');
+          else if (activeFilter === 'video') filtered = filtered.filter(c => c.type === 'video');
+          else if (activeFilter === 'free') filtered = filtered.filter(c => c.minTier === 'free');
+          else if (activeFilter === 'gold') filtered = filtered.filter(c => c.minTier === 'gold');
+
+          // Sort
+          const sortVal = sortSelect?.value || 'newest';
+          if (sortVal === 'newest') filtered.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          else if (sortVal === 'likes') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+
+          if (gridContainer) gridContainer.innerHTML = renderContentGrid(filtered);
+          wireContentCards();
+        }
+
+        // Filter buttons
+        filtersContainer?.addEventListener('click', (e) => {
+          const btn = e.target.closest('.admin-filter-btn');
+          if (!btn) return;
+
+          activeFilter = btn.dataset.filter;
+          filtersContainer.querySelectorAll('.admin-filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          applyFilters();
+        });
+
+        // Sort
+        sortSelect?.addEventListener('change', applyFilters);
+
+        // Content card clicks
+        wireContentCards();
+
+        function wireContentCards() {
+          gridContainer?.querySelectorAll('.admin-content-card').forEach(card => {
+            card.addEventListener('click', () => {
+              const contentId = card.dataset.contentId;
+              const item = getState().content.find(c => c.id === contentId);
+              if (!item) return;
+
+              const modalContainer = document.getElementById('admin-edit-modal');
+              if (modalContainer) {
+                modalContainer.innerHTML = renderEditModal(item);
+                wireEditModal(item, modalContainer, applyFilters);
+              }
+            });
+          });
+        }
+      }
+
+      function wireEditModal(item, modalContainer, refreshGrid) {
+        const closeBtn = document.getElementById('admin-modal-close');
+        const cancelBtn = document.getElementById('edit-cancel');
+        const saveBtn = document.getElementById('edit-save');
+        const deleteBtn = document.getElementById('edit-delete');
+        const overlay = document.getElementById('admin-modal-overlay');
+
+        function closeModal() {
+          if (modalContainer) modalContainer.innerHTML = '';
+        }
+
+        closeBtn?.addEventListener('click', closeModal);
+        cancelBtn?.addEventListener('click', closeModal);
+        overlay?.addEventListener('click', (e) => {
+          if (e.target === overlay) closeModal();
+        });
+
+        // Save
+        saveBtn?.addEventListener('click', () => {
+          const state = getState();
+          const idx = state.content.findIndex(c => c.id === item.id);
+          if (idx === -1) return;
+
+          state.content[idx] = {
+            ...state.content[idx],
+            title: document.getElementById('edit-title')?.value || item.title,
+            description: document.getElementById('edit-description')?.value || item.description,
+            category: document.getElementById('edit-category')?.value || item.category,
+            minTier: document.querySelector('input[name="edit-tier"]:checked')?.value || item.minTier,
+            isPublic: (document.querySelector('input[name="edit-tier"]:checked')?.value || item.minTier) === 'free',
+          };
+
+          closeModal();
+          refreshGrid();
+          showToast('Content updated! ✨', 'success');
+        });
+
+        // Delete
+        deleteBtn?.addEventListener('click', () => {
+          const state = getState();
+          state.content = state.content.filter(c => c.id !== item.id);
+          closeModal();
+          refreshGrid();
+          showToast('Content deleted', 'success');
+        });
+      }
+
+      // =====================
+      // Upload Tab Wiring
+      // =====================
+      function wireUploadTab() {
+        const dropzone = document.getElementById('admin-dropzone');
+        const fileInput = document.getElementById('upload-file-input');
+        const filenameLabel = document.getElementById('upload-filename');
+        const uploadBtn = document.getElementById('admin-upload-btn');
+        let selectedFiles = [];
+
+        // Dropzone click → file input
+        dropzone?.addEventListener('click', () => fileInput?.click());
+
+        // Drag & drop events
+        dropzone?.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropzone.classList.add('dragover');
+        });
+        dropzone?.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone?.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('dragover');
+          if (e.dataTransfer?.files?.length) {
+            selectedFiles = Array.from(e.dataTransfer.files).slice(0, 20);
+            if (filenameLabel) filenameLabel.textContent = `Selected: ${selectedFiles.length} file(s)`;
+          }
+        });
+
+        // File input change
+        fileInput?.addEventListener('change', () => {
+          if (fileInput.files?.length) {
+            selectedFiles = Array.from(fileInput.files).slice(0, 20);
+            if (filenameLabel) filenameLabel.textContent = `Selected: ${selectedFiles.length} file(s)`;
+          }
+        });
+
+        // Upload button
+        // Upload button
+        uploadBtn?.addEventListener('click', async () => {
+          const title = document.getElementById('upload-title')?.value?.trim();
+          const description = document.getElementById('upload-description')?.value?.trim();
+          const category = document.getElementById('upload-category')?.value;
+          const type = document.querySelector('input[name="upload-type"]:checked')?.value || 'image';
+          const tier = document.querySelector('input[name="upload-tier"]:checked')?.value || 'free';
+
+          if (!title) {
+            showToast('Please enter a title', 'error');
+            return;
+          }
+          
+          if (!selectedFiles.length) {
+            showToast('Please select at least one file', 'error');
+            return;
+          }
+
+          uploadBtn.disabled = true;
+          uploadBtn.innerHTML = `${icons.spinner} Uploading...`;
+
+          try {
+            const mediaPaths = [];
+            for (const file of selectedFiles) {
+              const fileExt = file.name.split('.').pop();
+              const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+              const filePath = `uploads/${fileName}`;
+
+              const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
+              
+              if (uploadError) {
+                console.error(uploadError);
+                throw new Error('Failed to upload file to storage');
+              }
+              mediaPaths.push(filePath);
+            }
+
+            const item = {
+              title,
+              description: description || '',
+              thumbnailPath: mediaPaths[0],
+              mediaPaths: mediaPaths,
+              type: selectedFiles.length > 1 ? 'carousel' : type,
+              isPublic: tier === 'free',
+              minTier: tier,
+              category,
+            };
+
+            await uploadContent(item);
+
+            // Reset form
+            if (document.getElementById('upload-title')) document.getElementById('upload-title').value = '';
+            if (document.getElementById('upload-description')) document.getElementById('upload-description').value = '';
+            if (document.getElementById('upload-category')) document.getElementById('upload-category').value = 'lingerie';
+            document.querySelectorAll('input[name="upload-type"]').forEach(r => r.checked = r.value === 'image');
+            document.querySelectorAll('input[name="upload-tier"]').forEach(r => r.checked = r.value === 'free');
+            selectedFiles = [];
+            if (filenameLabel) filenameLabel.textContent = 'Supports up to 20 files (JPG, PNG, MP4, MOV)';
+            
+          } catch (e) {
+            showToast(e.message || 'Upload failed', 'error');
+          } finally {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = `${icons.upload} Upload Content`;
+          }
+        });
+      }
+    }
+  };
+}
