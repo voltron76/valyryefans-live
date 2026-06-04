@@ -294,7 +294,16 @@ export function renderCheckout(params = {}) {
             }
           });
 
-          if (error) throw error;
+          if (error) {
+            let msg = error.message;
+            try {
+              if (error.context && typeof error.context.json === 'function') {
+                const body = await error.context.json();
+                if (body.error) msg = body.error;
+              }
+            } catch (e) {}
+            throw new Error(msg);
+          }
 
           btnText.style.display = 'block';
           btnSpinner.style.display = 'none';
