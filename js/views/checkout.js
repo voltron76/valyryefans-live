@@ -243,7 +243,7 @@ export function renderCheckout(params = {}) {
       });
 
       // Form submit
-      form?.addEventListener('submit', (e) => {
+      form?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         // Validate all fields
