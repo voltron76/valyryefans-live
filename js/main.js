@@ -188,35 +188,66 @@ export function openAuthModal(mode = 'login') {
   const form = document.getElementById('auth-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    handleDemoAuth(mode);
+    handleRealAuth(mode);
   });
 }
 
-function handleDemoAuth(mode) {
+async function handleRealAuth(mode) {
   const email = document.getElementById('auth-email')?.value;
+  const password = document.getElementById('auth-password')?.value;
   const name = document.getElementById('auth-name')?.value || email?.split('@')[0];
-  const s = getState();
 
-  // Simulate authentication
-  s.isAuthenticated = true;
-  s.user = { email, name, id: 'demo-user-1' };
-  s.profile = { display_name: name, avatar_url: null, role: 'fan' };
-  s.currentTier = 'free'; // New users start on Free tier
-
-  closeAuthModal();
-
-  // Re-render navbar with logged-in state
-  const navbarEl = document.getElementById('navbar');
-  if (navbarEl) {
-    navbarEl.innerHTML = renderNavbar();
-    initNavbarEvents();
-    afterNavRender();
+  const btn = document.querySelector('#auth-form button');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Please wait...';
   }
 
-  // Import and show toast
-  import('./store.js').then(({ showToast }) => {
-    showToast(`Welcome${name ? ', ' + name : ''}! 🎉`, 'success');
-  });
+  try {
+    const { supabase } = await import('./supabase.js');
+    const { initStore, showToast } = await import('./store.js');
+
+    if (mode === 'signup') {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } }
+      });
+      if (error) throw error;
+      
+      if (data.session === null) {
+        showToast('Registration successful! Please check your email to confirm.', 'success');
+        closeAuthModal();
+        return;
+      }
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) throw error;
+    }
+
+    // Refresh global state from DB
+    await initStore();
+    showToast('Successfully logged in!', 'success');
+    closeAuthModal();
+
+    // Re-render navbar
+    const navbarEl = document.getElementById('navbar');
+    if (navbarEl) {
+      navbarEl.innerHTML = renderNavbar();
+      initNavbarEvents();
+      afterNavRender();
+    }
+  } catch (err) {
+    import('./store.js').then(({ showToast }) => showToast(err.message, 'error'));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = mode === 'login' ? 'Sign In' : 'Create Account';
+    }
+  }
 }
 
 function closeAuthModal() {
