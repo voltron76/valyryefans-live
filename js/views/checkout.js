@@ -318,6 +318,12 @@ export function renderCheckout(params = {}) {
             const s = getState();
             s.currentTier = 'gold';
 
+            // IMPORTANT: Update tier in DB so it persists!
+            try {
+              const { supabase } = await import('../supabase.js');
+              await supabase.from('profiles').update({ tier: 'gold' }).eq('id', s.user.id);
+            } catch(e) { console.error('Failed to update DB tier', e); }
+
             // Re-render navbar with Gold badge
             try {
               const { renderNavbar, afterNavRender } = await import('../components/navbar.js');

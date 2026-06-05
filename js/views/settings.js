@@ -178,6 +178,35 @@ export function renderSettings() {
           </form>
         </div>
 
+        <!-- ===================== BILLING SECTION ===================== -->
+        <div class="card animate-fade-in-up stagger-1" style="border-radius: var(--radius-xl); padding: var(--space-8); margin-bottom: var(--space-6);">
+          <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);">
+            <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--accent-subtle); border: 1px solid var(--border-accent); display: flex; align-items: center; justify-content: center; color: var(--accent-light);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            </div>
+            <h2 class="font-display" style="font-size: var(--text-xl);">Billing & Subscription</h2>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--border);">
+            <div>
+              <div style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">Current Plan</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">${state.currentTier === 'gold' ? 'Gold Subscriber - Active' : 'Free Member'}</div>
+            </div>
+            ${state.currentTier === 'gold' ? '<span class="sub-badge sub-badge--gold">Gold</span>' : '<span class="sub-badge sub-badge--free">Free</span>'}
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--border);">
+            <div>
+              <div style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">Payment Method</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">${state.currentTier === 'gold' ? 'Visa ending in 4242' : 'None linked'}</div>
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-6);">
+            <button class="btn btn-secondary w-full" style="justify-content: center;" onclick="window.location.hash='#/subscribe'">Manage Subscription</button>
+          </div>
+        </div>
+
         <!-- ===================== APPEARANCE SECTION ===================== -->
         <div class="card animate-fade-in-up stagger-2" style="border-radius: var(--radius-xl); padding: var(--space-8); margin-bottom: var(--space-6);">
           <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);">

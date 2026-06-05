@@ -178,6 +178,7 @@ export function renderHome() {
     `}
 
     <!-- ===== SOCIAL PROOF / FOOTER CTA ===== -->
+    ${isGold ? '' : `
     <section class="section reveal" style="text-align: center; padding-bottom: var(--space-24);">
       <div style="max-width: 600px; margin: 0 auto;">
         <div style="font-size: 48px; margin-bottom: var(--space-4);">✨</div>
@@ -192,6 +193,7 @@ export function renderHome() {
         </button>
       </div>
     </section>
+    `}
   `;
 
   return {
