@@ -38,11 +38,11 @@ function renderDropdownMenu() {
       <div class="nav-dropdown__section">
         <a href="#/profile" class="nav-dropdown__item" data-close-dropdown>${menuIcons.profile}<span>Profile</span></a>
         <a href="#/subscribe" class="nav-dropdown__item" data-close-dropdown>${menuIcons.subscriptions}<span>Subscriptions</span></a>
-        <a href="#/bookmarks" class="nav-dropdown__item" data-close-dropdown>${menuIcons.media}<span>Media Collection</span></a>
+        <a href="#/purchases" class="nav-dropdown__item" data-close-dropdown>${menuIcons.media}<span>Media Collection</span></a>
         <a href="#/bookmarks" class="nav-dropdown__item" data-close-dropdown>${menuIcons.bookmarks}<span>Bookmarks</span></a>
         <a href="#/messages" class="nav-dropdown__item" data-close-dropdown>${menuIcons.messages}<span>Messages</span></a>
         <a href="#/notifications" class="nav-dropdown__item" data-close-dropdown>${menuIcons.notifications}<span>Notifications</span></a>
-        <a href="#/profile" class="nav-dropdown__item" data-close-dropdown>${menuIcons.payments}<span>Payments</span></a>
+        <a href="#/settings?tab=billing" class="nav-dropdown__item" data-close-dropdown>${menuIcons.payments}<span>Payments</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
@@ -60,7 +60,7 @@ function renderDropdownMenu() {
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
         <a href="#/settings" class="nav-dropdown__item" data-close-dropdown>${menuIcons.settings}<span>Settings</span></a>
-        <a href="#/settings" class="nav-dropdown__item" data-close-dropdown>${menuIcons.language}<span>Language</span></a>
+        <div class="nav-dropdown__item" id="dropdown-language" data-close-dropdown>${menuIcons.language}<span>Language</span></div>
         <div class="nav-dropdown__item" id="dropdown-theme-toggle">
           ${menuIcons.darkMode}
           <span>Dark Mode</span>
@@ -199,11 +199,58 @@ export function afterNavRender() {
       });
     }
 
+    // Language Selection Modal
+    const langBtn = document.getElementById('dropdown-language');
+    if (langBtn) {
+      langBtn.addEventListener('click', () => {
+        closeDropdown();
+        // Create simple modal overlay
+        const modalHtml = `
+          <div class="paywall-overlay active" id="lang-modal" style="z-index: 10000;">
+            <div class="card-glass" style="max-width: 400px; width: 90%; text-align: center; position: relative;">
+              <button class="paywall-overlay__close" id="close-lang-modal" style="position:absolute; top:var(--space-4); right:var(--space-4); background:none; border:none; color:var(--text-muted); cursor:pointer;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <div style="font-size: 32px; margin-bottom: var(--space-4);">🌐</div>
+              <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-2);">Select Language</h2>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Choose your preferred language for ValyryeFans.</p>
+              
+              <div style="display:flex; flex-direction:column; gap:var(--space-2);">
+                <button class="btn btn-secondary w-full" style="justify-content:center; border: 1px solid var(--accent);">English (US)</button>
+                <button class="btn btn-ghost w-full" style="justify-content:center; color: var(--text-muted);" onclick="this.innerText='Coming soon...'">Español</button>
+                <button class="btn btn-ghost w-full" style="justify-content:center; color: var(--text-muted);" onclick="this.innerText='Coming soon...'">Français</button>
+                <button class="btn btn-ghost w-full" style="justify-content:center; color: var(--text-muted);" onclick="this.innerText='Coming soon...'">日本語</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('lang-modal');
+        const closeBtn = document.getElementById('close-lang-modal');
+        
+        const removeModal = () => {
+          modal.style.opacity = '0';
+          setTimeout(() => modal.remove(), 300);
+        };
+        
+        closeBtn.addEventListener('click', removeModal);
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) removeModal();
+        });
+      });
+    }
+
     // Logout
     const logoutBtn = document.getElementById('dropdown-logout');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
+      logoutBtn.addEventListener('click', async () => {
         closeDropdown();
+        
+        try {
+          const { supabase } = await import('../supabase.js');
+          await supabase.auth.signOut();
+        } catch(e) {}
+
         const s = getState();
         s.isAuthenticated = false;
         s.user = null;

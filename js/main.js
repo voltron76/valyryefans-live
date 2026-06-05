@@ -20,6 +20,7 @@ import { renderSettings } from './views/settings.js';
 import { renderTerms, renderPrivacy, renderHelpCenter, renderSupport, renderLeaderboard, renderReferrals, renderBecomeCreator } from './views/static-pages.js';
 import { renderAdmin } from './views/admin.js';
 import { renderAdminLogin } from './views/admin-login.js';
+import { renderPurchases } from './views/purchases.js';
 
 // ---- Initialize App ----
 async function initApp() {
@@ -45,6 +46,7 @@ async function initApp() {
   registerRoute('/bookmarks', renderBookmarks);
   registerRoute('/notifications', renderNotifications);
   registerRoute('/settings', renderSettings);
+  registerRoute('/purchases', renderPurchases);
   registerRoute('/terms', renderTerms);
   registerRoute('/privacy', renderPrivacy);
   registerRoute('/help', renderHelpCenter);
