@@ -84,8 +84,9 @@ function renderTierCard(tier, index, currentTier) {
 
 export function renderHome() {
   const state = getState();
-  const { creatorProfile, content, tiers, currentTier } = state;
+  const { creatorProfile, content, tiers, currentTier, profile } = state;
   const latestContent = content.slice(0, 4);
+  const isGold = currentTier === 'gold' || profile?.tier === 'gold';
 
   const html = `
     <!-- ===== HERO ===== -->
@@ -128,12 +129,21 @@ export function renderHome() {
         </div>
 
         <div class="hero__actions animate-fade-in-up stagger-6">
-          <button class="btn btn-primary btn-lg" id="hero-subscribe-btn">
-            ${icons.star} Subscribe Now
-          </button>
-          <a href="#/gallery" class="btn btn-secondary btn-lg">
-            View Gallery ${icons.arrow}
-          </a>
+          ${isGold ? `
+            <div class="btn btn-primary btn-lg" style="pointer-events: none;">
+              ${icons.star} Gold Access Active
+            </div>
+            <a href="#/messages" class="btn btn-secondary btn-lg">
+              Message Valyrye ${icons.arrow}
+            </a>
+          ` : `
+            <button class="btn btn-primary btn-lg" id="hero-subscribe-btn">
+              ${icons.star} Subscribe Now
+            </button>
+            <a href="#/gallery" class="btn btn-secondary btn-lg">
+              View Gallery ${icons.arrow}
+            </a>
+          `}
         </div>
       </div>
     </section>
@@ -155,15 +165,17 @@ export function renderHome() {
     </section>
 
     <!-- ===== SUBSCRIPTION TIERS ===== -->
+    ${isGold ? '' : `
     <section class="section reveal">
       <div class="section__header" style="justify-content: center; text-align: center; flex-direction: column; align-items: center;">
         <h2 class="section__title font-display">Unlock <span class="text-gradient">Exclusive</span> Access</h2>
-        <p class="section__subtitle" style="max-width: 500px;">Choose the tier that's right for you and start enjoying premium content, direct messaging, and more.</p>
+        <p class="section__subtitle" style="margin-top: var(--space-2);">Choose the perfect tier to get closer to Valyrye</p>
       </div>
       <div class="tiers-grid">
-        ${tiers.map((tier, i) => renderTierCard(tier, i, currentTier)).join('')}
+        ${tiers.map((t, i) => renderTierCard(t, i, currentTier)).join('')}
       </div>
     </section>
+    `}
 
     <!-- ===== SOCIAL PROOF / FOOTER CTA ===== -->
     <section class="section reveal" style="text-align: center; padding-bottom: var(--space-24);">
