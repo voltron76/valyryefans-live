@@ -187,7 +187,7 @@ export function renderProfile() {
     html,
     afterRender() {
       // Save profile
-      document.getElementById('save-profile-btn')?.addEventListener('click', () => {
+      document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
         const name = document.getElementById('profile-name')?.value;
         const bio = document.getElementById('profile-bio')?.value;
         const s = getState();
@@ -195,6 +195,10 @@ export function renderProfile() {
           s.user.name = name || s.user.name;
           s.user.bio = bio || '';
         }
+        try {
+          const { supabase } = await import('../supabase.js');
+          await supabase.from('profiles').update({ name }).eq('id', s.user.id);
+        } catch(e) {}
         showToast('Profile updated!', 'success');
         // Re-render navbar to update avatar initial
         import('../components/navbar.js').then(({ renderNavbar, afterNavRender }) => {
@@ -231,10 +235,15 @@ export function renderProfile() {
       });
 
       // Cancel subscription
-      document.getElementById('cancel-sub-btn')?.addEventListener('click', () => {
+      document.getElementById('cancel-sub-btn')?.addEventListener('click', async () => {
         if (confirm('Are you sure you want to cancel your Gold subscription?')) {
           const s = getState();
           s.currentTier = 'free';
+          s.user.tier = 'free';
+          try {
+            const { supabase } = await import('../supabase.js');
+            await supabase.from('profiles').update({ tier: 'free' }).eq('id', s.user.id);
+          } catch(e) {}
           showToast('Subscription cancelled', 'success');
           navigate('/profile');
         }

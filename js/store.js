@@ -29,7 +29,14 @@ export const state = {
     handle: '@valyrye',
     bio: 'Exclusive content, behind-the-scenes access, and personal messaging. 💕 Subscribe for the full experience!',
     avatar: 'assets/images/avatar.jpg',
-    banner: 'assets/images/banner.jpg',
+    banner: 'assets/images/hero-01.jpg',
+    banners: [
+      'assets/images/hero-01.jpg',
+      'assets/images/hero-02.jpg',
+      'assets/images/hero-03.jpg',
+      'assets/images/hero-04.jpg',
+      'assets/images/hero-05.jpg',
+    ],
     stats: { posts: 0, photos: 0, videos: 0, fans: '12.4K' }
   },
   user: {
@@ -158,17 +165,18 @@ export async function initStore() {
       let { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       
       if (!profile) {
-        // Create profile if missing
-        const newProfile = { id: session.user.id, name: session.user.email.split('@')[0], tier: 'free', balance: 0 };
+        // Create profile if missing — use signup display name from user_metadata
+        const displayName = session.user.user_metadata?.name || session.user.email.split('@')[0];
+        const newProfile = { id: session.user.id, name: displayName, tier: 'free', balance: 0 };
         const { data: p } = await supabase.from('profiles').insert([newProfile]).select().single();
         profile = p;
       }
 
       if (profile) {
-        state.user.name = profile.name || 'User';
+        state.user.name = profile.name || session.user.user_metadata?.name || session.user.email.split('@')[0];
         state.user.tier = profile.tier || 'free';
         state.currentTier = profile.tier || 'free';
-        state.user.cardOnFile = profile.tier === 'gold'; // Mocking card on file for gold users
+        state.user.cardOnFile = profile.tier === 'gold';
         state.isAdmin = profile.tier === 'admin';
       }
 
@@ -311,7 +319,7 @@ export async function addMessage(content, sender = 'fan', type = 'text', mediaUr
 
   const newMsg = {
     id: data.id,
-    sender: 'fan',
+    sender,
     content: data.content,
     time: formatTime(data.created_at),
     type: data.type,

@@ -205,12 +205,13 @@ export function renderMessages() {
       }
 
       // ── Send message ──
-      function sendMessage() {
+      async function sendMessage() {
         const text = chatInput?.value?.trim();
         if (!text) return;
 
         // Add to store & render
-        const msg = addMessage(text, 'fan');
+        const msg = await addMessage(text, 'fan');
+        if (!msg) return;
         appendBubble(msg);
         chatInput.value = '';
         chatInput.style.height = 'auto';
@@ -223,10 +224,11 @@ export function renderMessages() {
 
         // Auto-reply after 2-3s
         const delay = 2000 + Math.random() * 1000;
-        replyTimeout = setTimeout(() => {
+        replyTimeout = setTimeout(async () => {
           if (typingIndicator) typingIndicator.style.display = 'none';
           const replyContent = getRandomReply();
-          const replyMsg = addMessage(replyContent, 'valyrye');
+          const replyMsg = await addMessage(replyContent, 'valyrye');
+          if (!replyMsg) return;
           appendBubble(replyMsg);
         }, delay);
       }
@@ -247,7 +249,7 @@ export function renderMessages() {
       });
 
       // ── Quick actions ──
-      document.getElementById('quick-actions')?.addEventListener('click', (e) => {
+      document.getElementById('quick-actions')?.addEventListener('click', async (e) => {
         const btn = e.target.closest('.quick-action-btn');
         if (!btn) return;
 
@@ -268,7 +270,8 @@ export function renderMessages() {
         };
 
         if (requestMessages[action]) {
-          const msg = addMessage(requestMessages[action], 'fan', 'request');
+          const msg = await addMessage(requestMessages[action], 'fan', 'request');
+          if (!msg) return;
           appendBubble(msg);
 
           // Auto-reply
@@ -277,10 +280,11 @@ export function renderMessages() {
             scrollToBottom();
           }
           const delay = 2000 + Math.random() * 1000;
-          replyTimeout = setTimeout(() => {
+          replyTimeout = setTimeout(async () => {
             if (typingIndicator) typingIndicator.style.display = 'none';
             const replyContent = getRandomReply();
-            const replyMsg = addMessage(replyContent, 'valyrye');
+            const replyMsg = await addMessage(replyContent, 'valyrye');
+            if (!replyMsg) return;
             appendBubble(replyMsg);
           }, delay);
         }
@@ -322,7 +326,7 @@ export function renderMessages() {
       });
 
       // Send tip
-      tipSendBtn?.addEventListener('click', () => {
+      tipSendBtn?.addEventListener('click', async () => {
         const state = getState();
         const hasCard = state.user?.tier === 'gold';
         
@@ -347,7 +351,8 @@ export function renderMessages() {
         const content = tipMsg
           ? `💝 Sent a $${amount} tip! "${tipMsg}"`
           : `💝 Sent a $${amount} tip!`;
-        const msg = addMessage(content, 'fan');
+        const msg = await addMessage(content, 'fan');
+        if (!msg) return;
         appendBubble(msg);
 
         // Close tip UI & reset
@@ -365,9 +370,10 @@ export function renderMessages() {
           typingIndicator.style.display = 'flex';
           scrollToBottom();
         }
-        replyTimeout = setTimeout(() => {
+        replyTimeout = setTimeout(async () => {
           if (typingIndicator) typingIndicator.style.display = 'none';
-          const replyMsg = addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyrye');
+          const replyMsg = await addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyrye');
+          if (!replyMsg) return;
           appendBubble(replyMsg);
         }, 1500);
       });
