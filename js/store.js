@@ -27,7 +27,7 @@ export const state = {
   creatorProfile: {
     name: 'Valyrye',
     handle: '@valyrye',
-    bio: 'Exclusive content, behind-the-scenes access, and personal messaging. 💕 Subscribe for the full experience!',
+    bio: `I'M ALWAYS HERE TO REPLY 🟢 LET'S CHAT 💬‼️\n\nWanna see what I don't post anywhere else? this is the only place you'll get the real me.\n\nAll natural, playful, and sweet. Slide in and let's have some fun. 😏\nNo agencies, no chatbots, no AI. Just me, all for you 🤭`,
     avatar: 'assets/images/avatar.jpg',
     banner: 'assets/images/hero-01.jpg',
     banners: [
