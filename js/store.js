@@ -366,7 +366,6 @@ export async function uploadContent(item) {
   
   if (error) {
     showToast('Upload failed to database', 'error');
-    console.error(error);
   } else {
     showToast('Content published successfully!', 'success');
     // Refresh content

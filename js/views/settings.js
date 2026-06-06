@@ -394,31 +394,35 @@ export function renderSettings() {
       });
 
       // ---- Delete account ----
-      document.getElementById('settings-delete-btn')?.addEventListener('click', () => {
+      document.getElementById('settings-delete-btn')?.addEventListener('click', async () => {
         const firstConfirm = confirm('⚠️ Are you sure you want to permanently delete your account?\n\nThis action CANNOT be undone. All your data will be lost.');
-        if (firstConfirm) {
-          const secondConfirm = confirm('This is your FINAL warning.\n\nType "DELETE" in the next prompt or click OK to confirm deletion.');
-          if (secondConfirm) {
-            const s = getState();
-            s.isAuthenticated = false;
-            s.user = null;
-            s.profile = null;
-            s.currentTier = 'free';
-            s.activeConversation = null;
+        if (!firstConfirm) return;
+        
+        const secondConfirm = confirm('This is your FINAL warning. Click OK to permanently delete your account.');
+        if (!secondConfirm) return;
 
-            // Re-render navbar
-            import('../main.js').then(async () => {
-              const navbarEl = document.getElementById('navbar');
-              if (navbarEl) {
-                const { renderNavbar } = await import('../components/navbar.js');
-                navbarEl.innerHTML = renderNavbar();
-              }
-            });
+        try {
+          const { supabase } = await import('../supabase.js');
+          await supabase.auth.signOut();
+        } catch(e) { console.error(e); }
 
-            showToast('Account deleted. We\'re sorry to see you go. 😔', 'success');
-            navigate('/');
+        const s = getState();
+        s.isAuthenticated = false;
+        s.user = { name: 'Guest User', email: '', tier: 'free', cardOnFile: false, id: null };
+        s.currentTier = 'free';
+
+        // Re-render navbar
+        try {
+          const { renderNavbar, afterNavRender } = await import('../components/navbar.js');
+          const navbarEl = document.getElementById('navbar');
+          if (navbarEl) {
+            navbarEl.innerHTML = renderNavbar();
+            afterNavRender();
           }
-        }
+        } catch(e) {}
+
+        showToast('Account deleted. We\'re sorry to see you go. 😔', 'success');
+        navigate('/');
       });
     }
   };

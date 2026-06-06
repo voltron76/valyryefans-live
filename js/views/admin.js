@@ -764,16 +764,54 @@ const adminStyles = `
         grid-template-columns: 1fr;
       }
       .admin-sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        border-right: none;
+        border-top: 1px solid var(--glass-card-border);
+        flex-direction: row;
+        padding: 0;
+        z-index: 100;
+        height: auto;
+      }
+      .admin-sidebar__brand {
         display: none;
+      }
+      .admin-sidebar__footer {
+        display: none;
+      }
+      .admin-tab {
+        flex-direction: column;
+        padding: var(--space-2) var(--space-3);
+        font-size: 10px;
+        border-left: none;
+        border-top: 3px solid transparent;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        gap: var(--space-1);
+      }
+      .admin-tab.active {
+        border-left-color: transparent;
+        border-top-color: var(--accent);
+      }
+      .admin-tab .tab-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        margin-left: 0;
+      }
+      .admin-content {
+        padding-bottom: 70px;
       }
       .admin-messages-layout {
         grid-template-columns: 1fr;
+        height: calc(100vh - var(--nav-height) - 70px - var(--space-12));
       }
       .admin-user-list {
         display: none;
-      }
-      .admin-dashboard-grid {
-        grid-template-columns: 1fr;
       }
     }
   </style>

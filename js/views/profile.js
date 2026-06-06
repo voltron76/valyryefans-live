@@ -7,6 +7,11 @@ import { getState, showToast } from '../store.js';
 import { navigate } from '../router.js';
 import { getTheme } from '../theme.js';
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 const icons = {
   user: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   mail: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
@@ -62,9 +67,9 @@ export function renderProfile() {
             ${initials}
           </div>
         </div>
-        <h1 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">${user.name || 'User'}</h1>
+        <h1 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">${escapeHtml(user.name) || 'User'}</h1>
         <p style="color: var(--text-muted); font-size: var(--text-sm); display: flex; align-items: center; justify-content: center; gap: var(--space-2);">
-          ${icons.mail} ${user.email || 'user@example.com'}
+          ${icons.mail} ${escapeHtml(user.email) || 'user@example.com'}
         </p>
         <div style="margin-top: var(--space-4);">
           <span class="sub-badge sub-badge--${tier}" style="font-size: var(--text-sm); padding: var(--space-2) var(--space-4);">
@@ -76,11 +81,11 @@ export function renderProfile() {
       <!-- Stats Row -->
       <div class="animate-fade-in-up stagger-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6);">
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
-          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">47</div>
+          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${state.content.filter(c => state.bookmarks.includes(c.id)).length || 0}</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Posts Liked</div>
         </div>
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
-          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">128</div>
+          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${state.content.length || 0}</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Content Viewed</div>
         </div>
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
@@ -88,7 +93,7 @@ export function renderProfile() {
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Member Since</div>
         </div>
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
-          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">3</div>
+          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">0</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Referrals</div>
         </div>
       </div>
@@ -137,17 +142,17 @@ export function renderProfile() {
 
         <div class="form-group" style="margin-bottom: var(--space-5);">
           <label class="form-label">Display Name</label>
-          <input class="form-input" type="text" id="profile-name" value="${user.name || ''}" placeholder="Your display name">
+          <input class="form-input" type="text" id="profile-name" value="${escapeHtml(user.name || '')}" placeholder="Your display name">
         </div>
 
         <div class="form-group" style="margin-bottom: var(--space-5);">
           <label class="form-label">Email</label>
-          <input class="form-input" type="email" id="profile-email" value="${user.email || ''}" readonly style="opacity: 0.7;">
+          <input class="form-input" type="email" id="profile-email" value="${escapeHtml(user.email || '')}" readonly style="opacity: 0.7;">
         </div>
 
         <div class="form-group" style="margin-bottom: var(--space-6);">
           <label class="form-label">Bio</label>
-          <textarea class="form-input" id="profile-bio" rows="3" placeholder="Tell us about yourself...">${user.bio || ''}</textarea>
+          <textarea class="form-input" id="profile-bio" rows="3" placeholder="Tell us about yourself...">${escapeHtml(user.bio || '')}</textarea>
         </div>
 
         <button class="btn btn-primary" id="save-profile-btn">${icons.check} Save Changes</button>

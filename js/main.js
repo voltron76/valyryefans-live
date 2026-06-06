@@ -70,7 +70,6 @@ async function initApp() {
     }
   });
 
-  console.log('%c✨ ValyryeFans loaded', 'color: #c9956b; font-size: 14px; font-weight: bold;');
 }
 
 // ---- Navbar Events ----

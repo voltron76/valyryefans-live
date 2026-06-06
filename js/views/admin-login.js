@@ -108,7 +108,7 @@ export function renderAdminLogin() {
             showToast('Access denied. You are not an authorized admin.', 'error');
           }
         } catch (err) {
-          console.error(err);
+          // Error already shown via toast
         } finally {
           submitBtn.disabled = false;
           submitBtn.innerHTML = 'Sign In to Dashboard';

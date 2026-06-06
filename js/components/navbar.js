@@ -36,34 +36,34 @@ function renderDropdownMenu() {
   const isDark = getTheme() === 'dark';
   return `
     <div class="nav-dropdown-overlay" id="nav-dropdown-overlay"></div>
-    <div class="nav-dropdown" id="nav-dropdown">
+    <div class="nav-dropdown" id="nav-dropdown" role="menu" aria-label="User menu">
       <div class="nav-dropdown__section">
-        <a href="#/profile" class="nav-dropdown__item" data-close-dropdown>${menuIcons.profile}<span>Profile</span></a>
-        <a href="#/subscribe" class="nav-dropdown__item" data-close-dropdown>${menuIcons.subscriptions}<span>Subscriptions</span></a>
-        <a href="#/purchases" class="nav-dropdown__item" data-close-dropdown>${menuIcons.media}<span>Media Collection</span></a>
-        <a href="#/bookmarks" class="nav-dropdown__item" data-close-dropdown>${menuIcons.bookmarks}<span>Bookmarks</span></a>
-        <a href="#/messages" class="nav-dropdown__item" data-close-dropdown>${menuIcons.messages}<span>Messages</span></a>
-        <a href="#/notifications" class="nav-dropdown__item" data-close-dropdown>${menuIcons.notifications}<span>Notifications</span></a>
-        <a href="#/settings?tab=billing" class="nav-dropdown__item" data-close-dropdown>${menuIcons.payments}<span>Payments</span></a>
+        <a href="#/profile" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.profile}<span>Profile</span></a>
+        <a href="#/subscribe" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.subscriptions}<span>Subscriptions</span></a>
+        <a href="#/purchases" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.media}<span>Media Collection</span></a>
+        <a href="#/bookmarks" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.bookmarks}<span>Bookmarks</span></a>
+        <a href="#/messages" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.messages}<span>Messages</span></a>
+        <a href="#/notifications" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.notifications}<span>Notifications</span></a>
+        <a href="#/settings?tab=billing" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.payments}<span>Payments</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <a href="#/become-creator" class="nav-dropdown__item" data-close-dropdown>${menuIcons.creator}<span>Become A Creator</span></a>
-        <a href="#/support" class="nav-dropdown__item" data-close-dropdown>${menuIcons.support}<span>Contact Support</span></a>
-        <a href="#/help" class="nav-dropdown__item" data-close-dropdown>${menuIcons.help}<span>Help Center</span></a>
-        <a href="#/leaderboard" class="nav-dropdown__item" data-close-dropdown>${menuIcons.leaderboard}<span>Leaderboard</span></a>
-        <a href="#/referrals" class="nav-dropdown__item" data-close-dropdown>${menuIcons.referrals}<span>Referrals</span></a>
+        <a href="#/become-creator" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.creator}<span>Become A Creator</span></a>
+        <a href="#/support" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.support}<span>Contact Support</span></a>
+        <a href="#/help" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.help}<span>Help Center</span></a>
+        <a href="#/leaderboard" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.leaderboard}<span>Leaderboard</span></a>
+        <a href="#/referrals" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.referrals}<span>Referrals</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <a href="#/terms" class="nav-dropdown__item" data-close-dropdown>${menuIcons.terms}<span>Terms of Service</span></a>
-        <a href="#/privacy" class="nav-dropdown__item" data-close-dropdown>${menuIcons.privacy}<span>Privacy Policy</span></a>
+        <a href="#/terms" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.terms}<span>Terms of Service</span></a>
+        <a href="#/privacy" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.privacy}<span>Privacy Policy</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <a href="#/settings" class="nav-dropdown__item" data-close-dropdown>${menuIcons.settings}<span>Settings</span></a>
-        <div class="nav-dropdown__item" id="dropdown-language" data-close-dropdown>${menuIcons.language}<span>Language</span></div>
-        <div class="nav-dropdown__item" id="dropdown-theme-toggle">
+        <a href="#/settings" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.settings}<span>Settings</span></a>
+        <div class="nav-dropdown__item" role="menuitem" id="dropdown-language" data-close-dropdown>${menuIcons.language}<span>Language</span></div>
+        <div class="nav-dropdown__item" role="menuitem" id="dropdown-theme-toggle">
           ${menuIcons.darkMode}
           <span>Dark Mode</span>
           <label class="toggle-switch" style="margin-left:auto;">
@@ -74,7 +74,7 @@ function renderDropdownMenu() {
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <div class="nav-dropdown__item nav-dropdown__item--danger" id="dropdown-logout">
+        <div class="nav-dropdown__item nav-dropdown__item--danger" role="menuitem" id="dropdown-logout">
           ${menuIcons.logout}<span>Log Out</span>
         </div>
       </div>
@@ -118,7 +118,7 @@ export function renderNavbar() {
       </button>
       ${isAuth ? `
         <div style="position:relative;">
-          <button class="nav-avatar" id="nav-avatar-btn" title="${user?.name || 'Profile'}" aria-label="Open profile menu">
+          <button class="nav-avatar" id="nav-avatar-btn" title="${user?.name || 'Profile'}" aria-label="Open profile menu" aria-haspopup="true" aria-expanded="false">
             <div style="width:100%;height:100%;background:var(--gradient-accent);display:flex;align-items:center;justify-content:center;color:var(--btn-primary-text);font-weight:700;font-size:14px;">
               ${(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
             </div>
@@ -217,9 +217,9 @@ export function afterNavRender() {
               
               <div style="display:flex; flex-direction:column; gap:var(--space-2);">
                 <button class="btn btn-secondary w-full" style="justify-content:center; border: 1px solid var(--accent);">English (US)</button>
-                <button class="btn btn-ghost w-full" style="justify-content:center; color: var(--text-muted);" onclick="this.innerText='Coming soon...'">Español</button>
-                <button class="btn btn-ghost w-full" style="justify-content:center; color: var(--text-muted);" onclick="this.innerText='Coming soon...'">Français</button>
-                <button class="btn btn-ghost w-full" style="justify-content:center; color: var(--text-muted);" onclick="this.innerText='Coming soon...'">日本語</button>
+                <button class="btn btn-ghost w-full lang-coming-soon" style="justify-content:center; color: var(--text-muted);">Español</button>
+                <button class="btn btn-ghost w-full lang-coming-soon" style="justify-content:center; color: var(--text-muted);">Français</button>
+                <button class="btn btn-ghost w-full lang-coming-soon" style="justify-content:center; color: var(--text-muted);">日本語</button>
               </div>
             </div>
           </div>
@@ -234,6 +234,9 @@ export function afterNavRender() {
         };
         
         closeBtn.addEventListener('click', removeModal);
+        modal.querySelectorAll('.lang-coming-soon').forEach(btn => {
+          btn.addEventListener('click', () => { btn.textContent = 'Coming soon...'; btn.disabled = true; });
+        });
         modal.addEventListener('click', (e) => {
           if (e.target === modal) removeModal();
         });

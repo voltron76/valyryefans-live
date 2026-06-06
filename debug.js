@@ -5,6 +5,8 @@ const path = require('path');
 
 const server = http.createServer((req, res) => {
   let filePath = '.' + req.url;
+  filePath = path.normalize(filePath);
+  if (!filePath.startsWith('.')) { res.writeHead(403); res.end('Forbidden'); return; }
   if (filePath === './') filePath = './index.html';
   
   const extname = path.extname(filePath);
