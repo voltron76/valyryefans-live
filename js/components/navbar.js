@@ -280,3 +280,46 @@ export function afterNavRender() {
     overlay?.classList.remove('open');
   }
 }
+
+export function renderMobileNav() {
+  const s = getState();
+  const unread = s.notifications?.filter(n => !n.read).length || 0;
+  const msgCount = s.messages?.length || 0;
+  
+  return `
+    <div class="mobile-bottom-nav" id="mobile-bottom-nav">
+      <div class="mobile-bottom-nav__items">
+        <a href="#/" class="mobile-nav-item${window.location.hash === '#/' || window.location.hash === '' ? ' active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          <span>Home</span>
+        </a>
+        <a href="#/gallery" class="mobile-nav-item${window.location.hash === '#/gallery' ? ' active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>Explore</span>
+        </a>
+        ${(s.currentTier !== 'gold' && !s.isAdmin) ? `
+          <a href="#/subscribe" class="mobile-nav-item">
+            <div style="width:36px;height:36px;background:var(--gradient-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-12px;box-shadow:0 4px 12px rgba(233,30,140,0.4);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" width="20" height="20"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <span style="margin-top:2px;">Subscribe</span>
+          </a>
+        ` : `
+          <a href="#/messages" class="mobile-nav-item${window.location.hash === '#/messages' ? ' active' : ''}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            <span>Chat</span>
+          </a>
+        `}
+        <a href="#/notifications" class="mobile-nav-item${window.location.hash === '#/notifications' ? ' active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          ${unread > 0 ? '<span class="mobile-nav-badge"></span>' : ''}
+          <span>Alerts</span>
+        </a>
+        <a href="#/profile" class="mobile-nav-item${window.location.hash === '#/profile' ? ' active' : ''}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </a>
+      </div>
+    </div>
+  `;
+}

@@ -37,7 +37,9 @@ export const state = {
       'assets/images/hero-04.jpg',
       'assets/images/hero-05.jpg',
     ],
-    stats: { posts: 0, photos: 0, videos: 0, fans: '12.4K' }
+    stats: { posts: 0, photos: 0, videos: 0, fans: '12.4K' },
+    verified: true,
+    online: true,
   },
   user: {
     name: 'Guest User',
@@ -434,3 +436,104 @@ export function getRandomReply() {
   ];
   return replies[Math.floor(Math.random() * replies.length)];
 }
+
+// ------------------------------------
+// Post Feed System
+// ------------------------------------
+export function toggleLike(contentId) {
+  const item = state.content.find(c => c.id === contentId);
+  if (!item) return;
+  if (!item.likedByUser) {
+    item.likes = (item.likes || 0) + 1;
+    item.likedByUser = true;
+  } else {
+    item.likes = Math.max(0, (item.likes || 1) - 1);
+    item.likedByUser = false;
+  }
+  notify('content');
+}
+
+export function addComment(contentId, text) {
+  const item = state.content.find(c => c.id === contentId);
+  if (!item) return;
+  if (!item.comments) item.comments = [];
+  const comment = {
+    id: Date.now().toString(36),
+    userId: state.user.id,
+    userName: state.user.name || 'Anonymous',
+    text,
+    time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    isCreator: state.isAdmin
+  };
+  item.comments.push(comment);
+  notify('content');
+  return comment;
+}
+
+export async function tipPost(contentId, amount) {
+  await addTip(contentId, amount);
+  const item = state.content.find(c => c.id === contentId);
+  if (item) {
+    item.tips = (item.tips || 0) + parseFloat(amount);
+    notify('content');
+  }
+  showToast(`💰 Sent $${parseFloat(amount).toFixed(2)} tip!`, 'success');
+}
+
+// ------------------------------------
+// Polls System
+// ------------------------------------
+export const polls = [
+  {
+    id: 'poll-1',
+    question: '🔥 What should I post next?',
+    options: [
+      { id: 'a', text: 'Lingerie photoshoot', votes: 847 },
+      { id: 'b', text: 'Beach day video', votes: 623 },
+      { id: 'c', text: 'Behind-the-scenes', votes: 512 },
+      { id: 'd', text: 'Q&A / Get to know me', votes: 394 },
+    ],
+    totalVotes: 2376,
+    userVote: null,
+    createdAt: '2 hours ago',
+    pinned: false
+  }
+];
+
+export function votePoll(pollId, optionId) {
+  const poll = polls.find(p => p.id === pollId);
+  if (!poll || poll.userVote) return;
+  const option = poll.options.find(o => o.id === optionId);
+  if (!option) return;
+  option.votes++;
+  poll.totalVotes++;
+  poll.userVote = optionId;
+  notify('polls');
+}
+
+// ------------------------------------
+// Welcome Message
+// ------------------------------------
+export async function sendWelcomeMessage() {
+  const welcomeText = `Hey ${state.user.name || 'babe'}! 💕 Welcome to my VIP! I'm SO happy you're here. You just unlocked everything 🔓\n\nDM me anytime — I always reply to my Gold members first 😘`;
+  const msg = {
+    id: 'welcome-' + Date.now(),
+    sender: 'valyrye',
+    content: welcomeText,
+    time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    type: 'text'
+  };
+  state.messages.unshift(msg);
+  notify('messages');
+}
+
+// ------------------------------------
+// Promotion System
+// ------------------------------------
+export const activePromo = {
+  active: true,
+  text: '🔥 Summer Special — 40% OFF first month!',
+  code: 'SUMMER40',
+  expiresIn: '2d 14h',
+  discount: 40
+};

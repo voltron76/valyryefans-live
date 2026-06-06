@@ -1,241 +1,541 @@
 // ============================================================
-// ValyryeFans — Home View
-// Stunning landing page with hero, latest content, & tiers
+// ValyryeFans — Home View (Social Post Feed)
+// Premium OnlyFans-style creator feed
 // ============================================================
 
-import { getState, canAccessTier } from '../store.js';
+import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, activePromo } from '../store.js';
 import { navigate } from '../router.js';
 
-// SVG icons
+// ------------------------------------
+// SVG Icons
+// ------------------------------------
 const icons = {
-  check: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L6.6 9.6l5.3-5.3a1 1 0 0 1 1.4 0z" fill="currentColor"/></svg>`,
-  x: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4.3 4.3a1 1 0 0 1 1.4 0L8 6.6l2.3-2.3a1 1 0 1 1 1.4 1.4L9.4 8l2.3 2.3a1 1 0 0 1-1.4 1.4L8 9.4l-2.3 2.3a1 1 0 0 1-1.4-1.4L6.6 8 4.3 5.7a1 1 0 0 1 0-1.4z" fill="currentColor"/></svg>`,
-  heart: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
-  lock: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-  arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
-  star: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  heart: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  heartFilled: `<svg width="20" height="20" viewBox="0 0 24 24" fill="var(--accent-primary)" stroke="var(--accent-primary)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  comment: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  bookmark: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
+  bookmarkFilled: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
+  lock: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  verified: `<svg class="verified-badge" width="18" height="18" viewBox="0 0 24 24" fill="#1da1f2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="white" stroke-width="2" fill="#1da1f2"/></svg>`,
 };
 
-function renderContentCard(item, index) {
-  const locked = !canAccessTier(item.minTier);
-  const stagger = `stagger-${Math.min(index + 1, 12)}`;
-  const typeBadge = item.type === 'video' ? '🎬 Video' : '📷 Photo';
-  const tierLabel = item.minTier === 'free' ? '' : item.minTier === 'gold' ? 'Gold' : 'VIP';
+// ------------------------------------
+// Promo Banner
+// ------------------------------------
+function renderPromoBanner(promo) {
+  if (!promo || !promo.active) return '';
+  return `
+    <div class="promo-banner animate-fade-in-up">
+      <div class="promo-banner__content">
+        <span class="promo-banner__text">${promo.text}</span>
+        <span class="promo-banner__code">Code: ${promo.code}</span>
+        <span class="promo-banner__timer">⏰ ${promo.expiresIn}</span>
+      </div>
+      <button class="promo-banner__close" id="close-promo">✕</button>
+    </div>`;
+}
 
-  if (locked) {
-    return `
-      <div class="gallery-card gallery-card--locked animate-fade-in-up ${stagger}" data-id="${item.id}" data-locked="true">
-        <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
-        <span class="gallery-card__type-badge">${typeBadge}</span>
-        <div class="gallery-card__overlay">
-          <div class="lock-icon">${icons.lock}</div>
-          <div class="lock-label">${tierLabel} Exclusive</div>
-          <button class="btn btn-primary btn-sm subscribe-cta">Subscribe to Unlock</button>
+// ------------------------------------
+// Creator Profile Header
+// ------------------------------------
+function renderCreatorHeader(creatorProfile, isGold) {
+  return `
+    <div class="creator-header">
+      <div class="creator-header__banner">
+        <img src="${creatorProfile.banner}" alt="Banner">
+      </div>
+      <div class="creator-header__info">
+        <div class="creator-header__avatar-wrap">
+          <img src="${creatorProfile.avatar}" alt="${creatorProfile.name}" class="creator-header__avatar">
+          <span class="online-dot"></span>
         </div>
+        <div class="creator-header__details">
+          <h1 class="creator-header__name">
+            ${creatorProfile.name}
+            ${icons.verified}
+          </h1>
+          <p class="creator-header__handle">${creatorProfile.handle}</p>
+          <p class="creator-header__bio">${creatorProfile.bio.replace(/\n/g, '<br>')}</p>
+        </div>
+        <div class="creator-header__stats">
+          <div class="stat-item"><strong>${creatorProfile.stats.posts}</strong><span>Posts</span></div>
+          <div class="stat-item"><strong>${creatorProfile.stats.photos}</strong><span>Photos</span></div>
+          <div class="stat-item"><strong>${creatorProfile.stats.videos}</strong><span>Videos</span></div>
+          <div class="stat-item"><strong>${creatorProfile.stats.fans}</strong><span>Fans</span></div>
+        </div>
+        ${!isGold
+          ? `<a href="#/subscribe" class="btn btn-primary btn-lg w-full" style="justify-content:center;margin-top:var(--space-4);">Subscribe — $14.99/mo</a>`
+          : `<div class="btn btn-secondary w-full" style="justify-content:center;margin-top:var(--space-4);pointer-events:none;">✅ Gold Member</div>`
+        }
+      </div>
+    </div>`;
+}
+
+// ------------------------------------
+// Stories Bar
+// ------------------------------------
+function renderStoriesBar() {
+  const storyLabels = ['BTS 🎬', 'Beach 🏖️', 'Gym 💪', 'Night Out 🌙', 'Morning ☀️'];
+  return `
+    <div class="stories-bar">
+      <div class="story-item story-item--add">
+        <div class="story-ring"><span>+</span></div>
+        <span class="story-label">New</span>
+      </div>
+      ${storyLabels.map((label, i) => `
+        <div class="story-item" data-story="${i}">
+          <div class="story-ring ${i < 2 ? 'story-ring--unseen' : ''}">
+            <img src="assets/images/hero-0${i + 2}.jpg" alt="${label}">
+          </div>
+          <span class="story-label">${label}</span>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+// ------------------------------------
+// Feed Tabs
+// ------------------------------------
+function renderFeedTabs() {
+  return `
+    <div class="feed-tabs">
+      <button class="feed-tab active" data-tab="all">All Posts</button>
+      <button class="feed-tab" data-tab="photos">Photos</button>
+      <button class="feed-tab" data-tab="videos">Videos</button>
+    </div>`;
+}
+
+// ------------------------------------
+// Poll Card
+// ------------------------------------
+function renderPollCard(poll, creatorProfile) {
+  const totalVotes = poll.totalVotes || 0;
+  return `
+    <div class="post-card post-card--poll animate-fade-in-up">
+      <div class="post-card__header">
+        <img src="${creatorProfile.avatar}" class="post-card__avatar" alt="Avatar">
+        <div>
+          <span class="post-card__name">${creatorProfile.name} ${icons.verified}</span>
+          <span class="post-card__time">${poll.createdAt || 'Just now'}</span>
+        </div>
+        <button class="post-card__menu">⋯</button>
+      </div>
+      <div class="poll-card">
+        <h3 class="poll-card__question">${poll.question}</h3>
+        <div class="poll-card__options">
+          ${poll.options.map(opt => `
+            <button class="poll-option ${poll.userVote === opt.id ? 'poll-option--voted' : ''} ${poll.userVote ? 'poll-option--results' : ''}" data-poll="${poll.id}" data-option="${opt.id}">
+              <span class="poll-option__text">${opt.text}</span>
+              ${poll.userVote ? `<span class="poll-option__pct">${totalVotes > 0 ? Math.round(opt.votes / totalVotes * 100) : 0}%</span>` : ''}
+              ${poll.userVote ? `<div class="poll-option__bar" style="width:${totalVotes > 0 ? Math.round(opt.votes / totalVotes * 100) : 0}%"></div>` : ''}
+            </button>
+          `).join('')}
+        </div>
+        <span class="poll-card__meta">${totalVotes.toLocaleString()} votes · ${poll.createdAt || ''}</span>
+      </div>
+    </div>`;
+}
+
+// ------------------------------------
+// Post Card
+// ------------------------------------
+function renderPostCard(item, creatorProfile) {
+  const locked = !canAccessTier(item.minTier);
+  const bookmarked = typeof isBookmarked === 'function' && isBookmarked(item.id);
+  const commentsArr = item.comments || [];
+  const lastComments = commentsArr.slice(-2);
+
+  // Media rendering
+  let mediaHtml = '';
+  if (locked) {
+    mediaHtml = `
+      <div class="post-card__media post-card__media--locked">
+        <img src="${item.thumbnail}" alt="Locked" class="post-card__img post-card__img--blur">
+        <div class="post-card__lock-overlay">
+          ${icons.lock}
+          <span>Subscribe to unlock</span>
+          <a href="#/subscribe" class="btn btn-primary btn-sm">Unlock — $14.99/mo</a>
+        </div>
+      </div>`;
+  } else if (item.type === 'video') {
+    mediaHtml = `
+      <div class="post-card__media">
+        <video src="${item.videoUrl || item.media?.[0] || item.thumbnail}" controls poster="${item.thumbnail}" class="post-card__video"></video>
+      </div>`;
+  } else if (item.media?.length > 1) {
+    mediaHtml = `
+      <div class="post-card__media post-card__carousel" data-post-id="${item.id}">
+        <div class="post-card__carousel-track">
+          ${item.media.map((src, i) => `<img src="${src}" alt="${item.title} ${i + 1}" class="post-card__img ${i === 0 ? 'active' : ''}">`).join('')}
+        </div>
+        <div class="post-card__carousel-dots">
+          ${item.media.map((_, i) => `<span class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join('')}
+        </div>
+      </div>`;
+  } else {
+    mediaHtml = `
+      <div class="post-card__media">
+        <img src="${item.media?.[0] || item.thumbnail}" alt="${item.title}" class="post-card__img">
       </div>`;
   }
 
   return `
-    <a href="#/content/${item.id}" class="gallery-card animate-fade-in-up ${stagger}" data-id="${item.id}">
-      <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
-      <span class="gallery-card__type-badge">${typeBadge}</span>
-      <div class="gallery-card__overlay">
-        <div class="gallery-card__title">${item.title}</div>
-        <div class="gallery-card__meta">
-          <span>${icons.heart} ${item.likes}</span>
-          <span>·</span>
-          <span>${item.createdAt}</span>
+    <div class="post-card animate-fade-in-up" data-post-id="${item.id}" data-type="${item.type || 'photo'}">
+      <!-- Header -->
+      <div class="post-card__header">
+        <img src="${creatorProfile.avatar}" class="post-card__avatar" alt="Avatar">
+        <div>
+          <span class="post-card__name">${creatorProfile.name} ${icons.verified}</span>
+          <span class="post-card__time">${item.createdAt || 'Just now'}</span>
+        </div>
+        <button class="post-card__menu">⋯</button>
+      </div>
+
+      <!-- Caption -->
+      ${item.caption || item.title ? `<p class="post-card__caption">${item.caption || item.title}</p>` : ''}
+
+      <!-- Media -->
+      ${mediaHtml}
+
+      <!-- Action Bar -->
+      <div class="post-card__actions">
+        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
+          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span>
+        </button>
+        <button class="post-action" data-action="comment" data-id="${item.id}">
+          ${icons.comment} <span>${commentsArr.length || 0}</span>
+        </button>
+        <button class="post-action" data-action="tip" data-id="${item.id}">
+          💰 Tip
+        </button>
+        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;">
+          ${bookmarked ? icons.bookmarkFilled : icons.bookmark}
+        </button>
+      </div>
+
+      <!-- Comments Section -->
+      <div class="post-card__comments" id="comments-${item.id}">
+        ${lastComments.map(c => `
+          <div class="post-comment">
+            <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}</strong>
+            <span>${c.text}</span>
+          </div>
+        `).join('')}
+        ${commentsArr.length > 2 ? `<button class="post-comments__more" data-id="${item.id}">View all ${commentsArr.length} comments</button>` : ''}
+        <div class="post-comment-input" data-id="${item.id}">
+          <input type="text" placeholder="Add a comment..." class="comment-input" data-id="${item.id}">
+          <button class="comment-send" data-id="${item.id}">Post</button>
         </div>
       </div>
-    </a>`;
-}
-
-function renderTierCard(tier, index, currentTier) {
-  const isPopular = tier.popular;
-  const isCurrent = currentTier === tier.id;
-  const stagger = `stagger-${Math.min(index + 1, 12)}`;
-
-  return `
-    <div class="tier-card${isPopular ? ' tier-card--popular' : ''} animate-fade-in-up ${stagger}">
-      ${isPopular ? '<div class="tier-badge">Most Popular</div>' : ''}
-      <div class="tier-card__name">${tier.name}</div>
-      <div class="tier-card__price">
-        <span class="tier-card__amount">${tier.price === 0 ? 'Free' : '$' + tier.price.toFixed(2)}</span>
-        ${tier.period ? `<span class="tier-card__period">${tier.period}</span>` : ''}
-      </div>
-      <ul class="tier-card__features">
-        ${tier.features.map(f => `
-          <li class="tier-card__feature${f.included ? '' : ' tier-card__feature--disabled'}">
-            ${f.included ? icons.check : icons.x}
-            <span>${f.text}</span>
-          </li>
-        `).join('')}
-      </ul>
-      ${isCurrent
-        ? `<div class="btn btn-secondary w-full" style="pointer-events: none; opacity: 0.7; justify-content: center;">
-             ${icons.check} Current Plan
-           </div>`
-        : `<a href="#/subscribe" class="btn ${isPopular ? 'btn-primary' : 'btn-secondary'} btn-lg w-full" style="justify-content: center;">
-             ${tier.cta} ${icons.arrow}
-           </a>`
-      }
     </div>`;
 }
 
-export function renderHome() {
-  const state = getState();
-  const { creatorProfile, content, tiers, currentTier } = state;
-  const latestContent = content.slice(0, 4);
-  const isGold = currentTier === 'gold' || state.user?.tier === 'gold';
-
-  const html = `
-    <!-- ===== HERO ===== -->
-    <section class="hero">
-      <div class="hero__bg" id="hero-carousel">
-        ${(creatorProfile.banners || [creatorProfile.banner]).map((src, i) => `
-          <img src="${src}" alt="Hero banner ${i + 1}" class="hero__carousel-img ${i === 0 ? 'active' : ''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:${i === 0 ? 1 : 0};transition:opacity 1.5s ease;">
+// ------------------------------------
+// Suggested Creators
+// ------------------------------------
+function renderSuggestedCreators() {
+  const suggested = ['Luna', 'Aria', 'Mia'];
+  return `
+    <div class="suggested-section">
+      <h3>Suggested Creators</h3>
+      <div class="suggested-list">
+        ${suggested.map((name, i) => `
+          <div class="suggested-card card-glass">
+            <div class="suggested-avatar" style="background:hsl(${i * 120},70%,60%);">${name[0]}</div>
+            <span class="suggested-name">${name}</span>
+            <span class="suggested-handle">@${name.toLowerCase()}</span>
+            <button class="btn btn-sm btn-secondary">Follow</button>
+          </div>
         `).join('')}
       </div>
-      <div class="hero__content">
-        <div class="hero__avatar animate-fade-in-up stagger-1">
-          <img src="${creatorProfile.avatar}" alt="${creatorProfile.name}">
+    </div>`;
+}
+
+// ------------------------------------
+// Tip Modal (inline)
+// ------------------------------------
+function renderTipModal() {
+  return `
+    <div class="tip-modal-overlay" id="tip-modal" style="display:none;">
+      <div class="tip-modal card-glass">
+        <div class="tip-modal__header">
+          <h3>Send a Tip 💰</h3>
+          <button class="tip-modal__close" id="tip-modal-close">✕</button>
         </div>
-
-        <h1 class="hero__name animate-fade-in-up stagger-2">
-          <span class="text-gradient">${creatorProfile.name}</span>
-        </h1>
-
-        <div class="hero__handle animate-fade-in-up stagger-3">${creatorProfile.handle}</div>
-
-        <p class="hero__bio animate-fade-in-up stagger-4">${creatorProfile.bio}</p>
-
-        <div class="hero__stats animate-fade-in-up stagger-5">
-          <div class="hero__stat">
-            <div class="hero__stat-value">${creatorProfile.stats.posts}</div>
-            <div class="hero__stat-label">Posts</div>
-          </div>
-          <div class="hero__stat">
-            <div class="hero__stat-value">${creatorProfile.stats.photos}</div>
-            <div class="hero__stat-label">Photos</div>
-          </div>
-          <div class="hero__stat">
-            <div class="hero__stat-value">${content.filter(c => c.minTier === 'gold').length}+</div>
-            <div class="hero__stat-label">Exclusive</div>
-          </div>
-          <div class="hero__stat">
-            <div class="hero__stat-value">${creatorProfile.stats.fans}</div>
-            <div class="hero__stat-label">Fans</div>
-          </div>
+        <div class="tip-modal__amounts">
+          <button class="tip-amount-btn" data-amount="5">$5</button>
+          <button class="tip-amount-btn" data-amount="10">$10</button>
+          <button class="tip-amount-btn" data-amount="25">$25</button>
+          <button class="tip-amount-btn" data-amount="50">$50</button>
         </div>
+        <input type="text" class="tip-modal__message" placeholder="Add a message (optional)" id="tip-message">
+        <button class="btn btn-primary w-full" id="tip-confirm" style="justify-content:center;margin-top:var(--space-3);">Send Tip</button>
+      </div>
+    </div>`;
+}
 
-        <div class="hero__actions animate-fade-in-up stagger-6">
-          ${isGold ? `
-            <div class="btn btn-primary btn-lg" style="pointer-events: none;">
-              ${icons.star} Gold Access Active
-            </div>
-            <a href="#/messages" class="btn btn-secondary btn-lg">
-              Message Valyrye ${icons.arrow}
-            </a>
-          ` : `
-            <button class="btn btn-primary btn-lg" id="hero-subscribe-btn">
-              ${icons.star} Subscribe Now
-            </button>
-            <a href="#/gallery" class="btn btn-secondary btn-lg">
-              View Gallery ${icons.arrow}
-            </a>
-          `}
+// ============================================================
+// Main Render
+// ============================================================
+export function renderHome() {
+  const state = getState();
+  const { creatorProfile, content, currentTier } = state;
+  const isGold = currentTier === 'gold' || state.user?.tier === 'gold';
+
+  // Promo data (may be undefined if not exported from store)
+  const promo = typeof activePromo !== 'undefined' ? activePromo : null;
+
+  // Polls data (may be undefined if not exported from store)
+  const pollList = typeof polls !== 'undefined' && Array.isArray(polls) ? polls : [];
+
+  // Separate pinned posts
+  const pinnedPosts = content.filter(c => c.pinned);
+  const regularPosts = content.filter(c => !c.pinned);
+
+  const html = `
+    <!-- Promo Banner -->
+    ${renderPromoBanner(promo)}
+
+    <!-- Creator Header -->
+    ${renderCreatorHeader(creatorProfile, isGold)}
+
+    <!-- Stories Bar -->
+    ${renderStoriesBar()}
+
+    <!-- Feed Tabs -->
+    ${renderFeedTabs()}
+
+    <!-- Feed Container -->
+    <div class="feed-container" id="feed-container">
+
+      <!-- Pinned Posts -->
+      ${pinnedPosts.map(item => `
+        <div class="pinned-badge-wrap">
+          <span class="pinned-badge">📌 Pinned</span>
+          ${renderPostCard(item, creatorProfile)}
         </div>
-      </div>
-    </section>
+      `).join('')}
 
-    <!-- ===== LATEST CONTENT ===== -->
-    <section class="section reveal">
-      <div class="section__header">
-        <div>
-          <h2 class="section__title font-display">Latest Content</h2>
-          <p class="section__subtitle">Fresh drops from Valyrye's exclusive collection</p>
-        </div>
-        <a href="#/gallery" class="btn btn-ghost">
-          View All ${icons.arrow}
-        </a>
-      </div>
-      <div class="gallery-grid">
-        ${latestContent.map((item, i) => renderContentCard(item, i)).join('')}
-      </div>
-    </section>
+      <!-- Poll Cards -->
+      ${pollList.map(poll => renderPollCard(poll, creatorProfile)).join('')}
 
-    <!-- ===== SUBSCRIPTION TIERS ===== -->
-    ${isGold ? '' : `
-    <section class="section reveal">
-      <div class="section__header" style="justify-content: center; text-align: center; flex-direction: column; align-items: center;">
-        <h2 class="section__title font-display">Unlock <span class="text-gradient">Exclusive</span> Access</h2>
-        <p class="section__subtitle" style="margin-top: var(--space-2);">Choose the perfect tier to get closer to Valyrye</p>
-      </div>
-      <div class="tiers-grid">
-        ${tiers.map((t, i) => renderTierCard(t, i, currentTier)).join('')}
-      </div>
-    </section>
-    `}
+      <!-- Content Feed -->
+      ${regularPosts.map(item => renderPostCard(item, creatorProfile)).join('')}
 
-    <!-- ===== SOCIAL PROOF / FOOTER CTA ===== -->
-    ${isGold ? '' : `
-    <section class="section reveal" style="text-align: center; padding-bottom: var(--space-24);">
-      <div style="max-width: 600px; margin: 0 auto;">
-        <div style="font-size: 48px; margin-bottom: var(--space-4);">✨</div>
-        <h2 class="font-display" style="font-size: var(--text-3xl); margin-bottom: var(--space-4);">
-          Join <span class="text-gradient">${creatorProfile.stats.fans}</span> Fans
-        </h2>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-8); font-size: var(--text-lg);">
-          Don't miss out on exclusive content, behind-the-scenes access, and personal interactions with Valyrye.
-        </p>
-        <button class="btn btn-primary btn-lg" id="footer-subscribe-btn">
-          ${icons.star} Get Started Today
-        </button>
-      </div>
-    </section>
-    `}
+    </div>
+
+    <!-- Suggested Creators -->
+    ${renderSuggestedCreators()}
+
+    <!-- Tip Modal -->
+    ${renderTipModal()}
   `;
 
-  let carouselInterval;
+  let tipTargetId = null;
 
   return {
     html,
+
     afterRender() {
-      // Hero carousel
-      const carousel = document.getElementById('hero-carousel');
-      if (carousel) {
-        const imgs = carousel.querySelectorAll('.hero__carousel-img');
-        if (imgs.length > 1) {
-          let current = 0;
-          carouselInterval = setInterval(() => {
-            imgs[current].style.opacity = '0';
-            current = (current + 1) % imgs.length;
-            imgs[current].style.opacity = '1';
-          }, 4000);
+      // ---- Close Promo Banner ----
+      document.getElementById('close-promo')?.addEventListener('click', () => {
+        const banner = document.querySelector('.promo-banner');
+        if (banner) {
+          banner.style.opacity = '0';
+          banner.style.transform = 'translateY(-100%)';
+          setTimeout(() => banner.remove(), 300);
         }
-      }
+      });
 
-      // Subscribe buttons
-      document.getElementById('hero-subscribe-btn')?.addEventListener('click', () => navigate('/subscribe'));
-      document.getElementById('footer-subscribe-btn')?.addEventListener('click', () => navigate('/subscribe'));
+      // ---- Feed Tab Switching ----
+      document.querySelectorAll('.feed-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const filter = tab.dataset.tab;
+          document.querySelectorAll('.post-card:not(.post-card--poll)').forEach(card => {
+            if (filter === 'all') {
+              card.style.display = '';
+            } else if (filter === 'photos') {
+              card.style.display = card.dataset.type === 'photo' || card.dataset.type === 'carousel' ? '' : 'none';
+            } else if (filter === 'videos') {
+              card.style.display = card.dataset.type === 'video' ? '' : 'none';
+            }
+          });
+        });
+      });
 
-      // Locked card subscribe CTAs
-      document.querySelectorAll('.subscribe-cta').forEach(btn => {
+      // ---- Poll Voting ----
+      document.querySelectorAll('.poll-option:not(.poll-option--results)').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pollId = btn.dataset.poll;
+          const optionId = btn.dataset.option;
+          if (typeof votePoll === 'function') {
+            votePoll(pollId, optionId);
+          }
+          showToast('Vote recorded! 🗳️');
+          // Visual feedback — disable all options in this poll
+          const parent = btn.closest('.poll-card__options');
+          if (parent) {
+            parent.querySelectorAll('.poll-option').forEach(o => {
+              o.classList.add('poll-option--results');
+              o.disabled = true;
+            });
+            btn.classList.add('poll-option--voted');
+          }
+        });
+      });
+
+      // ---- Like Buttons ----
+      document.querySelectorAll('[data-action="like"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          if (typeof toggleLike === 'function') {
+            toggleLike(id);
+          }
+          const isActive = btn.classList.toggle('post-action--active');
+          const countEl = btn.querySelector('.like-count');
+          if (countEl) {
+            let count = parseInt(countEl.textContent) || 0;
+            countEl.textContent = isActive ? count + 1 : Math.max(0, count - 1);
+          }
+          btn.innerHTML = (isActive ? icons.heartFilled : icons.heart) + ` <span class="like-count">${btn.querySelector('.like-count')?.textContent || countEl?.textContent || 0}</span>`;
+          // Re-read count after innerHTML replacement
+          const newCount = btn.querySelector('.like-count');
+          if (newCount && countEl) {
+            newCount.textContent = countEl.textContent;
+          }
+        });
+      });
+
+      // ---- Comment Submit ----
+      document.querySelectorAll('.comment-send').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const input = document.querySelector(`.comment-input[data-id="${id}"]`);
+          if (!input || !input.value.trim()) return;
+          const text = input.value.trim();
+          if (typeof addComment === 'function') {
+            addComment(id, text);
+          }
+          // Append comment visually
+          const commentsContainer = document.getElementById(`comments-${id}`);
+          if (commentsContainer) {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'post-comment animate-fade-in-up';
+            commentDiv.innerHTML = `<strong>${state.user?.name || 'You'}</strong> <span>${text}</span>`;
+            const inputWrap = commentsContainer.querySelector('.post-comment-input');
+            commentsContainer.insertBefore(commentDiv, inputWrap);
+          }
+          input.value = '';
+          showToast('Comment added! 💬');
+        });
+      });
+
+      // Enter key for comment input
+      document.querySelectorAll('.comment-input').forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const sendBtn = document.querySelector(`.comment-send[data-id="${input.dataset.id}"]`);
+            sendBtn?.click();
+          }
+        });
+      });
+
+      // ---- Tip Buttons ----
+      const tipModal = document.getElementById('tip-modal');
+      document.querySelectorAll('[data-action="tip"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          tipTargetId = btn.dataset.id;
+          if (tipModal) tipModal.style.display = 'flex';
+        });
+      });
+
+      document.getElementById('tip-modal-close')?.addEventListener('click', () => {
+        if (tipModal) tipModal.style.display = 'none';
+        tipTargetId = null;
+      });
+
+      tipModal?.addEventListener('click', (e) => {
+        if (e.target === tipModal) {
+          tipModal.style.display = 'none';
+          tipTargetId = null;
+        }
+      });
+
+      let selectedTipAmount = null;
+      document.querySelectorAll('.tip-amount-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedTipAmount = parseInt(btn.dataset.amount);
+        });
+      });
+
+      document.getElementById('tip-confirm')?.addEventListener('click', () => {
+        if (!selectedTipAmount) {
+          showToast('Please select a tip amount', 'error');
+          return;
+        }
+        const message = document.getElementById('tip-message')?.value || '';
+        if (typeof tipPost === 'function') {
+          tipPost(tipTargetId, selectedTipAmount, message);
+        }
+        showToast(`Tip of $${selectedTipAmount} sent! 💰 Thank you!`);
+        if (tipModal) tipModal.style.display = 'none';
+        selectedTipAmount = null;
+        tipTargetId = null;
+        const msgInput = document.getElementById('tip-message');
+        if (msgInput) msgInput.value = '';
+        document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
+      });
+
+      // ---- Bookmark Buttons ----
+      document.querySelectorAll('[data-action="bookmark"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          if (typeof toggleBookmark === 'function') {
+            toggleBookmark(id);
+          }
+          const isActive = btn.classList.toggle('post-action--active');
+          btn.innerHTML = isActive ? icons.bookmarkFilled : icons.bookmark;
+        });
+      });
+
+      // ---- Story Clicks ----
+      document.querySelectorAll('.story-item').forEach(item => {
+        item.addEventListener('click', () => {
+          showToast('Stories coming soon! 🎬', 'info');
+        });
+      });
+
+      // ---- Subscribe CTAs on locked posts ----
+      document.querySelectorAll('.post-card__lock-overlay .btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.preventDefault();
-          e.stopPropagation();
           navigate('/subscribe');
         });
       });
 
-      // Locked cards themselves
-      document.querySelectorAll('.gallery-card[data-locked="true"]').forEach(card => {
-        card.addEventListener('click', () => navigate('/subscribe'));
-        card.style.cursor = 'pointer';
+      // ---- Locked media click ----
+      document.querySelectorAll('.post-card__media--locked').forEach(media => {
+        media.style.cursor = 'pointer';
+        media.addEventListener('click', () => navigate('/subscribe'));
+      });
+
+      // ---- Comment toggle (focus input) ----
+      document.querySelectorAll('[data-action="comment"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const input = document.querySelector(`.comment-input[data-id="${id}"]`);
+          if (input) input.focus();
+        });
       });
     },
+
     cleanup() {
-      clearInterval(carouselInterval);
+      // Nothing to clean up (no intervals)
     }
   };
 }

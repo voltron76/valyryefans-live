@@ -5,7 +5,7 @@
 import './theme.js';
 import { registerRoute, initRouter, navigate } from './router.js';
 import { getState, initStore } from './store.js';
-import { renderNavbar, afterNavRender } from './components/navbar.js';
+import { renderNavbar, afterNavRender, renderMobileNav } from './components/navbar.js';
 import { renderHome } from './views/home.js';
 import { renderGallery } from './views/gallery.js';
 import { renderContentDetail } from './views/content-detail.js';
@@ -33,6 +33,21 @@ async function initApp() {
     initNavbarEvents();
     afterNavRender();
   }
+
+  // Render mobile bottom nav
+  let mobileNav = document.getElementById('mobile-bottom-nav');
+  if (!mobileNav) {
+    mobileNav = document.createElement('div');
+    mobileNav.id = 'mobile-nav-container';
+    document.getElementById('app').appendChild(mobileNav);
+  }
+  mobileNav.innerHTML = renderMobileNav();
+
+  // Update mobile nav on route changes
+  window.addEventListener('hashchange', () => {
+    const mc = document.getElementById('mobile-nav-container');
+    if (mc) mc.innerHTML = renderMobileNav();
+  });
 
   // Register routes
   registerRoute('/', renderHome);
