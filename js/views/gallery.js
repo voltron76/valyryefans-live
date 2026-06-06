@@ -69,7 +69,7 @@ function buildCard(item, idx) {
 export function renderGallery() {
   const state = getState();
   const { content } = state;
-  const photoCount = content.filter(c => c.type === 'image').length;
+  const photoCount = content.filter(c => c.type === 'photo').length;
   const videoCount = content.filter(c => c.type === 'video').length;
 
   const html = `
@@ -165,7 +165,7 @@ export function renderGallery() {
           let show = true;
 
           switch (filter) {
-            case 'image':     show = type === 'image'; break;
+            case 'image':     show = type === 'photo'; break;
             case 'video':     show = type === 'video'; break;
             case 'free':      show = tier === 'free'; break;
             case 'exclusive': show = tier !== 'free'; break;

@@ -45,7 +45,7 @@ export const state = {
   content: [], // Loaded from DB
   messages: [], // Loaded from DB
   notifications: [],
-  bookmarks: new Set(),
+  bookmarks: [],
   ui: {
     authModalOpen: false,
     authMode: 'login',
@@ -309,15 +309,17 @@ export async function addMessage(content, sender = 'fan', type = 'text', mediaUr
     return;
   }
 
-  state.messages.push({
+  const newMsg = {
     id: data.id,
     sender: 'fan',
     content: data.content,
     time: formatTime(data.created_at),
     type: data.type,
     mediaUrl: data.media_url
-  });
+  };
+  state.messages.push(newMsg);
   notify('messages');
+  return newMsg;
 }
 
 export async function addAdminReply(userId, content, type = 'text', mediaUrl = null) {
@@ -390,18 +392,19 @@ export async function addTip(contentId, amount, message = null) {
 }
 
 export function toggleBookmark(id) {
-  if (state.bookmarks.has(id)) {
-    state.bookmarks.delete(id);
+  const idx = state.bookmarks.indexOf(id);
+  if (idx !== -1) {
+    state.bookmarks.splice(idx, 1);
     showToast('Removed from bookmarks');
   } else {
-    state.bookmarks.add(id);
+    state.bookmarks.push(id);
     showToast('Added to bookmarks');
   }
   notify('bookmarks');
 }
 
 export function isBookmarked(id) {
-  return state.bookmarks.has(id);
+  return state.bookmarks.includes(id);
 }
 
 export function markNotificationsRead() {

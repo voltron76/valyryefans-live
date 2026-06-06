@@ -89,12 +89,6 @@ export function renderAdminLogin() {
           await initStore();
           const s = getState();
 
-          // Force admin tier for the specific authorized email if needed (MVP hack)
-          if (email.toLowerCase() === 'atkittelson1@gmail.com') {
-            await supabase.from('profiles').update({ tier: 'admin' }).eq('id', data.user.id);
-            s.isAdmin = true;
-          }
-          
           if (s.isAdmin) {
             sessionStorage.setItem('vf-admin-auth', 'true');
             showToast('Welcome to the Creator Portal!', 'success');

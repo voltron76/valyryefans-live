@@ -2,6 +2,8 @@
 // ValyryeFans — Navbar Component (with Profile Dropdown)
 // ============================================================
 
+let _escapeHandler = null;
+
 import { getState } from '../store.js';
 import { toggleTheme, getTheme } from '../theme.js';
 
@@ -172,11 +174,9 @@ export function afterNavRender() {
     overlay?.addEventListener('click', closeDropdown);
 
     // Close on Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && dropdown.classList.contains('open')) {
-        closeDropdown();
-      }
-    });
+    if (_escapeHandler) document.removeEventListener('keydown', _escapeHandler);
+    _escapeHandler = (e) => { if (e.key === 'Escape') closeDropdown(); };
+    document.addEventListener('keydown', _escapeHandler);
 
     // Close on menu item click
     dropdown.querySelectorAll('[data-close-dropdown]').forEach(item => {

@@ -4,7 +4,7 @@
 
 import './theme.js';
 import { registerRoute, initRouter, navigate } from './router.js';
-import { getState, state, initStore } from './store.js';
+import { getState, initStore } from './store.js';
 import { renderNavbar, afterNavRender } from './components/navbar.js';
 import { renderHome } from './views/home.js';
 import { renderGallery } from './views/gallery.js';
@@ -194,54 +194,6 @@ export function openAuthModal(mode = 'login') {
   });
 }
 
-async function handleRoute() {
-  let path = window.location.hash.slice(1) || '/';
-  // Strip query params for routing
-  const queryIndex = path.indexOf('?');
-  if (queryIndex !== -1) {
-    path = path.slice(0, queryIndex);
-  }
-
-  const app = document.getElementById('app');
-  if (!app) return;
-
-  app.style.opacity = '0';
-  
-  setTimeout(async () => {
-    let matched = false;
-    
-    // Dynamic routes
-    if (path.startsWith('/content/')) {
-      const id = path.split('/')[2];
-      const view = routes['/content/:id'](id);
-      app.innerHTML = view.html;
-      if (view.afterRender) view.afterRender();
-      matched = true;
-    } 
-    // Static routes
-    else if (routes[path]) {
-      const view = routes[path]();
-      app.innerHTML = view.html;
-      if (view.afterRender) view.afterRender();
-      matched = true;
-    }
-    
-    // 404 Fallback
-    if (!matched) {
-      app.innerHTML = `
-        <div style="min-height: calc(100vh - var(--nav-height)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--space-8);">
-          <div style="font-size: 64px; margin-bottom: var(--space-6);">🧭</div>
-          <h1 class="font-display" style="font-size: var(--text-4xl); margin-bottom: var(--space-4);">404 Not Found</h1>
-          <p style="color: var(--text-secondary); margin-bottom: var(--space-8);">The page you are looking for doesn't exist or has been moved.</p>
-          <a href="#/" class="btn btn-primary btn-lg">Return Home</a>
-        </div>
-      `;
-    }
-
-    app.style.opacity = '1';
-    window.scrollTo(0, 0);
-  }, 150);
-}
 
 async function handleRealAuth(mode) {
   const email = document.getElementById('auth-email')?.value;

@@ -53,7 +53,7 @@ export function renderPurchases() {
 
   // Get items the user has explicitly paid for or has access to via Gold tier
   // For now, if they are gold, they have access to everything that is minTier='gold'.
-  const isGold = state.currentTier === 'gold' || state.profile?.tier === 'gold';
+  const isGold = state.currentTier === 'gold' || state.user?.tier === 'gold';
   
   let purchasedItems = [];
   if (isGold) {

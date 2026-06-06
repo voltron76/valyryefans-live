@@ -3,8 +3,8 @@
 // ============================================================
 
 export function renderMessageBubble(msg) {
-  const isCreator = msg.senderId === 'creator';
-  const bubbleClass = isCreator ? 'message-bubble--sent' : 'message-bubble--received';
+  const isSent = msg.sender === 'fan';
+  const bubbleClass = isSent ? 'message-bubble--sent' : 'message-bubble--received';
 
   return `
     <div class="message-bubble ${bubbleClass}">

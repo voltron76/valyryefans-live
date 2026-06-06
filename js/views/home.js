@@ -84,9 +84,9 @@ function renderTierCard(tier, index, currentTier) {
 
 export function renderHome() {
   const state = getState();
-  const { creatorProfile, content, tiers, currentTier, profile } = state;
+  const { creatorProfile, content, tiers, currentTier } = state;
   const latestContent = content.slice(0, 4);
-  const isGold = currentTier === 'gold' || profile?.tier === 'gold';
+  const isGold = currentTier === 'gold' || state.user?.tier === 'gold';
 
   const html = `
     <!-- ===== HERO ===== -->
@@ -196,6 +196,8 @@ export function renderHome() {
     `}
   `;
 
+  let carouselInterval;
+
   return {
     html,
     afterRender() {
@@ -205,7 +207,7 @@ export function renderHome() {
         const imgs = carousel.querySelectorAll('.hero__carousel-img');
         if (imgs.length > 1) {
           let current = 0;
-          setInterval(() => {
+          carouselInterval = setInterval(() => {
             imgs[current].style.opacity = '0';
             current = (current + 1) % imgs.length;
             imgs[current].style.opacity = '1';
@@ -231,6 +233,9 @@ export function renderHome() {
         card.addEventListener('click', () => navigate('/subscribe'));
         card.style.cursor = 'pointer';
       });
+    },
+    cleanup() {
+      clearInterval(carouselInterval);
     }
   };
 }

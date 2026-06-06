@@ -317,6 +317,8 @@ export function renderCheckout(params = {}) {
           } else {
             const s = getState();
             s.currentTier = 'gold';
+            s.user.tier = 'gold';
+            s.user.cardOnFile = true;
 
             // IMPORTANT: Update tier in DB so it persists!
             try {
