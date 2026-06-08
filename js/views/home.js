@@ -3,7 +3,7 @@
 // Premium OnlyFans-style creator feed
 // ============================================================
 
-import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, activePromo } from '../store.js';
+import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, activePromo, incrementStoryView } from '../store.js';
 import { navigate } from '../router.js';
 
 let activeProgressInterval = null;
@@ -296,14 +296,7 @@ export function renderHome() {
   const pinnedPosts = content.filter(c => c.pinned && c.category !== 'story');
   const regularPosts = content.filter(c => !c.pinned && c.category !== 'story');
 
-  const defaultStories = [
-    { id: 'story-default-1', title: 'BTS 🎬', thumbnail: 'assets/images/hero-02.jpg', media: ['assets/images/hero-02.jpg'], type: 'image', likes: 124, likedByUser: false, createdAt: '2 hours ago' },
-    { id: 'story-default-2', title: 'Beach 🏖️', thumbnail: 'assets/images/hero-03.jpg', media: ['assets/images/hero-03.jpg'], type: 'image', likes: 235, likedByUser: false, createdAt: '4 hours ago' },
-    { id: 'story-default-3', title: 'Gym 💪', thumbnail: 'assets/images/hero-04.jpg', media: ['assets/images/hero-04.jpg'], type: 'image', likes: 89, likedByUser: false, createdAt: '6 hours ago' },
-    { id: 'story-default-4', title: 'Night Out 🌙', thumbnail: 'assets/images/hero-05.jpg', media: ['assets/images/hero-05.jpg'], type: 'image', likes: 341, likedByUser: false, createdAt: '9 hours ago' },
-    { id: 'story-default-5', title: 'Morning ☀️', thumbnail: 'assets/images/hero-06.jpg', media: ['assets/images/hero-06.jpg'], type: 'image', likes: 156, likedByUser: false, createdAt: '12 hours ago' },
-  ];
-  const allStories = [...stories, ...defaultStories];
+  const allStories = stories;
 
   const html = `
     <!-- Promo Banner -->
@@ -530,13 +523,30 @@ export function renderHome() {
         });
       });
 
-      function openStoryViewer(startIndex) {
-        let currentIndex = startIndex;
+      function formatRelativeTime(dateString) {
+        if (!dateString) return 'Just now';
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffMs = now - date;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHr = Math.floor(diffMin / 60);
+        const diffDays = Math.floor(diffHr / 24);
+
+        if (diffSec < 60) return 'Just now';
+        if (diffMin < 60) return `${diffMin}m`;
+        if (diffHr < 24) return `${diffHr}h`;
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+
+      function openStoryViewer(startCircleIndex) {
+        let currentCircleIndex = startCircleIndex;
+        let currentSlideIndex = 0;
         let storyProgress = 0;
-        const duration = 5000; // 5 seconds per story
+        const duration = 5000; // 5 seconds per story slide
         const intervalTime = 50; // Update every 50ms
         let isPaused = false;
-
+        
         let modal = document.getElementById('story-viewer-modal');
         if (!modal) {
           const viewerHtml = `
@@ -554,11 +564,20 @@ export function renderHome() {
                 <div class="story-viewer__content">
                   <div class="story-viewer__click-left" id="story-click-left"></div>
                   <div class="story-viewer__click-right" id="story-click-right"></div>
+                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--left" id="story-nav-left" style="pointer-events: auto; z-index: 15;">&lt;</button>
+                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--right" id="story-nav-right" style="pointer-events: auto; z-index: 15;">&gt;</button>
                   <div class="story-viewer__media-container" id="story-media-container"></div>
                 </div>
                 <div class="story-viewer__footer">
-                  <span class="story-viewer__caption" id="story-viewer-caption"></span>
-                  <button class="story-viewer__like-btn" id="story-viewer-like"></button>
+                  <div class="story-viewer__footer-left">
+                    <span class="story-viewer__caption" id="story-viewer-caption"></span>
+                    <div class="story-viewer__stats-row" id="story-viewer-stats" style="margin-top:var(--space-2); display:flex; gap:var(--space-3); font-size:12px; color:rgba(255,255,255,0.6);">
+                    </div>
+                  </div>
+                  <div class="story-viewer__footer-right" style="display:flex; gap:var(--space-2); align-items:center;">
+                    <button class="story-viewer__tip-btn" id="story-viewer-tip" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:var(--space-2) var(--space-4); border-radius:var(--radius-full); cursor:pointer; display:flex; align-items:center; gap:var(--space-1); transition:all 0.2s; font-size:12px; z-index:15;">💰 Tip</button>
+                    <button class="story-viewer__like-btn" id="story-viewer-like" style="z-index:15;"></button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -575,39 +594,98 @@ export function renderHome() {
         const closeBtn = document.getElementById('story-viewer-close');
         const clickLeft = document.getElementById('story-click-left');
         const clickRight = document.getElementById('story-click-right');
+        const navLeft = document.getElementById('story-nav-left');
+        const navRight = document.getElementById('story-nav-right');
+        const tipBtn = document.getElementById('story-viewer-tip');
+
+        let activeSlides = [];
+        
+        const getSlidesForStory = (story) => {
+          if (!story) return [];
+          if (story.type === 'carousel' && story.media && story.media.length > 0) {
+            return story.media.map(url => ({ type: 'image', url: url }));
+          } else if (story.type === 'video') {
+            return [{ type: 'video', url: story.videoUrl || story.media?.[0] || story.thumbnail }];
+          } else {
+            return [{ type: 'image', url: story.thumbnail || story.media?.[0] }];
+          }
+        };
 
         const renderProgressBars = () => {
-          progressContainer.innerHTML = allStories.map((_, i) => `
+          progressContainer.innerHTML = activeSlides.map((_, i) => `
             <div class="story-viewer__progress-bar">
               <div class="story-viewer__progress-fill" id="story-fill-${i}"></div>
             </div>
           `).join('');
         };
 
-        const showStory = (index) => {
-          currentIndex = index;
-          storyProgress = 0;
-          const story = allStories[currentIndex];
+        const updateStats = () => {
+          const story = allStories[currentCircleIndex];
+          if (!story) return;
+          
+          const statsEl = document.getElementById('story-viewer-stats');
+          if (statsEl) {
+            const originalItem = state.content.find(c => c.id === story.id);
+            const likesCount = originalItem ? (originalItem.likes || 0) : (story.likes || 0);
+            const viewsCount = originalItem ? (originalItem.views || 0) : (story.views || 0);
+            statsEl.innerHTML = `
+              <span>❤️ ${likesCount} likes</span>
+              <span>👁️ ${viewsCount} views</span>
+            `;
+          }
+        };
+
+        const updateLikeBtn = () => {
+          const story = allStories[currentCircleIndex];
+          if (!story) return;
+          
+          const originalItem = state.content.find(c => c.id === story.id);
+          const liked = originalItem ? originalItem.likedByUser : story.likedByUser;
+          
+          likeBtn.className = `story-viewer__like-btn ${liked ? 'story-viewer__like-btn--active' : ''}`;
+          likeBtn.innerHTML = liked ? icons.heartFilled : icons.heart;
+        };
+
+        const showCircle = (circleIndex, startSlideIndex = 0) => {
+          currentCircleIndex = circleIndex;
+          const story = allStories[currentCircleIndex];
           if (!story) {
             closeStoryViewer();
             return;
           }
+          
+          activeSlides = getSlidesForStory(story);
+          renderProgressBars();
+          showSlide(startSlideIndex);
+        };
 
-          for (let i = 0; i < allStories.length; i++) {
+        const showSlide = (slideIndex) => {
+          currentSlideIndex = slideIndex;
+          storyProgress = 0;
+          const story = allStories[currentCircleIndex];
+          const slide = activeSlides[currentSlideIndex];
+          
+          if (!story || !slide) {
+            closeStoryViewer();
+            return;
+          }
+
+          // Reset progress fills
+          for (let i = 0; i < activeSlides.length; i++) {
             const fill = document.getElementById(`story-fill-${i}`);
             if (fill) {
-              if (i < currentIndex) fill.style.width = '100%';
-              else if (i > currentIndex) fill.style.width = '0%';
+              if (i < currentSlideIndex) fill.style.width = '100%';
+              else if (i > currentSlideIndex) fill.style.width = '0%';
             }
           }
 
-          timeEl.textContent = story.createdAt || 'Just now';
+          timeEl.textContent = formatRelativeTime(story.rawCreatedAt) || 'Just now';
           captionEl.textContent = story.title || '';
 
           mediaContainer.innerHTML = '';
-          if (story.type === 'video') {
+          if (slide.type === 'video') {
             const video = document.createElement('video');
-            video.src = story.videoUrl || story.media?.[0] || story.thumbnail;
+            video.src = slide.url;
             video.autoplay = true;
             video.muted = true;
             video.playsInline = true;
@@ -615,43 +693,43 @@ export function renderHome() {
             mediaContainer.appendChild(video);
           } else {
             const img = document.createElement('img');
-            img.src = story.thumbnail || story.media?.[0];
+            img.src = slide.url;
             img.className = 'story-viewer__media protect-media';
             mediaContainer.appendChild(img);
           }
 
-          updateLikeButtonState();
+          updateLikeBtn();
+          updateStats();
+          
+          if (typeof incrementStoryView === 'function' && story.id) {
+            incrementStoryView(story.id);
+            setTimeout(updateStats, 100);
+          }
+          
           startTimer();
-        };
-
-        const updateLikeButtonState = () => {
-          const story = allStories[currentIndex];
-          if (!story) return;
-          const liked = story.likedByUser;
-          likeBtn.className = `story-viewer__like-btn ${liked ? 'story-viewer__like-btn--active' : ''}`;
-          likeBtn.innerHTML = `
-            ${liked ? icons.heartFilled : icons.heart}
-            <span class="story-viewer__like-count">${story.likes || 0}</span>
-          `;
         };
 
         const startTimer = () => {
           clearInterval(activeProgressInterval);
           activeProgressInterval = setInterval(() => {
-            if (isPaused) return;
+            const tipModalVisible = document.getElementById('tip-modal')?.style.display === 'flex';
+            if (isPaused || tipModalVisible) return;
 
             storyProgress += (intervalTime / duration) * 100;
             if (storyProgress >= 100) {
               storyProgress = 100;
               clearInterval(activeProgressInterval);
-              if (currentIndex < allStories.length - 1) {
-                showStory(currentIndex + 1);
+              
+              if (currentSlideIndex < activeSlides.length - 1) {
+                showSlide(currentSlideIndex + 1);
+              } else if (currentCircleIndex < allStories.length - 1) {
+                showCircle(currentCircleIndex + 1, 0);
               } else {
                 closeStoryViewer();
               }
             }
 
-            const activeFill = document.getElementById(`story-fill-${currentIndex}`);
+            const activeFill = document.getElementById(`story-fill-${currentSlideIndex}`);
             if (activeFill) {
               activeFill.style.width = `${storyProgress}%`;
             }
@@ -665,21 +743,32 @@ export function renderHome() {
 
         closeBtn?.addEventListener('click', closeStoryViewer);
         
-        clickLeft?.addEventListener('click', () => {
-          if (currentIndex > 0) {
-            showStory(currentIndex - 1);
-          } else {
-            showStory(0);
-          }
-        });
-
-        clickRight?.addEventListener('click', () => {
-          if (currentIndex < allStories.length - 1) {
-            showStory(currentIndex + 1);
+        const goNext = () => {
+          if (currentSlideIndex < activeSlides.length - 1) {
+            showSlide(currentSlideIndex + 1);
+          } else if (currentCircleIndex < allStories.length - 1) {
+            showCircle(currentCircleIndex + 1, 0);
           } else {
             closeStoryViewer();
           }
-        });
+        };
+
+        const goPrev = () => {
+          if (currentSlideIndex > 0) {
+            showSlide(currentSlideIndex - 1);
+          } else if (currentCircleIndex > 0) {
+            const prevStory = allStories[currentCircleIndex - 1];
+            const prevSlides = getSlidesForStory(prevStory);
+            showCircle(currentCircleIndex - 1, prevSlides.length - 1);
+          } else {
+            showSlide(0);
+          }
+        };
+
+        clickLeft?.addEventListener('click', goPrev);
+        clickRight?.addEventListener('click', goNext);
+        navLeft?.addEventListener('click', (e) => { e.stopPropagation(); goPrev(); });
+        navRight?.addEventListener('click', (e) => { e.stopPropagation(); goNext(); });
 
         const pauseStory = () => { isPaused = true; };
         const resumeStory = () => { isPaused = false; };
@@ -690,29 +779,43 @@ export function renderHome() {
         contentArea?.addEventListener('touchstart', pauseStory);
         contentArea?.addEventListener('touchend', resumeStory);
 
-        likeBtn?.addEventListener('click', () => {
-          const story = allStories[currentIndex];
+        likeBtn?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const story = allStories[currentCircleIndex];
           if (!story) return;
 
-          toggleLike(story.id);
-          story.likedByUser = !story.likedByUser;
-          story.likes = story.likedByUser ? (story.likes || 0) + 1 : Math.max(0, (story.likes || 1) - 1);
+          if (typeof toggleLike === 'function') {
+            await toggleLike(story.id);
+          }
 
-          updateLikeButtonState();
+          updateLikeBtn();
+          updateStats();
 
           const feedCard = document.querySelector(`.post-action[data-id="${story.id}"][data-action="like"]`);
           if (feedCard) {
+            const originalItem = state.content.find(c => c.id === story.id);
+            const likesCount = originalItem ? (originalItem.likes || 0) : story.likes;
+            const liked = originalItem ? originalItem.likedByUser : story.likedByUser;
+            
             const countEl = feedCard.querySelector('.like-count');
-            if (countEl) {
-              countEl.textContent = story.likes;
-            }
-            feedCard.classList.toggle('post-action--active', story.likedByUser);
-            feedCard.innerHTML = (story.likedByUser ? icons.heartFilled : icons.heart) + ` <span class="like-count">${story.likes}</span>`;
+            if (countEl) countEl.textContent = likesCount;
+            feedCard.classList.toggle('post-action--active', liked);
+            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${likesCount}</span>`;
           }
         });
 
-        renderProgressBars();
-        showStory(currentIndex);
+        tipBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const story = allStories[currentCircleIndex];
+          if (!story) return;
+          tipTargetId = story.id;
+          isPaused = true;
+          const tipModal = document.getElementById('tip-modal');
+          if (tipModal) tipModal.style.display = 'flex';
+        });
+
+        showCircle(currentCircleIndex, 0);
+      }
       }
 
       // ---- Subscribe CTAs on locked posts ----

@@ -233,7 +233,8 @@ const adminStyles = `
     .admin-messages-layout {
       display: grid;
       grid-template-columns: 280px 1fr;
-      height: 100%;
+      flex: 1;
+      min-height: 0;
       border-radius: var(--radius-xl);
       overflow: hidden;
       border: 1px solid var(--glass-card-border);
@@ -1672,12 +1673,22 @@ export function renderAdmin() {
         });
 
         // Delete
-        deleteBtn?.addEventListener('click', () => {
-          const state = getState();
-          state.content = state.content.filter(c => c.id !== item.id);
-          closeModal();
-          refreshGrid();
-          showToast('Content deleted', 'success');
+        deleteBtn?.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to permanently delete this content from the server?')) return;
+          try {
+            const { supabase } = await import('../supabase.js');
+            const { error } = await supabase.from('content').delete().eq('id', item.id);
+            if (error) throw error;
+            
+            const state = getState();
+            state.content = state.content.filter(c => c.id !== item.id);
+            closeModal();
+            refreshGrid();
+            showToast('Content deleted from server', 'success');
+          } catch (err) {
+            console.error('Delete error:', err);
+            showToast('Failed to delete content', 'error');
+          }
         });
       }
 

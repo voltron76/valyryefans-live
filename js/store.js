@@ -204,6 +204,47 @@ export async function initStore() {
       }
     }
 
+    // 1.5 Fetch user likes if logged in
+    const likedContentIds = new Set();
+    if (session) {
+      try {
+        const { data: likesData } = await supabase.from('content_likes').select('content_id').eq('user_id', session.user.id);
+        if (likesData) {
+          likesData.forEach(l => likedContentIds.add(l.content_id));
+        }
+      } catch (e) {
+        console.error('Error loading likes:', e);
+      }
+    }
+
+    // 1.6 Fetch comments (Supabase table with localStorage fallback)
+    let commentsMap = {};
+    try {
+      const { data: commentsData, error: commentsErr } = await supabase.from('comments').select('*').order('created_at', { ascending: true });
+      if (!commentsErr && commentsData) {
+        commentsData.forEach(c => {
+          if (!commentsMap[c.content_id]) commentsMap[c.content_id] = [];
+          commentsMap[c.content_id].push({
+            id: c.id,
+            userId: c.user_id,
+            userName: c.user_name || 'Anonymous',
+            text: c.text,
+            time: formatTime(c.created_at),
+            isCreator: c.user_name === 'Valyrye'
+          });
+        });
+      } else {
+        throw new Error(commentsErr?.message || 'Comments table query failed');
+      }
+    } catch (err) {
+      const localComments = localStorage.getItem('vf-comments');
+      if (localComments) {
+        try {
+          commentsMap = JSON.parse(localComments);
+        } catch (e) {}
+      }
+    }
+
     // 2. Fetch Content Metadata
     const { data: contentData } = await supabase.from('content').select('*').order('created_at', { ascending: false });
     
@@ -231,6 +272,7 @@ export async function initStore() {
       // 4. Map content to state
       state.content = contentData.map(c => {
         const mappedMedia = (c.media || []).map(m => urlMap[m] || m);
+        const commentsList = commentsMap[c.id] || [];
         return {
           id: c.id,
           title: c.title,
@@ -241,8 +283,12 @@ export async function initStore() {
           media: mappedMedia,
           minTier: c.min_tier,
           likes: c.likes || 0,
+          likedByUser: likedContentIds.has(c.id),
+          comments: commentsList,
+          views: c.views || 0,
           category: c.category || 'Other',
-          createdAt: formatDate(c.created_at)
+          createdAt: formatDate(c.created_at),
+          rawCreatedAt: c.created_at
         };
       });
 
@@ -283,7 +329,8 @@ async function loadAdminData() {
           sender: m.sender_id === state.user.id ? 'valyrye' : 'fan',
           content: m.content,
           time: formatTime(m.created_at),
-          type: m.type
+          type: m.type,
+          mediaUrl: m.media_url
         });
       }
     });
@@ -441,9 +488,18 @@ export function getRandomReply() {
 // ------------------------------------
 // Post Feed System
 // ------------------------------------
-export function toggleLike(contentId) {
+export async function toggleLike(contentId) {
+  if (!state.user.id) {
+    showToast('Please login to like posts', 'error');
+    return;
+  }
   const item = state.content.find(c => c.id === contentId);
   if (!item) return;
+
+  const originalLiked = item.likedByUser;
+  const originalLikesCount = item.likes;
+
+  // Optimistic UI update
   if (!item.likedByUser) {
     item.likes = (item.likes || 0) + 1;
     item.likedByUser = true;
@@ -452,23 +508,99 @@ export function toggleLike(contentId) {
     item.likedByUser = false;
   }
   notify('content');
+
+  try {
+    if (!originalLiked) {
+      const { error: likeErr } = await supabase.from('content_likes').insert([{
+        content_id: contentId,
+        user_id: state.user.id
+      }]);
+      if (likeErr) throw likeErr;
+    } else {
+      const { error: unlikeErr } = await supabase.from('content_likes').delete().eq('content_id', contentId).eq('user_id', state.user.id);
+      if (unlikeErr) throw unlikeErr;
+    }
+    // Update count in content table
+    await supabase.from('content').update({ likes: item.likes }).eq('id', contentId);
+  } catch (err) {
+    // Revert if error
+    item.likedByUser = originalLiked;
+    item.likes = originalLikesCount;
+    notify('content');
+    showToast('Failed to update like', 'error');
+  }
 }
 
-export function addComment(contentId, text) {
+export async function addComment(contentId, text) {
+  if (!state.user.id) {
+    showToast('Please login to comment', 'error');
+    return;
+  }
   const item = state.content.find(c => c.id === contentId);
   if (!item) return;
-  if (!item.comments) item.comments = [];
-  const comment = {
-    id: Date.now().toString(36),
-    userId: state.user.id,
-    userName: state.user.name || 'Anonymous',
-    text,
-    time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-    isCreator: state.isAdmin
+
+  const commentObj = {
+    content_id: contentId,
+    user_id: state.user.id,
+    user_name: state.user.name || 'Anonymous',
+    text: text
   };
-  item.comments.push(comment);
+
+  let success = false;
+  let newComment = null;
+
+  try {
+    const { data, error } = await supabase.from('comments').insert([commentObj]).select().single();
+    if (!error && data) {
+      newComment = {
+        id: data.id,
+        userId: data.user_id,
+        userName: data.user_name || 'Anonymous',
+        text: data.text,
+        time: formatTime(data.created_at),
+        isCreator: state.isAdmin
+      };
+      success = true;
+    }
+  } catch (err) {
+    // Suppress and fallback
+  }
+
+  if (!success) {
+    // Local storage fallback
+    newComment = {
+      id: Date.now().toString(36),
+      userId: state.user.id,
+      userName: state.user.name || 'Anonymous',
+      text,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      isCreator: state.isAdmin
+    };
+    
+    const localComments = JSON.parse(localStorage.getItem('vf-comments') || '{}');
+    if (!localComments[contentId]) localComments[contentId] = [];
+    localComments[contentId].push(newComment);
+    localStorage.setItem('vf-comments', JSON.stringify(localComments));
+  }
+
+  if (!item.comments) item.comments = [];
+  item.comments.push(newComment);
   notify('content');
-  return comment;
+  return newComment;
+}
+
+export async function incrementStoryView(storyId) {
+  const item = state.content.find(c => c.id === storyId);
+  if (!item) return;
+
+  item.views = (item.views || 0) + 1;
+  notify('content');
+
+  try {
+    await supabase.from('content').update({ views: item.views }).eq('id', storyId);
+  } catch (err) {
+    // Ignore DB errors in case schema hasn't updated
+  }
 }
 
 export async function tipPost(contentId, amount) {

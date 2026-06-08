@@ -131,14 +131,6 @@ export function renderNavbar() {
         <button class="btn btn-secondary btn-sm" id="nav-auth-btn">Sign In</button>
       `}
     </div>
-
-    <button class="nav-menu-toggle" id="nav-menu-toggle" aria-label="Toggle menu" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
   `;
 }
 
