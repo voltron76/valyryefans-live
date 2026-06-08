@@ -1857,6 +1857,7 @@ body.light-theme .nav-dropdown {
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
+  height: calc(100vh - var(--nav-height));
 }
 
 .chat-header {

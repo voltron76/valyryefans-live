@@ -351,7 +351,8 @@ export async function addAdminReply(userId, content, type = 'text', mediaUrl = n
       sender: 'valyrye',
       content: data.content,
       time: formatTime(data.created_at),
-      type: data.type
+      type: data.type,
+      mediaUrl: data.media_url
     });
     notify('adminMessages');
   }

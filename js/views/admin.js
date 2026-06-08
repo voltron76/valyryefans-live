@@ -137,7 +137,9 @@ const adminStyles = `
     .admin-layout {
       display: grid;
       grid-template-columns: 240px 1fr;
-      min-height: calc(100vh - var(--nav-height));
+      height: calc(100vh - var(--nav-height));
+      max-height: calc(100vh - var(--nav-height));
+      overflow: hidden;
       background: var(--bg-primary);
     }
 
@@ -216,15 +218,22 @@ const adminStyles = `
     /* Content panel */
     .admin-content {
       padding: var(--space-6);
+      height: 100%;
+      max-height: 100%;
       overflow-y: auto;
-      max-height: calc(100vh - var(--nav-height));
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+    .admin-content.admin-content--messages {
+      overflow: hidden;
     }
 
     /* Messages tab */
     .admin-messages-layout {
       display: grid;
       grid-template-columns: 280px 1fr;
-      height: calc(100vh - var(--nav-height) - var(--space-12));
+      height: 100%;
       border-radius: var(--radius-xl);
       overflow: hidden;
       border: 1px solid var(--glass-card-border);
@@ -909,8 +918,19 @@ function renderChatThread(userId) {
     let cls = isValyrye ? 'admin-msg--valyrye' : 'admin-msg--fan';
     if (isRequest) cls = 'admin-msg--request';
 
+    let mediaHtml = '';
+    if (msg.mediaUrl) {
+      const isVideo = msg.mediaUrl.toLowerCase().endsWith('.mp4') || msg.mediaUrl.toLowerCase().endsWith('.mov') || msg.mediaUrl.toLowerCase().endsWith('.webm');
+      if (isVideo) {
+        mediaHtml = `<div class="message-media" style="margin-bottom:var(--space-2); max-width:200px;"><video src="${msg.mediaUrl}" controls style="width:100%; display:block; border-radius:var(--radius-md);"></video></div>`;
+      } else {
+        mediaHtml = `<div class="message-media" style="margin-bottom:var(--space-2); max-width:200px;"><img src="${msg.mediaUrl}" style="width:100%; display:block; border-radius:var(--radius-md);" alt="Media"></div>`;
+      }
+    }
+
     return `
       <div class="admin-msg ${cls}">
+        ${mediaHtml}
         <div>${escapeHtml(msg.content)}</div>
         <div class="admin-msg__time">${msg.time || ''}</div>
       </div>
@@ -935,7 +955,13 @@ function renderChatThread(userId) {
         </div>
       `}
     </div>
-    <div class="admin-chat__input">
+    <div class="admin-chat__input" style="align-items: flex-end;">
+      <input type="file" id="admin-photo-input" accept="image/*" style="display:none;">
+      <input type="file" id="admin-video-input" accept="video/*" style="display:none;">
+      <div style="display:flex; gap:var(--space-1); margin-bottom: 2px;">
+        <button id="admin-photo-btn" title="Send photo" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:var(--radius-md); transition: background 0.2s;">${icons.photo}</button>
+        <button id="admin-video-btn" title="Send video" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:var(--radius-md); transition: background 0.2s;">${icons.video}</button>
+      </div>
       <textarea id="admin-reply-input" placeholder="Reply as Valyrye..." rows="1"></textarea>
       <button id="admin-reply-send" title="Send reply">${icons.send}</button>
     </div>
@@ -1360,9 +1386,13 @@ export function renderAdmin() {
       // --- Dashboard is loaded ---
       const state = getState();
 
-      // Initialize selected user
+      // Initialize selected user and setup initial tab layout
       if (state.adminUsers?.length > 0) {
         selectedUserId = state.adminUsers[0].id;
+      }
+      const initialContentEl = document.getElementById('admin-tab-content');
+      if (initialContentEl) {
+        initialContentEl.classList.toggle('admin-content--messages', currentTab === 'messages');
       }
 
       // Tab switching
@@ -1370,6 +1400,9 @@ export function renderAdmin() {
         currentTab = tabId;
         const contentEl = document.getElementById('admin-tab-content');
         if (!contentEl) return;
+
+        // Toggle overflow control class specifically for messages view
+        contentEl.classList.toggle('admin-content--messages', tabId === 'messages');
 
         // Update active tab
         document.querySelectorAll('.admin-tab[data-tab]').forEach(btn => {
@@ -1446,6 +1479,57 @@ export function renderAdmin() {
       function wireChatInput(userId) {
         const input = document.getElementById('admin-reply-input');
         const sendBtn = document.getElementById('admin-reply-send');
+        const photoBtn = document.getElementById('admin-photo-btn');
+        const videoBtn = document.getElementById('admin-video-btn');
+        const photoInput = document.getElementById('admin-photo-input');
+        const videoInput = document.getElementById('admin-video-input');
+
+        photoBtn?.addEventListener('click', () => photoInput?.click());
+        videoBtn?.addEventListener('click', () => videoInput?.click());
+
+        const handleAdminUpload = async (fileInput, isVideo) => {
+          if (!fileInput?.files?.length || !userId) return;
+          const file = fileInput.files[0];
+
+          try {
+            showToast('Uploading media...', 'info');
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `chat_${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `chat/${fileName}`;
+
+            const { supabase } = await import('../supabase.js');
+            const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
+
+            if (uploadError) {
+              console.error(uploadError);
+              throw new Error('Failed to upload file');
+            }
+
+            const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+            const mediaUrl = data.publicUrl;
+
+            const msgText = isVideo ? '🎬 Sent a video' : '📸 Sent a photo';
+            await addAdminReply(userId, msgText, 'media', mediaUrl);
+
+            fileInput.value = '';
+
+            // Re-render chat thread
+            const chatContainer = document.getElementById('admin-chat');
+            if (chatContainer) {
+              chatContainer.innerHTML = renderChatThread(userId);
+              wireChatInput(userId);
+              scrollChatToBottom();
+            }
+            showToast('Media sent! 💬', 'success');
+
+          } catch (e) {
+            showToast(e.message || 'Media upload failed', 'error');
+          }
+        };
+
+        photoInput?.addEventListener('change', () => handleAdminUpload(photoInput, false));
+        videoInput?.addEventListener('change', () => handleAdminUpload(videoInput, true));
 
         function sendReply() {
           const text = input?.value?.trim();
