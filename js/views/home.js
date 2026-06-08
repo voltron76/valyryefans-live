@@ -816,7 +816,6 @@ export function renderHome() {
 
         showCircle(currentCircleIndex, 0);
       }
-      }
 
       // ---- Subscribe CTAs on locked posts ----
       document.querySelectorAll('.post-card__lock-overlay .btn').forEach(btn => {
