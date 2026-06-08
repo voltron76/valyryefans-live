@@ -155,22 +155,27 @@ export function afterNavRender() {
     });
   }
 
-  // Avatar dropdown toggle
+  // Avatar and Hamburger dropdown toggle
   const avatarBtn = document.getElementById('nav-avatar-btn');
+  const menuToggle = document.getElementById('nav-menu-toggle');
   const dropdown = document.getElementById('nav-dropdown');
   const overlay = document.getElementById('nav-dropdown-overlay');
 
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    if (!dropdown) return;
+    const isOpen = dropdown.classList.contains('open');
+    if (isOpen) {
+      closeDropdown();
+    } else {
+      dropdown.classList.add('open');
+      overlay?.classList.add('open');
+    }
+  };
+
   if (avatarBtn && dropdown) {
-    avatarBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = dropdown.classList.contains('open');
-      if (isOpen) {
-        closeDropdown();
-      } else {
-        dropdown.classList.add('open');
-        overlay?.classList.add('open');
-      }
-    });
+    avatarBtn.addEventListener('click', toggleDropdown);
+    menuToggle?.addEventListener('click', toggleDropdown);
 
     // Close on overlay click
     overlay?.addEventListener('click', closeDropdown);

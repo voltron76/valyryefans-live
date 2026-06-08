@@ -1079,6 +1079,19 @@ function renderUploadTab() {
         <input type="file" id="upload-file-input" accept="image/*,video/*" multiple max="20" style="display:none;" />
       </div>
 
+      <!-- Publish Destination -->
+      <div class="form-group">
+        <label class="form-label">Publish Destination</label>
+        <div class="admin-radio-group">
+          <label class="admin-radio-option">
+            <input type="radio" name="upload-destination" value="feed" checked /> Feed Post
+          </label>
+          <label class="admin-radio-option">
+            <input type="radio" name="upload-destination" value="story" /> Story
+          </label>
+        </div>
+      </div>
+
       <!-- File type -->
       <div class="form-group">
         <label class="form-label">File Type</label>
@@ -1597,6 +1610,30 @@ export function renderAdmin() {
         // Dropzone click → file input
         dropzone?.addEventListener('click', () => fileInput?.click());
 
+        // Toggle form groups based on destination (feed post vs story)
+        const destRadios = document.querySelectorAll('input[name="upload-destination"]');
+        const titleGroup = document.getElementById('upload-title')?.closest('.form-group');
+        const descGroup = document.getElementById('upload-description')?.closest('.form-group');
+        const catGroup = document.getElementById('upload-category')?.closest('.form-group');
+        const tierGroup = document.getElementById('upload-tier')?.closest('.form-group');
+
+        destRadios.forEach(radio => {
+          radio.addEventListener('change', () => {
+            const isStory = radio.value === 'story';
+            if (isStory) {
+              if (titleGroup) titleGroup.querySelector('label').textContent = 'Story Caption (Optional)';
+              if (descGroup) descGroup.style.display = 'none';
+              if (catGroup) catGroup.style.display = 'none';
+              if (tierGroup) tierGroup.style.display = 'none';
+            } else {
+              if (titleGroup) titleGroup.querySelector('label').textContent = 'Title';
+              if (descGroup) descGroup.style.display = '';
+              if (catGroup) catGroup.style.display = '';
+              if (tierGroup) tierGroup.style.display = '';
+            }
+          });
+        });
+
         // Drag & drop events
         dropzone?.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -1621,13 +1658,14 @@ export function renderAdmin() {
         });
 
         // Upload button
-        // Upload button
         uploadBtn?.addEventListener('click', async () => {
-          const title = document.getElementById('upload-title')?.value?.trim();
+          const isStory = document.querySelector('input[name="upload-destination"]:checked')?.value === 'story';
+          const rawTitle = document.getElementById('upload-title')?.value?.trim();
+          const title = rawTitle || (isStory ? 'Story' : '');
           const description = document.getElementById('upload-description')?.value?.trim();
-          const category = document.getElementById('upload-category')?.value;
+          const category = isStory ? 'story' : document.getElementById('upload-category')?.value;
           const type = document.querySelector('input[name="upload-type"]:checked')?.value || 'image';
-          const tier = document.querySelector('input[name="upload-tier"]:checked')?.value || 'free';
+          const tier = isStory ? 'free' : (document.querySelector('input[name="upload-tier"]:checked')?.value || 'free');
 
           if (!title) {
             showToast('Please enter a title', 'error');
@@ -1660,12 +1698,12 @@ export function renderAdmin() {
 
             const item = {
               title,
-              description: description || '',
+              description: isStory ? 'Story Upload' : (description || ''),
               thumbnailPath: mediaPaths[0],
               mediaPaths: mediaPaths,
               type: selectedFiles.length > 1 ? 'carousel' : type,
-              isPublic: tier === 'free',
-              minTier: tier,
+              isPublic: isStory ? true : (tier === 'free'),
+              minTier: isStory ? 'free' : tier,
               category,
             };
 
@@ -1677,6 +1715,11 @@ export function renderAdmin() {
             if (document.getElementById('upload-category')) document.getElementById('upload-category').value = 'lingerie';
             document.querySelectorAll('input[name="upload-type"]').forEach(r => r.checked = r.value === 'image');
             document.querySelectorAll('input[name="upload-tier"]').forEach(r => r.checked = r.value === 'free');
+            document.querySelectorAll('input[name="upload-destination"]').forEach(r => r.checked = r.value === 'feed');
+            if (titleGroup) titleGroup.querySelector('label').textContent = 'Title';
+            if (descGroup) descGroup.style.display = '';
+            if (catGroup) catGroup.style.display = '';
+            if (tierGroup) tierGroup.style.display = '';
             selectedFiles = [];
             if (filenameLabel) filenameLabel.textContent = 'Supports up to 20 files (JPG, PNG, MP4, MOV)';
             

@@ -6,6 +6,8 @@
 import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, activePromo } from '../store.js';
 import { navigate } from '../router.js';
 
+let activeProgressInterval = null;
+
 // ------------------------------------
 // SVG Icons
 // ------------------------------------
@@ -74,20 +76,21 @@ function renderCreatorHeader(creatorProfile, isGold) {
 // ------------------------------------
 // Stories Bar
 // ------------------------------------
-function renderStoriesBar() {
-  const storyLabels = ['BTS 🎬', 'Beach 🏖️', 'Gym 💪', 'Night Out 🌙', 'Morning ☀️'];
+function renderStoriesBar(allStories, isAdmin) {
   return `
     <div class="stories-bar">
-      <div class="story-item story-item--add">
-        <div class="story-ring"><span>+</span></div>
-        <span class="story-label">New</span>
-      </div>
-      ${storyLabels.map((label, i) => `
-        <div class="story-item" data-story="${i}">
-          <div class="story-ring ${i < 2 ? 'story-ring--unseen' : ''}">
-            <img src="assets/images/hero-0${i + 2}.jpg" alt="${label}">
+      ${isAdmin ? `
+        <div class="story-item story-item--add" id="add-story-btn">
+          <div class="story-ring"><span>+</span></div>
+          <span class="story-label">New Story</span>
+        </div>
+      ` : ''}
+      ${allStories.map((story, i) => `
+        <div class="story-item" data-story-index="${i}">
+          <div class="story-ring story-ring--unseen">
+            <img src="${story.thumbnail}" alt="${story.title}">
           </div>
-          <span class="story-label">${label}</span>
+          <span class="story-label">${story.title}</span>
         </div>
       `).join('')}
     </div>`;
@@ -288,9 +291,19 @@ export function renderHome() {
   // Polls data (may be undefined if not exported from store)
   const pollList = typeof polls !== 'undefined' && Array.isArray(polls) ? polls : [];
 
-  // Separate pinned posts
-  const pinnedPosts = content.filter(c => c.pinned);
-  const regularPosts = content.filter(c => !c.pinned);
+  // Separate pinned posts and stories
+  const stories = content.filter(c => c.category === 'story');
+  const pinnedPosts = content.filter(c => c.pinned && c.category !== 'story');
+  const regularPosts = content.filter(c => !c.pinned && c.category !== 'story');
+
+  const defaultStories = [
+    { id: 'story-default-1', title: 'BTS 🎬', thumbnail: 'assets/images/hero-02.jpg', media: ['assets/images/hero-02.jpg'], type: 'image', likes: 124, likedByUser: false, createdAt: '2 hours ago' },
+    { id: 'story-default-2', title: 'Beach 🏖️', thumbnail: 'assets/images/hero-03.jpg', media: ['assets/images/hero-03.jpg'], type: 'image', likes: 235, likedByUser: false, createdAt: '4 hours ago' },
+    { id: 'story-default-3', title: 'Gym 💪', thumbnail: 'assets/images/hero-04.jpg', media: ['assets/images/hero-04.jpg'], type: 'image', likes: 89, likedByUser: false, createdAt: '6 hours ago' },
+    { id: 'story-default-4', title: 'Night Out 🌙', thumbnail: 'assets/images/hero-05.jpg', media: ['assets/images/hero-05.jpg'], type: 'image', likes: 341, likedByUser: false, createdAt: '9 hours ago' },
+    { id: 'story-default-5', title: 'Morning ☀️', thumbnail: 'assets/images/hero-06.jpg', media: ['assets/images/hero-06.jpg'], type: 'image', likes: 156, likedByUser: false, createdAt: '12 hours ago' },
+  ];
+  const allStories = [...stories, ...defaultStories];
 
   const html = `
     <!-- Promo Banner -->
@@ -300,7 +313,7 @@ export function renderHome() {
     ${renderCreatorHeader(creatorProfile, isGold)}
 
     <!-- Stories Bar -->
-    ${renderStoriesBar()}
+    ${renderStoriesBar(allStories, state.isAdmin)}
 
     <!-- Feed Tabs -->
     ${renderFeedTabs()}
@@ -504,11 +517,203 @@ export function renderHome() {
       });
 
       // ---- Story Clicks ----
-      document.querySelectorAll('.story-item').forEach(item => {
-        item.addEventListener('click', () => {
-          showToast('Stories coming soon! 🎬', 'info');
+      const addStoryBtn = document.getElementById('add-story-btn');
+      addStoryBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigate('/admin');
+      });
+
+      document.querySelectorAll('.story-item[data-story-index]').forEach(item => {
+        item.addEventListener('click', (e) => {
+          const index = parseInt(item.dataset.storyIndex);
+          openStoryViewer(index);
         });
       });
+
+      function openStoryViewer(startIndex) {
+        let currentIndex = startIndex;
+        let storyProgress = 0;
+        const duration = 5000; // 5 seconds per story
+        const intervalTime = 50; // Update every 50ms
+        let isPaused = false;
+
+        let modal = document.getElementById('story-viewer-modal');
+        if (!modal) {
+          const viewerHtml = `
+            <div class="story-viewer" id="story-viewer-modal">
+              <div class="story-viewer__container">
+                <div class="story-viewer__progress-container" id="story-progress-container"></div>
+                <div class="story-viewer__header">
+                  <img src="${creatorProfile.avatar}" class="story-viewer__avatar">
+                  <div class="story-viewer__creator-info">
+                    <span class="story-viewer__name">${creatorProfile.name}</span>
+                    <span class="story-viewer__time" id="story-viewer-time"></span>
+                  </div>
+                  <button class="story-viewer__close" id="story-viewer-close">✕</button>
+                </div>
+                <div class="story-viewer__content">
+                  <div class="story-viewer__click-left" id="story-click-left"></div>
+                  <div class="story-viewer__click-right" id="story-click-right"></div>
+                  <div class="story-viewer__media-container" id="story-media-container"></div>
+                </div>
+                <div class="story-viewer__footer">
+                  <span class="story-viewer__caption" id="story-viewer-caption"></span>
+                  <button class="story-viewer__like-btn" id="story-viewer-like"></button>
+                </div>
+              </div>
+            </div>
+          `;
+          document.body.insertAdjacentHTML('beforeend', viewerHtml);
+          modal = document.getElementById('story-viewer-modal');
+        }
+
+        const progressContainer = document.getElementById('story-progress-container');
+        const mediaContainer = document.getElementById('story-media-container');
+        const captionEl = document.getElementById('story-viewer-caption');
+        const timeEl = document.getElementById('story-viewer-time');
+        const likeBtn = document.getElementById('story-viewer-like');
+        const closeBtn = document.getElementById('story-viewer-close');
+        const clickLeft = document.getElementById('story-click-left');
+        const clickRight = document.getElementById('story-click-right');
+
+        const renderProgressBars = () => {
+          progressContainer.innerHTML = allStories.map((_, i) => `
+            <div class="story-viewer__progress-bar">
+              <div class="story-viewer__progress-fill" id="story-fill-${i}"></div>
+            </div>
+          `).join('');
+        };
+
+        const showStory = (index) => {
+          currentIndex = index;
+          storyProgress = 0;
+          const story = allStories[currentIndex];
+          if (!story) {
+            closeStoryViewer();
+            return;
+          }
+
+          for (let i = 0; i < allStories.length; i++) {
+            const fill = document.getElementById(`story-fill-${i}`);
+            if (fill) {
+              if (i < currentIndex) fill.style.width = '100%';
+              else if (i > currentIndex) fill.style.width = '0%';
+            }
+          }
+
+          timeEl.textContent = story.createdAt || 'Just now';
+          captionEl.textContent = story.title || '';
+
+          mediaContainer.innerHTML = '';
+          if (story.type === 'video') {
+            const video = document.createElement('video');
+            video.src = story.videoUrl || story.media?.[0] || story.thumbnail;
+            video.autoplay = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.className = 'story-viewer__media protect-media';
+            mediaContainer.appendChild(video);
+          } else {
+            const img = document.createElement('img');
+            img.src = story.thumbnail || story.media?.[0];
+            img.className = 'story-viewer__media protect-media';
+            mediaContainer.appendChild(img);
+          }
+
+          updateLikeButtonState();
+          startTimer();
+        };
+
+        const updateLikeButtonState = () => {
+          const story = allStories[currentIndex];
+          if (!story) return;
+          const liked = story.likedByUser;
+          likeBtn.className = `story-viewer__like-btn ${liked ? 'story-viewer__like-btn--active' : ''}`;
+          likeBtn.innerHTML = `
+            ${liked ? icons.heartFilled : icons.heart}
+            <span class="story-viewer__like-count">${story.likes || 0}</span>
+          `;
+        };
+
+        const startTimer = () => {
+          clearInterval(activeProgressInterval);
+          activeProgressInterval = setInterval(() => {
+            if (isPaused) return;
+
+            storyProgress += (intervalTime / duration) * 100;
+            if (storyProgress >= 100) {
+              storyProgress = 100;
+              clearInterval(activeProgressInterval);
+              if (currentIndex < allStories.length - 1) {
+                showStory(currentIndex + 1);
+              } else {
+                closeStoryViewer();
+              }
+            }
+
+            const activeFill = document.getElementById(`story-fill-${currentIndex}`);
+            if (activeFill) {
+              activeFill.style.width = `${storyProgress}%`;
+            }
+          }, intervalTime);
+        };
+
+        const closeStoryViewer = () => {
+          clearInterval(activeProgressInterval);
+          modal?.remove();
+        };
+
+        closeBtn?.addEventListener('click', closeStoryViewer);
+        
+        clickLeft?.addEventListener('click', () => {
+          if (currentIndex > 0) {
+            showStory(currentIndex - 1);
+          } else {
+            showStory(0);
+          }
+        });
+
+        clickRight?.addEventListener('click', () => {
+          if (currentIndex < allStories.length - 1) {
+            showStory(currentIndex + 1);
+          } else {
+            closeStoryViewer();
+          }
+        });
+
+        const pauseStory = () => { isPaused = true; };
+        const resumeStory = () => { isPaused = false; };
+        
+        const contentArea = modal.querySelector('.story-viewer__content');
+        contentArea?.addEventListener('mousedown', pauseStory);
+        contentArea?.addEventListener('mouseup', resumeStory);
+        contentArea?.addEventListener('touchstart', pauseStory);
+        contentArea?.addEventListener('touchend', resumeStory);
+
+        likeBtn?.addEventListener('click', () => {
+          const story = allStories[currentIndex];
+          if (!story) return;
+
+          toggleLike(story.id);
+          story.likedByUser = !story.likedByUser;
+          story.likes = story.likedByUser ? (story.likes || 0) + 1 : Math.max(0, (story.likes || 1) - 1);
+
+          updateLikeButtonState();
+
+          const feedCard = document.querySelector(`.post-action[data-id="${story.id}"][data-action="like"]`);
+          if (feedCard) {
+            const countEl = feedCard.querySelector('.like-count');
+            if (countEl) {
+              countEl.textContent = story.likes;
+            }
+            feedCard.classList.toggle('post-action--active', story.likedByUser);
+            feedCard.innerHTML = (story.likedByUser ? icons.heartFilled : icons.heart) + ` <span class="like-count">${story.likes}</span>`;
+          }
+        });
+
+        renderProgressBars();
+        showStory(currentIndex);
+      }
 
       // ---- Subscribe CTAs on locked posts ----
       document.querySelectorAll('.post-card__lock-overlay .btn').forEach(btn => {
@@ -535,7 +740,8 @@ export function renderHome() {
     },
 
     cleanup() {
-      // Nothing to clean up (no intervals)
+      if (activeProgressInterval) clearInterval(activeProgressInterval);
+      document.getElementById('story-viewer-modal')?.remove();
     }
   };
 }
