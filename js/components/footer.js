@@ -42,7 +42,7 @@ export function renderFooter() {
           <a href="https://instagram.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="Instagram">
             ${socialIcons.instagram}
           </a>
-          <a href="https://tiktok.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="TikTok">
+          <a href="https://www.tiktok.com/@valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="TikTok">
             ${socialIcons.tiktok}
           </a>
           <a href="https://x.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="X / Twitter">
