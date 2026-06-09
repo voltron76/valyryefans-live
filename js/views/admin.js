@@ -3,7 +3,7 @@
 // Secured admin panel for creator (Valyrye) to manage platform
 // ============================================================
 
-import { getState, uploadContent, showToast } from '../store.js';
+import { getState, uploadContent, showToast, addAdminReply } from '../store.js';
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
 
