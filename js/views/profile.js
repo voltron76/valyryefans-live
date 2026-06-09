@@ -3,7 +3,7 @@
 // Menu items are now in the navbar dropdown overlay
 // ============================================================
 
-import { getState, showToast } from '../store.js';
+import { getState, showToast, uploadProfilePicture } from '../store.js';
 import { navigate } from '../router.js';
 import { getTheme } from '../theme.js';
 
@@ -22,6 +22,9 @@ const icons = {
   heart: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
   star: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   check: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L6.6 9.6l5.3-5.3a1 1 0 0 1 1.4 0z" fill="currentColor"/></svg>`,
+  camera: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+  heartFill: `<svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  play: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
 };
 
 const tierConfig = {
@@ -56,16 +59,89 @@ export function renderProfile() {
   const tc = tierConfig[tier] || tierConfig.free;
   const initials = (user.name || user.email || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const memberSince = user.joined || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const avatarUrl = user.avatarUrl;
+
+  // Get liked posts (using likedByUser from the store, NOT bookmarks)
+  const likedPosts = state.content.filter(c => c.likedByUser && c.category !== 'story');
+  const likedCount = likedPosts.length;
+
+  // Build liked posts grid
+  const likedPostsGridHtml = likedPosts.length > 0 ? likedPosts.map(post => {
+    const thumb = post.thumbnail || (post.media && post.media[0]) || '';
+    const isVideo = post.type === 'video';
+    return `
+      <div class="profile-liked-item" data-content-id="${post.id}" style="
+        position: relative; aspect-ratio: 1; border-radius: var(--radius-lg); overflow: hidden;
+        cursor: pointer; background: var(--bg-card); border: 1px solid var(--border);
+        transition: transform 0.2s, box-shadow 0.2s;
+      ">
+        ${thumb ? `<img src="${escapeHtml(thumb)}" alt="${escapeHtml(post.title)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">` : `
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-hover);color:var(--text-muted);font-size:var(--text-2xl);">
+            ${isVideo ? icons.play : icons.heartFill}
+          </div>
+        `}
+        <div style="
+          position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,0.7));
+          display:flex;flex-direction:column;justify-content:flex-end;padding:var(--space-2);
+          opacity:0;transition:opacity 0.2s;
+        " class="profile-liked-overlay">
+          <div style="display:flex;align-items:center;gap:var(--space-2);color:#fff;font-size:var(--text-xs);">
+            ${icons.heartFill} <span>${post.likes || 0}</span>
+            ${isVideo ? `<span style="margin-left:auto;">${icons.play}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') : '';
 
   const html = `
+    <style>
+      .profile-liked-item:hover {
+        transform: scale(1.03);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      }
+      .profile-liked-item:hover .profile-liked-overlay {
+        opacity: 1 !important;
+      }
+      .profile-avatar-container {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        margin: 0 auto var(--space-4);
+        cursor: pointer;
+      }
+      .profile-avatar-container .profile-avatar-overlay {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
+      .profile-avatar-container:hover .profile-avatar-overlay {
+        opacity: 1;
+      }
+    </style>
     <div class="section" style="padding-top: var(--space-10); max-width: 720px; margin: 0 auto;">
 
       <!-- Profile Header -->
       <div class="card-glass animate-fade-in-up stagger-1" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6); text-align: center;">
-        <div style="width: 100px; height: 100px; border-radius: var(--radius-full); margin: 0 auto var(--space-4); overflow: hidden; border: 3px solid var(--border-accent);">
-          <div style="width:100%;height:100%;background:var(--gradient-accent);display:flex;align-items:center;justify-content:center;color:var(--btn-primary-text);font-weight:700;font-size:32px;">
-            ${initials}
+        <div class="profile-avatar-container" id="profile-avatar-click" title="Change profile picture">
+          <div style="width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid var(--border-accent);">
+            ${avatarUrl
+              ? `<img id="profile-avatar-img" src="${escapeHtml(avatarUrl)}" alt="Profile" style="width:100%;height:100%;object-fit:cover;">`
+              : `<div id="profile-avatar-img" style="width:100%;height:100%;background:var(--gradient-accent);display:flex;align-items:center;justify-content:center;color:var(--btn-primary-text);font-weight:700;font-size:32px;">${initials}</div>`
+            }
           </div>
+          <div class="profile-avatar-overlay">
+            ${icons.camera}
+          </div>
+          <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
         </div>
         <h1 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">${escapeHtml(user.name) || 'User'}</h1>
         <p style="color: var(--text-muted); font-size: var(--text-sm); display: flex; align-items: center; justify-content: center; gap: var(--space-2);">
@@ -81,11 +157,11 @@ export function renderProfile() {
       <!-- Stats Row -->
       <div class="animate-fade-in-up stagger-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6);">
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
-          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${state.content.filter(c => state.bookmarks.includes(c.id)).length || 0}</div>
+          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${likedCount}</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Posts Liked</div>
         </div>
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
-          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${state.content.length || 0}</div>
+          <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${state.content.filter(c => c.category !== 'story').length || 0}</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Content Viewed</div>
         </div>
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
@@ -96,6 +172,26 @@ export function renderProfile() {
           <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">0</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Referrals</div>
         </div>
+      </div>
+
+      <!-- Liked Posts Section -->
+      <div class="card-glass animate-fade-in-up stagger-2" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6);">
+        <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);">
+          <span style="color: var(--accent-light);">${icons.heart}</span>
+          <h2 class="font-display" style="font-size: var(--text-xl);">Liked Posts</h2>
+          <span style="font-size: var(--text-xs); color: var(--text-muted); margin-left: auto;">${likedCount} posts</span>
+        </div>
+        ${likedPosts.length > 0 ? `
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3);" id="liked-posts-grid">
+            ${likedPostsGridHtml}
+          </div>
+        ` : `
+          <div style="text-align: center; padding: var(--space-10); color: var(--text-muted);">
+            <div style="font-size: var(--text-3xl); margin-bottom: var(--space-3);">💖</div>
+            <div style="font-size: var(--text-sm);">No liked posts yet</div>
+            <div style="font-size: var(--text-xs); margin-top: var(--space-2);">Like some content and it will appear here!</div>
+          </div>
+        `}
       </div>
 
       <!-- Subscription Card -->
@@ -186,6 +282,53 @@ export function renderProfile() {
   return {
     html,
     afterRender() {
+      // Profile picture upload
+      const avatarClick = document.getElementById('profile-avatar-click');
+      const avatarInput = document.getElementById('profile-avatar-input');
+
+      avatarClick?.addEventListener('click', () => avatarInput?.click());
+
+      avatarInput?.addEventListener('change', async () => {
+        if (!avatarInput.files?.length) return;
+        const file = avatarInput.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          showToast('Image must be under 5MB', 'error');
+          return;
+        }
+        showToast('Uploading profile picture...', 'info');
+        const url = await uploadProfilePicture(file);
+        if (url) {
+          // Update the avatar image on the page
+          const imgEl = document.getElementById('profile-avatar-img');
+          if (imgEl) {
+            if (imgEl.tagName === 'IMG') {
+              imgEl.src = url;
+            } else {
+              // Replace initials div with img
+              imgEl.outerHTML = `<img id="profile-avatar-img" src="${url}" alt="Profile" style="width:100%;height:100%;object-fit:cover;">`;
+            }
+          }
+          // Update navbar avatar
+          try {
+            const { renderNavbar, afterNavRender } = await import('../components/navbar.js');
+            const navbarEl = document.getElementById('navbar');
+            if (navbarEl) {
+              navbarEl.innerHTML = renderNavbar();
+              afterNavRender();
+            }
+          } catch(e) {}
+        }
+        avatarInput.value = '';
+      });
+
+      // Liked posts grid click handlers
+      document.querySelectorAll('.profile-liked-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const contentId = item.dataset.contentId;
+          if (contentId) navigate(`/content/${contentId}`);
+        });
+      });
+
       // Save profile
       document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
         const name = document.getElementById('profile-name')?.value;

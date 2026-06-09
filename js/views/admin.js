@@ -322,6 +322,8 @@ const adminStyles = `
       display: flex;
       flex-direction: column;
       height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
     .admin-chat__header {
       padding: var(--space-4) var(--space-5);
@@ -344,6 +346,7 @@ const adminStyles = `
     }
     .admin-chat__messages {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       padding: var(--space-4) var(--space-5);
       display: flex;

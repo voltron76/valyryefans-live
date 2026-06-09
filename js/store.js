@@ -47,6 +47,10 @@ export const state = {
     tier: 'free',
     cardOnFile: false,
     id: null,
+    avatarUrl: null,
+    tipLimit: 0,
+    subscriptionStatus: 'active',
+    cardLast4: '',
   },
   isAuthenticated: false,
   isAdmin: false,
@@ -180,6 +184,10 @@ export async function initStore() {
         state.currentTier = profile.tier || 'free';
         state.user.cardOnFile = profile.tier === 'gold';
         state.isAdmin = profile.tier === 'admin';
+        state.user.avatarUrl = profile.avatar_url || null;
+        state.user.tipLimit = profile.tip_limit || 0;
+        state.user.subscriptionStatus = profile.subscription_status || 'active';
+        state.user.cardLast4 = profile.card_last4 || '';
       }
 
       // Fetch user specific messages
@@ -604,13 +612,89 @@ export async function incrementStoryView(storyId) {
 }
 
 export async function tipPost(contentId, amount) {
+  const tipAmount = parseFloat(amount);
+  if (state.user.tipLimit > 0 && tipAmount > state.user.tipLimit) {
+    showToast(`Tip exceeds your limit of $${state.user.tipLimit.toFixed(2)}`, 'error');
+    return;
+  }
   await addTip(contentId, amount);
   const item = state.content.find(c => c.id === contentId);
   if (item) {
-    item.tips = (item.tips || 0) + parseFloat(amount);
+    item.tips = (item.tips || 0) + tipAmount;
     notify('content');
   }
-  showToast(`💰 Sent $${parseFloat(amount).toFixed(2)} tip!`, 'success');
+  showToast(`💰 Sent $${tipAmount.toFixed(2)} tip!`, 'success');
+}
+
+export async function updateTipLimit(amount) {
+  if (!state.user.id) return;
+  state.user.tipLimit = parseFloat(amount) || 0;
+  try {
+    await supabase.from('profiles').update({ tip_limit: state.user.tipLimit }).eq('id', state.user.id);
+  } catch (e) {
+    console.error('Error saving tip limit:', e);
+  }
+  notify('user');
+  showToast(`Tip limit set to $${state.user.tipLimit.toFixed(2)}`, 'success');
+}
+
+export async function updateSubscriptionStatus(status) {
+  if (!state.user.id) return;
+  state.user.subscriptionStatus = status;
+  const updates = { subscription_status: status };
+  if (status === 'cancelled') {
+    updates.tier = 'free';
+    state.user.tier = 'free';
+    state.currentTier = 'free';
+    state.user.cardOnFile = false;
+  } else if (status === 'paused') {
+    // Keep tier as gold but mark paused
+  } else if (status === 'active') {
+    // Resume
+  }
+  try {
+    await supabase.from('profiles').update(updates).eq('id', state.user.id);
+  } catch (e) {
+    console.error('Error updating subscription:', e);
+  }
+  notify('user');
+}
+
+export async function updateCardInfo(last4) {
+  if (!state.user.id) return;
+  state.user.cardLast4 = last4;
+  try {
+    await supabase.from('profiles').update({ card_last4: last4 }).eq('id', state.user.id);
+  } catch (e) {
+    console.error('Error updating card info:', e);
+  }
+  notify('user');
+  showToast('Payment card updated!', 'success');
+}
+
+export async function uploadProfilePicture(file) {
+  if (!state.user.id || !file) return null;
+  try {
+    const fileExt = file.name.split('.').pop();
+    const filePath = `avatars/${state.user.id}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file, { upsert: true });
+    if (uploadError) throw uploadError;
+    
+    const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+    const avatarUrl = data.publicUrl;
+    
+    await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', state.user.id);
+    
+    state.user.avatarUrl = avatarUrl;
+    notify('user');
+    showToast('Profile picture updated! 📸', 'success');
+    return avatarUrl;
+  } catch (e) {
+    console.error('Error uploading profile picture:', e);
+    showToast('Failed to upload profile picture', 'error');
+    return null;
+  }
 }
 
 // ------------------------------------

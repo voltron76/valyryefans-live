@@ -3,9 +3,14 @@
 // Full settings page: Account, Appearance, Notifications, Privacy, Danger Zone
 // ============================================================
 
-import { getState, showToast } from '../store.js';
+import { getState, showToast, updateTipLimit, updateSubscriptionStatus, updateCardInfo } from '../store.js';
 import { navigate } from '../router.js';
 import { toggleTheme, getTheme } from '../theme.js';
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 
 const icons = {
   user: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
@@ -187,23 +192,124 @@ export function renderSettings() {
             <h2 class="font-display" style="font-size: var(--text-xl);">Billing & Subscription</h2>
           </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--border);">
+          <!-- Current Plan -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4); background: var(--bg-card); border-radius: var(--radius-lg); margin-bottom: var(--space-4); border: 1px solid var(--border);">
             <div>
-              <div style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">Current Plan</div>
-              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">${state.currentTier === 'gold' ? 'Gold Subscriber - Active' : 'Free Member'}</div>
+              <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-primary);">${state.currentTier === 'gold' ? 'Gold VIP' : 'Free'} Plan</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">
+                ${state.currentTier === 'gold'
+                  ? (user.subscriptionStatus === 'paused' ? '⏸️ Subscription Paused' : '✅ Active — $14.99/month')
+                  : 'No active subscription'
+                }
+              </div>
             </div>
-            ${state.currentTier === 'gold' ? '<span class="sub-badge sub-badge--gold">Gold</span>' : '<span class="sub-badge sub-badge--free">Free</span>'}
+            ${state.currentTier === 'gold'
+              ? '<span class="sub-badge sub-badge--gold">Gold</span>'
+              : '<span class="sub-badge sub-badge--free">Free</span>'
+            }
           </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--border);">
-            <div>
-              <div style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">Payment Method</div>
-              <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">${state.currentTier === 'gold' ? 'Visa ending in 4242' : 'None linked'}</div>
+          ${state.currentTier === 'gold' ? `
+            <!-- Subscription Actions -->
+            <div style="display: flex; gap: var(--space-3); margin-bottom: var(--space-5); flex-wrap: wrap;">
+              ${user.subscriptionStatus === 'paused' ? `
+                <button class="btn btn-primary btn-sm" id="settings-resume-sub" style="gap: var(--space-2);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Resume Subscription
+                </button>
+              ` : `
+                <button class="btn btn-secondary btn-sm" id="settings-pause-sub" style="gap: var(--space-2);">
+                  ${icons.pause} Pause Subscription
+                </button>
+              `}
+              <button class="btn btn-sm" id="settings-cancel-sub" style="gap: var(--space-2); background: none; border: 1px solid var(--error); color: var(--error);">
+                ${icons.trash} Cancel Subscription
+              </button>
+            </div>
+          ` : `
+            <div style="margin-bottom: var(--space-5);">
+              <a href="#/subscribe" class="btn btn-primary btn-sm w-full" style="justify-content: center; gap: var(--space-2);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 17l3-12 5 7 2-10 2 10 5-7 3 12z"/><path d="M2 17h20"/></svg>
+                Upgrade to Gold — $14.99/mo
+              </a>
+            </div>
+          `}
+
+          <div style="border-top: 1px solid var(--border); margin: var(--space-4) 0;"></div>
+
+          <!-- Payment Card -->
+          <div style="margin-bottom: var(--space-5);">
+            <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              <span style="font-size: var(--text-sm); font-weight: 500; color: var(--text-secondary);">Payment Method</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="display: flex; align-items: center; gap: var(--space-3);">
+                <div style="width: 40px; height: 28px; border-radius: var(--radius-sm); background: linear-gradient(135deg, #1a1f71, #1434cb); display: flex; align-items: center; justify-content: center;">
+                  <span style="color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 1px;">VISA</span>
+                </div>
+                <span style="font-size: var(--text-sm); color: var(--text-primary);">
+                  ${user.cardLast4 ? '•••• •••• •••• ' + escapeHtml(user.cardLast4) : 'No card on file'}
+                </span>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="settings-change-card" style="font-size: var(--text-xs);">
+                ${icons.edit} Change
+              </button>
+            </div>
+            <!-- Change Card Form (hidden by default) -->
+            <div id="settings-card-form-wrap" style="display: none; margin-top: var(--space-3); padding: var(--space-4); background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div class="form-group" style="margin-bottom: var(--space-3);">
+                <label class="form-label" style="font-size: var(--text-xs);">Card Number</label>
+                <input class="form-input" type="text" id="settings-card-number" placeholder="4242 4242 4242 4242" maxlength="19" style="font-size: var(--text-sm);">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-3);">
+                <div class="form-group">
+                  <label class="form-label" style="font-size: var(--text-xs);">Expiry</label>
+                  <input class="form-input" type="text" id="settings-card-expiry" placeholder="MM/YY" maxlength="5" style="font-size: var(--text-sm);">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-size: var(--text-xs);">CVC</label>
+                  <input class="form-input" type="text" id="settings-card-cvc" placeholder="123" maxlength="4" style="font-size: var(--text-sm);">
+                </div>
+              </div>
+              <div style="display: flex; gap: var(--space-2);">
+                <button class="btn btn-primary btn-sm" id="settings-save-card" style="gap: var(--space-2);">
+                  ${icons.check} Save Card
+                </button>
+                <button class="btn btn-ghost btn-sm" id="settings-cancel-card">Cancel</button>
+              </div>
             </div>
           </div>
 
-          <div style="margin-top: var(--space-6);">
-            <button class="btn btn-secondary w-full" style="justify-content: center;" onclick="window.location.hash='#/subscribe'">Manage Subscription</button>
+          <div style="border-top: 1px solid var(--border); margin: var(--space-4) 0;"></div>
+
+          <!-- Tip Limit -->
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span style="font-size: var(--text-sm); font-weight: 500; color: var(--text-secondary);">Tip Limit</span>
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-3);">
+              Set a maximum tip amount per transaction across all content types. Set to 0 for no limit.
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <div style="position: relative; flex: 1; max-width: 200px;">
+                <span style="position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: var(--text-sm);">$</span>
+                <input class="form-input" type="number" id="settings-tip-limit" value="${user.tipLimit || 0}" min="0" step="1" style="padding-left: var(--space-7); font-size: var(--text-sm);">
+              </div>
+              <button class="btn btn-primary btn-sm" id="settings-save-tip-limit" style="gap: var(--space-2);">
+                ${icons.check} Set Limit
+              </button>
+            </div>
+            ${user.tipLimit > 0 ? `
+              <div style="margin-top: var(--space-2); font-size: var(--text-xs); color: var(--accent-light);">
+                ✅ Current limit: $${parseFloat(user.tipLimit).toFixed(2)} per tip
+              </div>
+            ` : `
+              <div style="margin-top: var(--space-2); font-size: var(--text-xs); color: var(--text-muted);">
+                No tip limit set — unlimited tipping enabled
+              </div>
+            `}
           </div>
         </div>
 
@@ -384,6 +490,74 @@ export function renderSettings() {
         const newTheme = toggleTheme();
         // Re-render the settings page to reflect new theme state
         navigate('/settings');
+      });
+
+      // ---- Subscription Management ----
+      document.getElementById('settings-pause-sub')?.addEventListener('click', async () => {
+        if (confirm('Pause your Gold subscription? You will keep access until the current billing period ends.')) {
+          await updateSubscriptionStatus('paused');
+          showToast('Subscription paused ⏸️', 'success');
+          navigate('/settings');
+        }
+      });
+
+      document.getElementById('settings-resume-sub')?.addEventListener('click', async () => {
+        await updateSubscriptionStatus('active');
+        showToast('Subscription resumed! 🎉', 'success');
+        navigate('/settings');
+      });
+
+      document.getElementById('settings-cancel-sub')?.addEventListener('click', async () => {
+        const confirmed = confirm('⚠️ Cancel your Gold subscription?\n\nYou will lose access to exclusive content immediately.');
+        if (!confirmed) return;
+        const doubleConfirm = confirm('This is your final confirmation. Click OK to cancel.');
+        if (!doubleConfirm) return;
+        await updateSubscriptionStatus('cancelled');
+        showToast('Subscription cancelled. You are now on the Free plan.', 'success');
+        navigate('/settings');
+      });
+
+      // ---- Change Payment Card ----
+      document.getElementById('settings-change-card')?.addEventListener('click', () => {
+        const formWrap = document.getElementById('settings-card-form-wrap');
+        if (formWrap) formWrap.style.display = formWrap.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.getElementById('settings-cancel-card')?.addEventListener('click', () => {
+        const formWrap = document.getElementById('settings-card-form-wrap');
+        if (formWrap) formWrap.style.display = 'none';
+      });
+
+      document.getElementById('settings-save-card')?.addEventListener('click', async () => {
+        const cardNum = document.getElementById('settings-card-number')?.value?.trim();
+        const expiry = document.getElementById('settings-card-expiry')?.value?.trim();
+        const cvc = document.getElementById('settings-card-cvc')?.value?.trim();
+
+        if (!cardNum || cardNum.replace(/\s/g, '').length < 13) {
+          showToast('Please enter a valid card number', 'error');
+          return;
+        }
+        if (!expiry || expiry.length < 4) {
+          showToast('Please enter a valid expiry date', 'error');
+          return;
+        }
+        if (!cvc || cvc.length < 3) {
+          showToast('Please enter a valid CVC', 'error');
+          return;
+        }
+
+        const last4 = cardNum.replace(/\s/g, '').slice(-4);
+        await updateCardInfo(last4);
+        const formWrap = document.getElementById('settings-card-form-wrap');
+        if (formWrap) formWrap.style.display = 'none';
+        navigate('/settings');
+      });
+
+      // ---- Tip Limit ----
+      document.getElementById('settings-save-tip-limit')?.addEventListener('click', async () => {
+        const input = document.getElementById('settings-tip-limit');
+        const amount = parseFloat(input?.value) || 0;
+        await updateTipLimit(amount);
       });
 
       // ---- Deactivate account ----
