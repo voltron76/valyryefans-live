@@ -1,6 +1,7 @@
 // ============================================================
 // ValyryeFans — Notifications View
 // Notification center with read/unread states
+// Generated dynamically from actual content/messages
 // ============================================================
 
 import { getState, showToast } from '../store.js';
@@ -22,74 +23,6 @@ const typeColors = {
 
 const bellIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
 
-// Default mock notifications if none exist in state
-const defaultNotifications = [
-  {
-    id: 'notif-1',
-    type: 'new_post',
-    title: 'New Photo Set! 📸',
-    message: 'Valyrye just posted "Midnight Blue" — a stunning 12-photo exclusive set.',
-    time: '2 min ago',
-    read: false,
-  },
-  {
-    id: 'notif-2',
-    type: 'message',
-    title: 'New Message',
-    message: 'Alex Rivera sent you a message: "Thank you so much for the custom shoot! 🔥"',
-    time: '15 min ago',
-    read: false,
-  },
-  {
-    id: 'notif-3',
-    type: 'subscription',
-    title: 'Subscription Renewed',
-    message: 'Your Gold plan has been renewed for another month. Enjoy unlimited access!',
-    time: '1 hour ago',
-    read: false,
-  },
-  {
-    id: 'notif-4',
-    type: 'new_post',
-    title: 'Behind the Scenes 🎬',
-    message: 'New behind-the-scenes content from the studio shoot is now available.',
-    time: '3 hours ago',
-    read: true,
-  },
-  {
-    id: 'notif-5',
-    type: 'system',
-    title: 'Profile Updated',
-    message: 'Your profile settings have been saved successfully.',
-    time: '1 day ago',
-    read: true,
-  },
-  {
-    id: 'notif-6',
-    type: 'message',
-    title: 'New Message',
-    message: 'Jordan Lee: "Can\'t wait for the next exclusive drop!"',
-    time: '1 day ago',
-    read: true,
-  },
-  {
-    id: 'notif-7',
-    type: 'new_post',
-    title: 'Early Access Drop! ⚡',
-    message: 'Gold members get early access to the new "Golden Hour" photo set.',
-    time: '2 days ago',
-    read: true,
-  },
-  {
-    id: 'notif-8',
-    type: 'system',
-    title: 'Welcome to ValyryeFans',
-    message: 'Thanks for joining! Explore exclusive content and connect with Valyrye.',
-    time: '3 days ago',
-    read: true,
-  },
-];
-
 function renderNotificationCard(notif, idx) {
   const icon = typeIcons[notif.type] || typeIcons.system;
   const color = typeColors[notif.type] || typeColors.system;
@@ -98,7 +31,7 @@ function renderNotificationCard(notif, idx) {
   const unreadBg = !notif.read ? `background: var(--accent-subtle);` : '';
 
   return `
-    <div class="card animate-fade-in-up ${stagger} notification-card" data-id="${notif.id}" style="
+    <div class="card animate-fade-in-up ${stagger} notification-card" data-id="${notif.id}" data-link="${notif.link || ''}" style="
       border-radius: var(--radius-md);
       padding: var(--space-5) var(--space-6);
       ${unreadBorder}
@@ -166,17 +99,13 @@ export function renderNotifications() {
     };
   }
 
-  // Initialize notifications in state if not present
-  if (!state.notifications) {
-    state.notifications = defaultNotifications.map(n => ({ ...n }));
-  }
-
-  const notifications = state.notifications;
+  const notifications = state.notifications || [];
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Empty state
   if (notifications.length === 0) {
-    return `
+    return {
+      html: `
       <div class="section" style="padding-top: var(--space-10);">
         <div class="section__header animate-fade-in-up" style="flex-direction: column; align-items: flex-start; gap: var(--space-2);">
           <div style="display: flex; align-items: center; gap: var(--space-3);">
@@ -191,7 +120,9 @@ export function renderNotifications() {
           <p class="empty-state__text">When there's activity on your account, you'll see it here.</p>
         </div>
       </div>
-    `;
+      `,
+      afterRender() {}
+    };
   }
 
   const html = `
@@ -244,38 +175,24 @@ export function renderNotifications() {
           s.notifications = s.notifications.map(n => ({ ...n, read: true }));
         }
         showToast('All notifications marked as read', 'success');
-        // Re-render
         navigate('/notifications');
       });
 
-      // Click individual notification to mark as read
+      // Click individual notification — mark as read + navigate to link
       document.querySelectorAll('.notification-card').forEach(card => {
         card.addEventListener('click', () => {
           const id = card.dataset.id;
+          const link = card.dataset.link;
           const s = getState();
           if (s.notifications) {
             const notif = s.notifications.find(n => n.id === id);
             if (notif && !notif.read) {
               notif.read = true;
-              // Update card visually
-              card.style.borderLeftColor = 'transparent';
-              card.style.background = 'var(--bg-card)';
-              card.setAttribute('onmouseout', "this.style.borderColor='transparent';this.style.background='var(--bg-card)'");
-              const dot = card.querySelector('[style*="width: 8px"]');
-              if (dot) dot.remove();
-
-              // Update badge count
-              const unread = s.notifications.filter(n => !n.read).length;
-              const badge = document.querySelector('.section__header span[style*="gradient-accent"]');
-              if (badge) {
-                if (unread > 0) {
-                  badge.textContent = unread;
-                } else {
-                  badge.remove();
-                  markAllBtn?.remove();
-                }
-              }
             }
+          }
+          // Navigate to the linked page
+          if (link) {
+            navigate(link);
           }
         });
       });

@@ -171,6 +171,8 @@ function renderPostCard(item, creatorProfile) {
         <div class="post-card__carousel-track">
           ${item.media.map((src, i) => `<img src="${src}" alt="${item.title} ${i + 1}" class="post-card__img ${i === 0 ? 'active' : ''}">`).join('')}
         </div>
+        <button class="carousel-arrow carousel-arrow--left" data-dir="-1" aria-label="Previous slide">&#8249;</button>
+        <button class="carousel-arrow carousel-arrow--right" data-dir="1" aria-label="Next slide">&#8250;</button>
         <div class="post-card__carousel-dots">
           ${item.media.map((_, i) => `<span class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join('')}
         </div>
@@ -829,6 +831,108 @@ export function renderHome() {
       document.querySelectorAll('.post-card__media--locked').forEach(media => {
         media.style.cursor = 'pointer';
         media.addEventListener('click', () => navigate('/subscribe'));
+      });
+
+      // ---- Carousel Interaction ----
+      document.querySelectorAll('.post-card__carousel').forEach(carousel => {
+        const track = carousel.querySelector('.post-card__carousel-track');
+        const dots = carousel.querySelectorAll('.carousel-dot');
+        const arrowLeft = carousel.querySelector('.carousel-arrow--left');
+        const arrowRight = carousel.querySelector('.carousel-arrow--right');
+        const totalSlides = dots.length;
+        let currentIndex = 0;
+
+        // Slide to a given index
+        const goToSlide = (index) => {
+          if (index < 0) index = 0;
+          if (index >= totalSlides) index = totalSlides - 1;
+          currentIndex = index;
+          track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+          // Update dots
+          dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+          });
+
+          // Update arrow disabled state
+          if (arrowLeft) arrowLeft.disabled = currentIndex === 0;
+          if (arrowRight) arrowRight.disabled = currentIndex === totalSlides - 1;
+        };
+
+        // Initialize arrow state
+        if (arrowLeft) arrowLeft.disabled = true;
+        if (arrowRight && totalSlides <= 1) arrowRight.disabled = true;
+
+        // Arrow clicks
+        if (arrowLeft) {
+          arrowLeft.addEventListener('click', (e) => {
+            e.stopPropagation();
+            goToSlide(currentIndex - 1);
+          });
+        }
+        if (arrowRight) {
+          arrowRight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            goToSlide(currentIndex + 1);
+          });
+        }
+
+        // Dot clicks
+        dots.forEach(dot => {
+          dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(dot.dataset.index, 10);
+            if (!isNaN(idx)) goToSlide(idx);
+          });
+        });
+
+        // Touch / Swipe support
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchDeltaX = 0;
+        let isSwiping = false;
+        const swipeThreshold = 40;
+
+        carousel.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchDeltaX = 0;
+          isSwiping = false;
+          track.classList.add('is-dragging');
+        }, { passive: true });
+
+        carousel.addEventListener('touchmove', (e) => {
+          const dx = e.touches[0].clientX - touchStartX;
+          const dy = e.touches[0].clientY - touchStartY;
+
+          // Only start swiping if horizontal movement dominates
+          if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+            isSwiping = true;
+          }
+
+          if (isSwiping) {
+            e.preventDefault();
+            touchDeltaX = dx;
+            const carouselWidth = carousel.offsetWidth;
+            const baseOffset = -currentIndex * carouselWidth;
+            track.style.transform = `translateX(${baseOffset + touchDeltaX}px)`;
+          }
+        }, { passive: false });
+
+        carousel.addEventListener('touchend', () => {
+          track.classList.remove('is-dragging');
+          if (isSwiping) {
+            if (touchDeltaX < -swipeThreshold && currentIndex < totalSlides - 1) {
+              goToSlide(currentIndex + 1);
+            } else if (touchDeltaX > swipeThreshold && currentIndex > 0) {
+              goToSlide(currentIndex - 1);
+            } else {
+              goToSlide(currentIndex); // snap back
+            }
+          }
+          touchDeltaX = 0;
+          isSwiping = false;
+        }, { passive: true });
       });
 
       // ---- Comment toggle (focus input) ----

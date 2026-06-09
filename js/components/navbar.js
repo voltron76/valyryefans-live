@@ -119,6 +119,26 @@ export function renderNavbar() {
         ${getTheme() === 'dark' ? SUN_ICON : MOON_ICON}
       </button>
       ${isAuth ? `
+      <a href="#/notifications" class="theme-toggle" style="position:relative;" aria-label="Notifications" title="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        ${(s.notifications?.filter(n => !n.read).length || 0) > 0 ? `
+          <span style="
+            position: absolute; top: 2px; right: 2px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gradient-accent);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg-primary);
+          ">${s.notifications.filter(n => !n.read).length}</span>
+        ` : ''}
+      </a>
+      ` : ''}
+      ${isAuth ? `
         <div style="position:relative;">
         <button class="nav-avatar" id="nav-avatar-btn" title="${user?.name || 'Profile'}" aria-label="Open profile menu" aria-haspopup="true" aria-expanded="false">
             ${user?.avatarUrl
@@ -308,9 +328,16 @@ export function renderMobileNav() {
             <span>Chat</span>
           </a>
         `}
-        <a href="#/notifications" class="mobile-nav-item${window.location.hash === '#/notifications' ? ' active' : ''}">
+        <a href="#/notifications" class="mobile-nav-item${window.location.hash === '#/notifications' ? ' active' : ''}" style="position:relative;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          ${unread > 0 ? '<span class="mobile-nav-badge"></span>' : ''}
+          ${unread > 0 ? `<span class="mobile-nav-badge" style="
+            position:absolute; top:2px; right:50%; transform:translateX(12px);
+            min-width:16px; height:16px; border-radius:8px;
+            background:var(--gradient-accent); color:#fff;
+            font-size:9px; font-weight:700;
+            display:flex; align-items:center; justify-content:center;
+            padding:0 3px; border:2px solid var(--bg-primary);
+          ">${unread}</span>` : ''}
           <span>Alerts</span>
         </a>
         <a href="#/profile" class="mobile-nav-item${window.location.hash === '#/profile' ? ' active' : ''}">

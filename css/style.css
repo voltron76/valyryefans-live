@@ -2993,6 +2993,122 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
 }
 .post-card__media--locked::after { display: none; }
 
+/* --- Post Carousel --- */
+.post-card__carousel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  touch-action: pan-y pinch-zoom;
+}
+
+.post-card__carousel-track {
+  display: flex;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+.post-card__carousel-track img {
+  flex-shrink: 0;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Dot Indicators */
+.post-card__carousel-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.carousel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.carousel-dot.active {
+  background: var(--accent, #e1306c);
+  transform: scale(1.3);
+  box-shadow: 0 0 6px rgba(225, 48, 108, 0.5);
+}
+
+/* Arrow Buttons */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.post-card__carousel:hover .carousel-arrow {
+  opacity: 1;
+}
+
+.carousel-arrow:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.carousel-arrow--left {
+  left: 8px;
+}
+
+.carousel-arrow--right {
+  right: 8px;
+}
+
+/* Hide arrow when at boundary */
+.carousel-arrow[disabled] {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* On touch devices always show arrows subtly */
+@media (hover: none) and (pointer: coarse) {
+  .carousel-arrow {
+    opacity: 0.6;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+}
+
+/* Disable the track transition during touch drag for responsiveness */
+.post-card__carousel-track.is-dragging {
+  transition: none;
+}
+
 /* --- Post Actions --- */
 .post-card__actions {
   display: flex;

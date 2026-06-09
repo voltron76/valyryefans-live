@@ -301,14 +301,144 @@ export async function initStore() {
       });
 
       // Update Creator Stats
-      state.creatorProfile.stats.posts = state.content.length;
-      state.creatorProfile.stats.photos = state.content.filter(c => c.type === 'photo' || c.type === 'carousel').length;
-      state.creatorProfile.stats.videos = state.content.filter(c => c.type === 'video').length;
+      state.creatorProfile.stats.posts = state.content.filter(c => c.category !== 'story').length;
+      state.creatorProfile.stats.photos = state.content.filter(c => (c.type === 'photo' || c.type === 'carousel') && c.category !== 'story').length;
+      state.creatorProfile.stats.videos = state.content.filter(c => c.type === 'video' && c.category !== 'story').length;
+
+      // Generate notifications from actual content/messages
+      if (session && !state.isAdmin) {
+        generateNotifications(state, session);
+      }
     }
 
   } catch (err) {
     console.error('Error initializing store:', err);
   }
+}
+
+// ------------------------------------
+// Notification Generation
+// ------------------------------------
+function formatRelativeTime(dateStr) {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return formatDate(dateStr);
+}
+
+function generateNotifications(st, session) {
+  const notifications = [];
+  const userTier = st.currentTier || 'free';
+  const lastSeen = localStorage.getItem('vf-last-notif-seen') || '1970-01-01T00:00:00Z';
+  const lastSeenTime = new Date(lastSeen).getTime();
+
+  // 1. Content upload notifications (non-story feed posts)
+  const feedPosts = st.content.filter(c => c.category !== 'story');
+  feedPosts.forEach(post => {
+    // Free content → everyone gets notified. Gold content → only gold users
+    if (post.minTier === 'gold' && userTier !== 'gold') return;
+
+    const postTime = new Date(post.rawCreatedAt).getTime();
+    const isNew = postTime > lastSeenTime;
+    const typeLabel = post.type === 'video' ? '🎬 New Video' : post.media?.length > 1 ? '📸 New Photo Set' : '📷 New Post';
+
+    notifications.push({
+      id: `notif-post-${post.id}`,
+      type: 'new_post',
+      title: `${typeLabel}${post.minTier === 'gold' ? ' (Gold Exclusive)' : ''}`,
+      message: `Valyrye posted "${post.title || 'New content'}"${post.minTier === 'gold' ? ' — exclusive for Gold members!' : ''}`,
+      time: formatRelativeTime(post.rawCreatedAt),
+      rawTime: post.rawCreatedAt,
+      read: !isNew,
+      link: `/content/${post.id}`
+    });
+  });
+
+  // 2. Story notifications
+  const stories = st.content.filter(c => c.category === 'story');
+  // Group stories by date (same day = one notification)
+  const storyDates = new Map();
+  stories.forEach(story => {
+    const day = new Date(story.rawCreatedAt).toDateString();
+    if (!storyDates.has(day)) storyDates.set(day, story);
+  });
+  storyDates.forEach((story, day) => {
+    const storyTime = new Date(story.rawCreatedAt).getTime();
+    const isNew = storyTime > lastSeenTime;
+    notifications.push({
+      id: `notif-story-${day}`,
+      type: 'new_post',
+      title: '🔥 New Story',
+      message: `Valyrye added a new story — check it out before it disappears!`,
+      time: formatRelativeTime(story.rawCreatedAt),
+      rawTime: story.rawCreatedAt,
+      read: !isNew,
+      link: '/'
+    });
+  });
+
+  // 3. Message notifications (unread incoming messages)
+  const incomingMsgs = st.messages.filter(m => m.sender === 'valyrye');
+  if (incomingMsgs.length > 0) {
+    const latest = incomingMsgs[incomingMsgs.length - 1];
+    notifications.push({
+      id: `notif-msg-latest`,
+      type: 'message',
+      title: '💬 New Message from Valyrye',
+      message: latest.content?.substring(0, 80) + (latest.content?.length > 80 ? '...' : ''),
+      time: latest.time || 'Recently',
+      rawTime: null,
+      read: false,
+      link: '/messages'
+    });
+  }
+
+  // 4. Subscription welcome notification
+  if (userTier === 'gold') {
+    notifications.push({
+      id: 'notif-sub-welcome',
+      type: 'subscription',
+      title: '⭐ Gold VIP Active',
+      message: 'You have full access to all exclusive content. Enjoy your Gold membership!',
+      time: 'Active',
+      rawTime: null,
+      read: true,
+      link: '/profile'
+    });
+  }
+
+  // 5. Welcome notification (always present)
+  notifications.push({
+    id: 'notif-welcome',
+    type: 'system',
+    title: '👋 Welcome to ValyryeFans',
+    message: 'Explore exclusive content and connect with Valyrye. Enjoy your experience!',
+    time: 'Welcome',
+    rawTime: null,
+    read: true,
+    link: '/'
+  });
+
+  // Sort: unread first, then by rawTime descending
+  notifications.sort((a, b) => {
+    if (a.read !== b.read) return a.read ? 1 : -1;
+    if (a.rawTime && b.rawTime) return new Date(b.rawTime) - new Date(a.rawTime);
+    return 0;
+  });
+
+  // Limit to 30 most recent
+  st.notifications = notifications.slice(0, 30);
+
+  // Save current time as last seen
+  localStorage.setItem('vf-last-notif-seen', new Date().toISOString());
 }
 
 async function loadAdminData() {
