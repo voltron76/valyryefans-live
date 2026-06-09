@@ -5,6 +5,8 @@
 const routes = {};
 let currentCleanup = null;
 
+import { renderFooter } from './components/footer.js';
+
 export function registerRoute(path, handler) {
   routes[path] = handler;
 }
@@ -78,9 +80,9 @@ async function handleRouteChange() {
     const result = await matched.handler(matched.params);
 
     if (typeof result === 'string') {
-      mainContent.innerHTML = result;
+      mainContent.innerHTML = result + renderFooter();
     } else if (result && typeof result === 'object') {
-      if (result.html) mainContent.innerHTML = result.html;
+      if (result.html) mainContent.innerHTML = result.html + renderFooter();
       if (result.cleanup) currentCleanup = result.cleanup;
       if (result.afterRender) {
         requestAnimationFrame(() => result.afterRender());
