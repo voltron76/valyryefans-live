@@ -3687,3 +3687,36 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   gap: 4px;
 }
 
+/* Gold Verified Badge */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  margin-left: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.verified-badge svg {
+  width: 10px;
+  height: 10px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 3;
+}
+[data-theme='light'] .verified-badge {
+  background: linear-gradient(135deg, #E91E8C, #FF6EC7);
+}
+
+/* Gold avatar ring */
+.avatar-ring--gold {
+  border: 3px solid #FFD700 !important;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+[data-theme='light'] .avatar-ring--gold {
+  border-color: #E91E8C !important;
+  box-shadow: 0 0 8px rgba(233, 30, 140, 0.4);
+}

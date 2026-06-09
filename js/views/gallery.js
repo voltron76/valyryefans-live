@@ -165,7 +165,7 @@ export function renderGallery() {
           let show = true;
 
           switch (filter) {
-            case 'image':     show = type === 'photo'; break;
+            case 'image':     show = type === 'photo' || type === 'carousel'; break;
             case 'video':     show = type === 'video'; break;
             case 'free':      show = tier === 'free'; break;
             case 'exclusive': show = tier !== 'free'; break;

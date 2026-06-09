@@ -194,7 +194,7 @@ export async function initStore() {
       if (!state.isAdmin) {
         const { data: msgs } = await supabase.from('messages')
           .select('*')
-          .or(`recipient_id.eq.${session.user.id},recipient_id.is.null`)
+          .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id},recipient_id.is.null`)
           .order('created_at', { ascending: true });
         if (msgs) {
           state.messages = msgs.map(m => ({
@@ -339,6 +339,9 @@ function generateNotifications(st, session) {
   const userTier = st.currentTier || 'free';
   const lastSeen = localStorage.getItem('vf-last-notif-seen') || '1970-01-01T00:00:00Z';
   const lastSeenTime = new Date(lastSeen).getTime();
+  // Load persisted read notification IDs
+  let readIds = [];
+  try { readIds = JSON.parse(localStorage.getItem('vf-read-notif-ids') || '[]'); } catch(e) {}
 
   // 1. Content upload notifications (non-story feed posts)
   const feedPosts = st.content.filter(c => c.category !== 'story');
@@ -347,11 +350,12 @@ function generateNotifications(st, session) {
     if (post.minTier === 'gold' && userTier !== 'gold') return;
 
     const postTime = new Date(post.rawCreatedAt).getTime();
-    const isNew = postTime > lastSeenTime;
+    const notifId = `notif-post-${post.id}`;
+    const isNew = postTime > lastSeenTime && !readIds.includes(notifId);
     const typeLabel = post.type === 'video' ? '🎬 New Video' : post.media?.length > 1 ? '📸 New Photo Set' : '📷 New Post';
 
     notifications.push({
-      id: `notif-post-${post.id}`,
+      id: notifId,
       type: 'new_post',
       title: `${typeLabel}${post.minTier === 'gold' ? ' (Gold Exclusive)' : ''}`,
       message: `Valyrye posted "${post.title || 'New content'}"${post.minTier === 'gold' ? ' — exclusive for Gold members!' : ''}`,
@@ -372,9 +376,10 @@ function generateNotifications(st, session) {
   });
   storyDates.forEach((story, day) => {
     const storyTime = new Date(story.rawCreatedAt).getTime();
-    const isNew = storyTime > lastSeenTime;
+    const notifId = `notif-story-${day}`;
+    const isNew = storyTime > lastSeenTime && !readIds.includes(notifId);
     notifications.push({
-      id: `notif-story-${day}`,
+      id: notifId,
       type: 'new_post',
       title: '🔥 New Story',
       message: `Valyrye added a new story — check it out before it disappears!`,
@@ -389,14 +394,15 @@ function generateNotifications(st, session) {
   const incomingMsgs = st.messages.filter(m => m.sender === 'valyrye');
   if (incomingMsgs.length > 0) {
     const latest = incomingMsgs[incomingMsgs.length - 1];
+    const msgNotifId = 'notif-msg-latest';
     notifications.push({
-      id: `notif-msg-latest`,
+      id: msgNotifId,
       type: 'message',
       title: '💬 New Message from Valyrye',
       message: latest.content?.substring(0, 80) + (latest.content?.length > 80 ? '...' : ''),
       time: latest.time || 'Recently',
       rawTime: null,
-      read: false,
+      read: readIds.includes(msgNotifId),
       link: '/messages'
     });
   }
@@ -436,9 +442,6 @@ function generateNotifications(st, session) {
 
   // Limit to 30 most recent
   st.notifications = notifications.slice(0, 30);
-
-  // Save current time as last seen
-  localStorage.setItem('vf-last-notif-seen', new Date().toISOString());
 }
 
 async function loadAdminData() {
@@ -805,16 +808,36 @@ export async function updateCardInfo(last4) {
 export async function uploadProfilePicture(file) {
   if (!state.user.id || !file) return null;
   try {
-    const fileExt = file.name.split('.').pop();
+    const fileExt = file.name.split('.').pop().toLowerCase();
     const filePath = `avatars/${state.user.id}.${fileExt}`;
     
-    const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file, { upsert: true });
-    if (uploadError) throw uploadError;
+    // Upload with content type
+    const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file, { 
+      upsert: true,
+      contentType: file.type || `image/${fileExt}`
+    });
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      throw uploadError;
+    }
     
-    const { data } = supabase.storage.from('media').getPublicUrl(filePath);
-    const avatarUrl = data.publicUrl;
+    // Try public URL first
+    let avatarUrl;
+    const { data: publicData } = supabase.storage.from('media').getPublicUrl(filePath);
+    if (publicData?.publicUrl) {
+      // Add cache-buster to avoid stale cached images
+      avatarUrl = publicData.publicUrl + '?t=' + Date.now();
+    } else {
+      // Fallback to signed URL
+      const { data: signedData } = await supabase.storage.from('media').createSignedUrl(filePath, 60 * 60 * 24 * 365);
+      avatarUrl = signedData?.signedUrl;
+    }
+
+    if (!avatarUrl) throw new Error('Could not generate avatar URL');
     
-    await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', state.user.id);
+    // Update DB
+    const { error: dbError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', state.user.id);
+    if (dbError) console.error('Profile DB update error:', dbError);
     
     state.user.avatarUrl = avatarUrl;
     notify('user');
@@ -822,7 +845,7 @@ export async function uploadProfilePicture(file) {
     return avatarUrl;
   } catch (e) {
     console.error('Error uploading profile picture:', e);
-    showToast('Failed to upload profile picture', 'error');
+    showToast('Failed to upload: ' + (e.message || 'Unknown error'), 'error');
     return null;
   }
 }

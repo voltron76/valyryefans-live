@@ -140,7 +140,7 @@ export function renderNavbar() {
       ` : ''}
       ${isAuth ? `
         <div style="position:relative;">
-        <button class="nav-avatar" id="nav-avatar-btn" title="${user?.name || 'Profile'}" aria-label="Open profile menu" aria-haspopup="true" aria-expanded="false">
+        <button class="nav-avatar ${s.currentTier === 'gold' ? 'avatar-ring--gold' : ''}" id="nav-avatar-btn" title="${user?.name || 'Profile'}" aria-label="Open profile menu" aria-haspopup="true" aria-expanded="false">
             ${user?.avatarUrl
               ? `<img src="${user.avatarUrl}" alt="${(user?.name || 'U').charAt(0)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
               : `<div style="width:100%;height:100%;background:var(--gradient-accent);display:flex;align-items:center;justify-content:center;color:var(--btn-primary-text);font-weight:700;font-size:14px;">${(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</div>`

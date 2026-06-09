@@ -27,6 +27,8 @@ const icons = {
   play: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
 };
 
+const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>';
+
 const tierConfig = {
   free: { label: 'Free', color: 'var(--text-muted)', icon: icons.zap, gradient: 'var(--gradient-subtle)' },
   gold: { label: 'Gold', color: 'var(--gold)', icon: icons.crown, gradient: 'var(--gradient-gold)' },
@@ -132,18 +134,19 @@ export function renderProfile() {
       <!-- Profile Header -->
       <div class="card-glass animate-fade-in-up stagger-1" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6); text-align: center;">
         <div class="profile-avatar-container" id="profile-avatar-click" title="Change profile picture">
-          <div style="width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid var(--border-accent);">
+          <div style="width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid var(--border-accent);" class="${tier === 'gold' ? 'avatar-ring--gold' : ''}">
             ${avatarUrl
               ? `<img id="profile-avatar-img" src="${escapeHtml(avatarUrl)}" alt="Profile" style="width:100%;height:100%;object-fit:cover;">`
               : `<div id="profile-avatar-img" style="width:100%;height:100%;background:var(--gradient-accent);display:flex;align-items:center;justify-content:center;color:var(--btn-primary-text);font-weight:700;font-size:32px;">${initials}</div>`
             }
           </div>
+          ${tier === 'gold' ? `<div style="position:absolute;bottom:4px;right:4px;z-index:2;">${verifiedBadgeSvg}</div>` : ''}
           <div class="profile-avatar-overlay">
             ${icons.camera}
           </div>
           <input type="file" id="profile-avatar-input" accept="image/*" style="display:none;">
         </div>
-        <h1 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-1);">${escapeHtml(user.name) || 'User'}</h1>
+        <h1 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-1); display: flex; align-items: center; justify-content: center; gap: 4px;">${escapeHtml(user.name) || 'User'}${tier === 'gold' ? verifiedBadgeSvg : ''}</h1>
         <p style="color: var(--text-muted); font-size: var(--text-sm); display: flex; align-items: center; justify-content: center; gap: var(--space-2);">
           ${icons.mail} ${escapeHtml(user.email) || 'user@example.com'}
         </p>

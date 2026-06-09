@@ -15,6 +15,8 @@ const icons = {
   video: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
 };
 
+const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>';
+
 function renderMessageBubble(msg) {
   const isSent = msg.sender === 'fan';
   const isRequest = msg.type === 'request';
@@ -41,8 +43,16 @@ function renderMessageBubble(msg) {
       </div>`;
   }
 
+  const s = getState();
+  const isGoldUser = s.currentTier === 'gold';
+  const senderName = isSent ? (s.user?.name || 'You') : 'Valyrye';
+  const nameHtml = isSent && isGoldUser
+    ? `<div style="font-size:var(--text-xs);font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:2px;color:var(--text-secondary);">${senderName}${verifiedBadgeSvg}</div>`
+    : '';
+
   return `
     <div class="message-bubble message-bubble--${isSent ? 'sent' : 'received'}">
+      ${nameHtml}
       ${mediaHtml}
       <div>${msg.content}</div>
       <div class="message-time">${msg.time}</div>

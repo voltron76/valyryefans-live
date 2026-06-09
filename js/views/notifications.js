@@ -167,6 +167,47 @@ export function renderNotifications() {
   return {
     html,
     afterRender() {
+      // Helper: update navbar badges in real-time
+      function updateBadges() {
+        const s = getState();
+        const unread = s.notifications?.filter(n => !n.read).length || 0;
+
+        // Save read notification IDs to localStorage for persistence
+        const readIds = s.notifications?.filter(n => n.read).map(n => n.id) || [];
+        localStorage.setItem('vf-read-notif-ids', JSON.stringify(readIds));
+
+        // Update desktop navbar badge
+        const desktopBadge = document.querySelector('a[href="#/notifications"] > span[style*="position: absolute"]');
+        if (desktopBadge) {
+          if (unread > 0) {
+            desktopBadge.textContent = unread;
+          } else {
+            desktopBadge.remove();
+          }
+        }
+
+        // Update mobile navbar badge
+        const mobileBadge = document.querySelector('.mobile-bottom-nav .mobile-nav-badge');
+        if (mobileBadge) {
+          if (unread > 0) {
+            mobileBadge.textContent = unread;
+          } else {
+            mobileBadge.remove();
+          }
+        }
+
+        // Update header count badge
+        const headerBadge = document.querySelector('.section__header span[style*="gradient-accent"]');
+        if (headerBadge) {
+          if (unread > 0) {
+            headerBadge.textContent = unread;
+          } else {
+            headerBadge.remove();
+            document.getElementById('mark-all-read-btn')?.remove();
+          }
+        }
+      }
+
       // Mark all as read
       const markAllBtn = document.getElementById('mark-all-read-btn');
       markAllBtn?.addEventListener('click', () => {
@@ -174,11 +215,18 @@ export function renderNotifications() {
         if (s.notifications) {
           s.notifications = s.notifications.map(n => ({ ...n, read: true }));
         }
-        showToast('All notifications marked as read', 'success');
-        navigate('/notifications');
+        // Update all cards visually
+        document.querySelectorAll('.notification-card').forEach(card => {
+          card.style.borderLeftColor = 'transparent';
+          card.style.background = 'var(--bg-card)';
+          const dot = card.querySelector('div[style*="width: 8px"]');
+          if (dot) dot.remove();
+        });
+        updateBadges();
+        showToast('All notifications marked as read ✓', 'success');
       });
 
-      // Click individual notification — mark as read + navigate to link
+      // Click individual notification — mark as read + update badge + navigate
       document.querySelectorAll('.notification-card').forEach(card => {
         card.addEventListener('click', () => {
           const id = card.dataset.id;
@@ -188,6 +236,12 @@ export function renderNotifications() {
             const notif = s.notifications.find(n => n.id === id);
             if (notif && !notif.read) {
               notif.read = true;
+              // Update card visually
+              card.style.borderLeftColor = 'transparent';
+              card.style.background = 'var(--bg-card)';
+              const dot = card.querySelector('div[style*="width: 8px"]');
+              if (dot) dot.remove();
+              updateBadges();
             }
           }
           // Navigate to the linked page

@@ -6,6 +6,8 @@
 import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, activePromo, incrementStoryView } from '../store.js';
 import { navigate } from '../router.js';
 
+const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>';
+
 let activeProgressInterval = null;
 
 // ------------------------------------
@@ -220,12 +222,17 @@ function renderPostCard(item, creatorProfile) {
 
       <!-- Comments Section -->
       <div class="post-card__comments" id="comments-${item.id}">
-        ${lastComments.map(c => `
+        ${lastComments.map(c => {
+          const state = getState();
+          const isCurrentUserGold = state.currentTier === 'gold' && c.userName === (state.user?.name || '');
+          const showBadge = c.isCreator || isCurrentUserGold;
+          return `
           <div class="post-comment">
-            <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}</strong>
+            <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong>
             <span>${c.text}</span>
           </div>
-        `).join('')}
+        `;
+        }).join('')}
         ${commentsArr.length > 2 ? `<button class="post-comments__more" data-id="${item.id}">View all ${commentsArr.length} comments</button>` : ''}
         <div class="post-comment-input" data-id="${item.id}">
           <input type="text" placeholder="Add a comment..." class="comment-input" data-id="${item.id}">
@@ -431,7 +438,8 @@ export function renderHome() {
           if (commentsContainer) {
             const commentDiv = document.createElement('div');
             commentDiv.className = 'post-comment animate-fade-in-up';
-            commentDiv.innerHTML = `<strong>${state.user?.name || 'You'}</strong> <span>${text}</span>`;
+            const isGold = state.currentTier === 'gold';
+            commentDiv.innerHTML = `<strong>${state.user?.name || 'You'}${isGold ? verifiedBadgeSvg : ''}</strong> <span>${text}</span>`;
             const inputWrap = commentsContainer.querySelector('.post-comment-input');
             commentsContainer.insertBefore(commentDiv, inputWrap);
           }
