@@ -3695,7 +3695,7 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #B76E79, #D4A0A8);
+  background: linear-gradient(135deg, #FFD700, #FFA500);
   margin-left: 4px;
   vertical-align: middle;
   flex-shrink: 0;
@@ -3708,17 +3708,17 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   stroke-width: 3;
 }
 [data-theme='light'] .verified-badge {
-  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  background: linear-gradient(135deg, #E91E8C, #FF6EC7);
 }
 
 /* Gold avatar ring */
 .avatar-ring--gold {
-  border: 3px solid #B76E79 !important;
-  box-shadow: 0 0 10px rgba(183, 110, 121, 0.45);
+  border: 3px solid #FFD700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
 }
 [data-theme='light'] .avatar-ring--gold {
-  border-color: #7C3AED !important;
-  box-shadow: 0 0 10px rgba(124, 58, 237, 0.4);
+  border-color: #E91E8C !important;
+  box-shadow: 0 0 10px rgba(233, 30, 140, 0.4);
 }
 
 /* Promo Banner */
