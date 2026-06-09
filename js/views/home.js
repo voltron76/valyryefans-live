@@ -3,7 +3,7 @@
 // Premium OnlyFans-style creator feed
 // ============================================================
 
-import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, activePromo, incrementStoryView } from '../store.js';
+import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, incrementStoryView } from '../store.js';
 import { navigate } from '../router.js';
 
 const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>';
@@ -27,15 +27,35 @@ const icons = {
 // Promo Banner
 // ------------------------------------
 function renderPromoBanner(promo) {
-  if (!promo || !promo.active) return '';
+  if (!promo) return '';
+  const color = promo.color || '#E91E8C';
+  let countdownHtml = '';
+  if (promo.expiresAt) {
+    countdownHtml = `<div class="promo-banner__countdown" id="promo-countdown">⏰ Calculating...</div>`;
+  }
   return `
-    <div class="promo-banner animate-fade-in-up">
-      <div class="promo-banner__content">
-        <span class="promo-banner__text">${promo.text}</span>
-        <span class="promo-banner__code">Code: ${promo.code}</span>
-        <span class="promo-banner__timer">⏰ ${promo.expiresIn}</span>
+    <div class="promo-banner animate-fade-in-up" id="promo-banner" style="background: linear-gradient(135deg, ${color}, ${color}dd, ${color}); color: #fff;">
+      <div class="promo-banner__shimmer"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); position: relative; z-index: 1;">
+        <div style="flex: 1; min-width: 200px;">
+          <div style="font-weight: 800; font-size: var(--text-xl); letter-spacing: -0.5px; margin-bottom: var(--space-1);">
+            🔥 ${promo.discount}% OFF
+          </div>
+          <div style="font-size: var(--text-sm); opacity: 0.9;">
+            ${promo.description || 'Limited time offer!'}
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;">
+          <div style="padding: var(--space-2) var(--space-4); background: rgba(255,255,255,0.2); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.25);">
+            Code: ${promo.code}
+          </div>
+          ${countdownHtml}
+          <a href="#/subscribe" class="btn btn-sm" style="background: #fff; color: ${color}; font-weight: 700; border: none;">
+            Subscribe Now →
+          </a>
+        </div>
       </div>
-      <button class="promo-banner__close" id="close-promo">✕</button>
+      <button id="close-promo" style="position: absolute; top: var(--space-2); right: var(--space-3); background: rgba(255,255,255,0.2); border: none; color: #fff; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; z-index: 2;">✕</button>
     </div>`;
 }
 
@@ -294,8 +314,8 @@ export function renderHome() {
   const { creatorProfile, content, currentTier } = state;
   const isGold = currentTier === 'gold' || state.user?.tier === 'gold';
 
-  // Promo data (may be undefined if not exported from store)
-  const promo = typeof activePromo !== 'undefined' ? activePromo : null;
+  // Promo data from state
+  const promo = state.activePromo;
 
   // Polls data (may be undefined if not exported from store)
   const pollList = typeof polls !== 'undefined' && Array.isArray(polls) ? polls : [];
@@ -354,13 +374,44 @@ export function renderHome() {
     afterRender() {
       // ---- Close Promo Banner ----
       document.getElementById('close-promo')?.addEventListener('click', () => {
-        const banner = document.querySelector('.promo-banner');
+        const banner = document.getElementById('promo-banner');
         if (banner) {
           banner.style.opacity = '0';
           banner.style.transform = 'translateY(-100%)';
           setTimeout(() => banner.remove(), 300);
+          sessionStorage.setItem('promo-dismissed', 'true');
         }
       });
+
+      // ---- Promo Countdown Timer ----
+      const countdownEl = document.getElementById('promo-countdown');
+      if (countdownEl) {
+        const state = getState();
+        const expiresAt = state.activePromo?.expiresAt;
+        if (expiresAt) {
+          const updateCountdown = () => {
+            const now = Date.now();
+            const end = new Date(expiresAt).getTime();
+            const diff = end - now;
+            if (diff <= 0) {
+              countdownEl.textContent = '⏰ Expired';
+              const banner = document.getElementById('promo-banner');
+              if (banner) { banner.style.opacity = '0.5'; }
+              return;
+            }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            let text = '⏰ ';
+            if (d > 0) text += `${d}d `;
+            text += `${h}h ${m}m ${s}s`;
+            countdownEl.textContent = text;
+          };
+          updateCountdown();
+          setInterval(updateCountdown, 1000);
+        }
+      }
 
       // ---- Feed Tab Switching ----
       document.querySelectorAll('.feed-tab').forEach(tab => {

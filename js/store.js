@@ -58,6 +58,7 @@ export const state = {
   content: [], // Loaded from DB
   messages: [], // Loaded from DB
   notifications: [],
+  activePromo: null, // { id, code, discount, description, color, expiresAt }
   bookmarks: [],
   ui: {
     authModalOpen: false,
@@ -308,6 +309,31 @@ export async function initStore() {
       // Generate notifications from actual content/messages
       if (session && !state.isAdmin) {
         generateNotifications(state, session);
+      }
+
+      // Load active promo
+      const { data: promos } = await supabase.from('content')
+        .select('*')
+        .eq('category', 'promo')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (promos && promos.length > 0) {
+        const p = promos[0];
+        const expiresAt = p.description ? p.description.split('|')[2] : null;
+        // Only show if not expired
+        if (!expiresAt || new Date(expiresAt) > new Date()) {
+          const parts = (p.description || '').split('|');
+          state.activePromo = {
+            id: p.id,
+            code: p.title || 'PROMO',
+            discount: parseInt(parts[0]) || 20,
+            description: parts[1] || 'Limited time offer!',
+            color: parts[3] || '#E91E8C',
+            expiresAt: expiresAt || null,
+          };
+        } else {
+          state.activePromo = null;
+        }
       }
     }
 
@@ -900,10 +926,44 @@ export async function sendWelcomeMessage() {
 // ------------------------------------
 // Promotion System
 // ------------------------------------
-export const activePromo = {
-  active: true,
-  text: '🔥 Summer Special — 40% OFF first month!',
-  code: 'SUMMER40',
-  expiresIn: '2d 14h',
-  discount: 40
-};
+// Promo Management
+// ------------------------------------
+export async function createPromo({ code, discount, description, color, expiresAt }) {
+  try {
+    // Delete any existing promos first
+    await supabase.from('content').delete().eq('category', 'promo');
+
+    // Store promo data: description field = "discount|text|expiresAt|color"
+    const descStr = `${discount}|${description}|${expiresAt || ''}|${color || '#E91E8C'}`;
+    const { data, error } = await supabase.from('content').insert([{
+      title: code,
+      description: descStr,
+      type: 'photo',
+      category: 'promo',
+      min_tier: 'free',
+      likes: 0
+    }]).select().single();
+
+    if (error) throw error;
+
+    state.activePromo = { id: data.id, code, discount, description, color, expiresAt };
+    notify('activePromo');
+    showToast('Promo created and live! 🎉', 'success');
+    return data;
+  } catch (e) {
+    console.error('Error creating promo:', e);
+    showToast('Failed to create promo', 'error');
+    return null;
+  }
+}
+
+export async function deletePromo() {
+  try {
+    await supabase.from('content').delete().eq('category', 'promo');
+    state.activePromo = null;
+    notify('activePromo');
+    showToast('Promo deactivated', 'success');
+  } catch (e) {
+    console.error('Error deleting promo:', e);
+  }
+}

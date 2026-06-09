@@ -46,11 +46,15 @@ const faqItems = [
   },
 ];
 
-function renderTierCard(tier, index, currentTier) {
+function renderTierCard(tier, index, currentTier, promoDiscount) {
   const isPopular = tier.popular;
   const isCurrent = currentTier === tier.id;
   const stagger = `stagger-${Math.min(index + 1, 12)}`;
   const icon = tierIcons[tier.id] || icons.star;
+
+  // Calculate discounted price
+  const hasDiscount = promoDiscount > 0 && tier.price > 0;
+  const discountedPrice = hasDiscount ? tier.price * (1 - promoDiscount / 100) : tier.price;
 
   return `
     <div class="tier-card${isPopular ? ' tier-card--popular' : ''} animate-fade-in-up ${stagger}">
@@ -65,17 +69,32 @@ function renderTierCard(tier, index, currentTier) {
       </div>
 
       <div class="tier-card__price">
-        <span class="tier-card__amount">${tier.price === 0 ? 'Free' : '$' + tier.price.toFixed(2)}</span>
+        ${hasDiscount ? `
+          <span style="font-size: var(--text-lg); text-decoration: line-through; color: var(--text-muted); margin-right: var(--space-2);">$${tier.price.toFixed(2)}</span>
+          <span class="tier-card__amount" style="color: var(--success);">$${discountedPrice.toFixed(2)}</span>
+        ` : `
+          <span class="tier-card__amount">${tier.price === 0 ? 'Free' : '$' + tier.price.toFixed(2)}</span>
+        `}
         ${tier.period ? `<span class="tier-card__period">${tier.period}</span>` : ''}
       </div>
 
-      ${tier.price > 0 ? `
+      ${hasDiscount ? `
+        <div style="font-size: var(--text-xs); color: var(--success); margin-bottom: var(--space-3); margin-top: calc(-1 * var(--space-3)); font-weight: 600;">
+          🎉 ${promoDiscount}% discount applied — first month only!
+        </div>
+      ` : ''}
+
+      ${tier.price > 0 && !hasDiscount ? `
         <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-6); margin-top: calc(-1 * var(--space-4));">
           Billed monthly · Cancel anytime
         </div>
-      ` : `
+      ` : tier.price === 0 ? `
         <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-6); margin-top: calc(-1 * var(--space-4));">
           No credit card required
+        </div>
+      ` : `
+        <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-6); margin-top: calc(-1 * var(--space-4));">
+          Billed monthly · Cancel anytime
         </div>
       `}
 
@@ -104,11 +123,28 @@ function renderTierCard(tier, index, currentTier) {
 export function renderSubscribe() {
   const state = getState();
   const { tiers, currentTier, creatorProfile } = state;
+  const promoDiscount = state.activePromo?.discount || 0;
+  const promoCode = state.activePromo?.code || '';
 
-  const tiersHtml = tiers.map((tier, i) => renderTierCard(tier, i, currentTier)).join('');
+  const tiersHtml = tiers.map((tier, i) => renderTierCard(tier, i, currentTier, promoDiscount)).join('');
 
   const html = `
     <div style="min-height: calc(100vh - var(--nav-height));">
+      <!-- Active Promo Banner -->
+      ${state.activePromo ? `
+        <div class="section" style="padding-bottom: 0;">
+          <div class="promo-banner animate-fade-in-up" style="background: linear-gradient(135deg, ${state.activePromo.color || '#E91E8C'}, ${state.activePromo.color || '#E91E8C'}dd); color: #fff; max-width: 700px; margin: 0 auto;">
+            <div class="promo-banner__shimmer"></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); position: relative; z-index: 1;">
+              <div>
+                <div style="font-weight: 800; font-size: var(--text-lg);">🔥 ${state.activePromo.discount}% OFF — Code: ${state.activePromo.code}</div>
+                <div style="font-size: var(--text-sm); opacity: 0.9;">${state.activePromo.description}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
       <!-- Header -->
       <div class="section" style="text-align: center; padding-bottom: 0;">
         <div class="animate-fade-in-up stagger-1" style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: var(--radius-full); background: var(--accent-subtle); border: 2px solid var(--border-accent); margin-bottom: var(--space-6);">
@@ -120,6 +156,14 @@ export function renderSubscribe() {
         <p class="animate-fade-in-up stagger-3" style="color: var(--text-secondary); max-width: 500px; margin: 0 auto; font-size: var(--text-lg);">
           Unlock exclusive content, direct messaging, and personal interactions with ${creatorProfile.name}.
         </p>
+      </div>
+
+      <!-- Promo Code Input -->
+      <div class="section animate-fade-in-up stagger-4" style="padding-top: var(--space-6); padding-bottom: 0; max-width: 400px; margin: 0 auto;">
+        <div style="display: flex; gap: var(--space-2); align-items: center;">
+          <input class="form-input" type="text" id="promo-code-input" placeholder="Enter promo code" value="${promoCode}" style="flex: 1; text-transform: uppercase; text-align: center; font-weight: 600; letter-spacing: 1px;">
+          <button class="btn btn-secondary btn-sm" id="apply-promo-btn" style="white-space: nowrap;">${promoDiscount > 0 ? '✓ Applied' : 'Apply'}</button>
+        </div>
       </div>
 
       <!-- Tiers Grid -->
@@ -181,6 +225,24 @@ export function renderSubscribe() {
   return {
     html,
     afterRender() {
+      // Promo code apply
+      document.getElementById('apply-promo-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('promo-code-input');
+        const code = input?.value?.trim().toUpperCase();
+        const state = getState();
+        
+        if (!code) { showToast('Please enter a promo code', 'error'); return; }
+        
+        if (state.activePromo && state.activePromo.code.toUpperCase() === code) {
+          showToast(`🎉 Promo code "${code}" applied — ${state.activePromo.discount}% off!`, 'success');
+          // Store in session for checkout
+          sessionStorage.setItem('vf-promo', JSON.stringify(state.activePromo));
+          navigate('/subscribe'); // Re-render with discount
+        } else {
+          showToast('Invalid promo code', 'error');
+        }
+      });
+
       // Tier select buttons
       document.querySelectorAll('.tier-select-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -193,10 +255,12 @@ export function renderSubscribe() {
           }
 
           if (tier === 'gold') {
-            // Route through Stripe checkout
+            // Save promo for checkout
+            if (state.activePromo) {
+              sessionStorage.setItem('vf-promo', JSON.stringify(state.activePromo));
+            }
             navigate('/checkout');
           } else {
-            // Free tier — just set it
             state.currentTier = 'free';
             showToast('You\'re on the Free plan!', 'success');
             navigate('/profile');
