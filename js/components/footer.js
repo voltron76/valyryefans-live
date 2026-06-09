@@ -9,7 +9,7 @@ const socialIcons = {
   instagram: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>`,
   tiktok: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.73a8.19 8.19 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.16z"/></svg>`,
   twitter: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
-  youtube: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><polygon points="9.545 15.568 15.818 12 9.545 8.432" fill="var(--bg-primary)" /></svg>`,
+  youtube: '',
 };
 
 export function renderFooter() {
@@ -39,17 +39,14 @@ export function renderFooter() {
 
         <!-- Center: Social Icons -->
         <div class="site-footer__socials">
-          <a href="https://instagram.com" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="Instagram">
+          <a href="https://instagram.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="Instagram">
             ${socialIcons.instagram}
           </a>
-          <a href="https://tiktok.com" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="TikTok">
+          <a href="https://tiktok.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="TikTok">
             ${socialIcons.tiktok}
           </a>
-          <a href="https://x.com" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="X / Twitter">
+          <a href="https://x.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="X / Twitter">
             ${socialIcons.twitter}
-          </a>
-          <a href="https://youtube.com" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="YouTube">
-            ${socialIcons.youtube}
           </a>
         </div>
 
