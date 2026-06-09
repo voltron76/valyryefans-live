@@ -322,8 +322,8 @@ export function renderHome() {
 
   // Separate pinned posts and stories
   const stories = content.filter(c => c.category === 'story');
-  const pinnedPosts = content.filter(c => c.pinned && c.category !== 'story');
-  const regularPosts = content.filter(c => !c.pinned && c.category !== 'story');
+  const pinnedPosts = content.filter(c => c.pinned && c.category !== 'story' && c.category !== 'promo');
+  const regularPosts = content.filter(c => !c.pinned && c.category !== 'story' && c.category !== 'promo');
 
   const allStories = stories;
 

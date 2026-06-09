@@ -302,9 +302,9 @@ export async function initStore() {
       });
 
       // Update Creator Stats
-      state.creatorProfile.stats.posts = state.content.filter(c => c.category !== 'story').length;
-      state.creatorProfile.stats.photos = state.content.filter(c => (c.type === 'photo' || c.type === 'carousel') && c.category !== 'story').length;
-      state.creatorProfile.stats.videos = state.content.filter(c => c.type === 'video' && c.category !== 'story').length;
+      state.creatorProfile.stats.posts = state.content.filter(c => c.category !== 'story' && c.category !== 'promo').length;
+      state.creatorProfile.stats.photos = state.content.filter(c => (c.type === 'photo' || c.type === 'carousel') && c.category !== 'story' && c.category !== 'promo').length;
+      state.creatorProfile.stats.videos = state.content.filter(c => c.type === 'video' && c.category !== 'story' && c.category !== 'promo').length;
 
       // Generate notifications from actual content/messages
       if (session && !state.isAdmin) {
@@ -370,7 +370,7 @@ function generateNotifications(st, session) {
   try { readIds = JSON.parse(localStorage.getItem('vf-read-notif-ids') || '[]'); } catch(e) {}
 
   // 1. Content upload notifications (non-story feed posts)
-  const feedPosts = st.content.filter(c => c.category !== 'story');
+  const feedPosts = st.content.filter(c => c.category !== 'story' && c.category !== 'promo');
   feedPosts.forEach(post => {
     // Free content → everyone gets notified. Gold content → only gold users
     if (post.minTier === 'gold' && userTier !== 'gold') return;
@@ -941,6 +941,7 @@ export async function createPromo({ code, discount, description, color, expiresA
       type: 'photo',
       category: 'promo',
       min_tier: 'free',
+      thumbnail: 'promo',
       likes: 0
     }]).select().single();
 
