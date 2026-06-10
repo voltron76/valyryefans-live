@@ -119,6 +119,15 @@ async function initApp() {
     });
   });
 
+  // Set up periodic store polling every 10 seconds
+  setInterval(async () => {
+    try {
+      await initStore();
+    } catch (e) {
+      console.error('Periodic store sync failed:', e);
+    }
+  }, 10000);
+
   initialized = true;
 }
 

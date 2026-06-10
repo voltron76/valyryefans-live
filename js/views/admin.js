@@ -1297,7 +1297,7 @@ function renderDashboardTab() {
           <div class="admin-bar">
             <div class="admin-bar__label">Gold</div>
             <div class="admin-bar__track">
-              <div class="admin-bar__fill" style="width:${(goldCount / maxCount * 100).toFixed(0)}%;background:#f59e0b;">${goldCount}</div>
+              <div class="admin-bar__fill" style="width:${(goldCount / maxCount * 100).toFixed(0)}%;background:var(--gradient-gold);">${goldCount}</div>
             </div>
           </div>
         </div>
@@ -1379,7 +1379,7 @@ function renderPromotionsTab() {
       <!-- Preview -->
       <div style="margin-bottom: var(--space-5);">
         <label class="form-label">Preview</label>
-        <div id="promo-preview" class="promo-banner" style="color: #fff; padding: var(--space-4);">
+        <div id="promo-preview" class="promo-banner" style="color: #fff; padding: var(--space-4); position: relative !important; top: 0 !important; z-index: 1 !important;">
           <div class="promo-banner__shimmer"></div>
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);">
             <div>
@@ -1401,6 +1401,148 @@ function renderPromotionsTab() {
 }
 
 // ------------------------------------
+// Polls Tab
+// ------------------------------------
+function renderPollsTab() {
+  const stateRef = getState();
+  const pollsList = stateRef.polls || [];
+  const activePoll = pollsList.find(p => !p.isExpired);
+  
+  const pollsListHtml = pollsList.length > 0 ? 
+    pollsList.map(p => {
+      const total = p.totalVotes || 0;
+      return `
+        <div class="card-glass" style="padding: var(--space-4); margin-bottom: var(--space-3); border-radius: var(--radius-lg); border-left: 3px solid ${p.isExpired ? 'var(--text-muted)' : 'var(--success)'};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1; min-width: 0; padding-right: var(--space-4);">
+              <div style="font-weight: 600; margin-bottom: var(--space-2);">${p.question}</div>
+              <div style="display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-2);">
+                ${p.options.map(opt => {
+                  const pct = total > 0 ? Math.round(opt.votes / total * 100) : 0;
+                  return `
+                    <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--text-secondary);">
+                      <span>${opt.text}</span>
+                      <span>${opt.votes} votes (${pct}%)</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: var(--bg-elevated); border-radius: var(--radius-full); overflow: hidden; margin-bottom: var(--space-1);">
+                      <div style="height: 100%; width: ${pct}%; background: var(--accent);"></div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted);">
+                ${total} votes · ${p.isExpired ? '<span style="color:var(--error);">Completed</span>' : '<span style="color:var(--success);">Active</span>'}
+                ${p.expiresAt ? ` · Expires: ${new Date(p.expiresAt).toLocaleString()}` : ''}
+              </div>
+            </div>
+            <button class="btn btn-sm poll-delete-btn" data-id="${p.id}" style="background: none; border: 1px solid var(--error); color: var(--error); flex-shrink:0;">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join('') : '<p style="color:var(--text-muted);">No polls created yet.</p>';
+
+  let rightColumnHtml = '';
+  if (activePoll) {
+    rightColumnHtml = `
+      <div class="card-glass" style="padding: var(--space-6); border-radius: var(--radius-xl); border-top: 4px solid var(--accent);">
+        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-lg); display: flex; align-items: center; gap: 8px;">
+          📊 Active Poll Running
+        </h3>
+        <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4);">
+          You can only run one active poll at a time. The current poll must complete or be ended before you can create a new one.
+        </p>
+        
+        <div class="card-glass" style="background: rgba(255,255,255,0.03); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-5);">
+          <div style="font-weight: 600; margin-bottom: var(--space-3);">${activePoll.question}</div>
+          <div style="font-size: var(--text-sm); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2);">
+            Time Remaining: <span id="active-poll-countdown" data-expiry="${activePoll.expiresAt}">Calculating...</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3);">
+            ${activePoll.options.map(opt => {
+              const total = activePoll.totalVotes || 0;
+              const pct = total > 0 ? Math.round(opt.votes / total * 100) : 0;
+              return `
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); margin-bottom: 2px;">
+                    <span>${opt.text}</span>
+                    <strong>${opt.votes} votes (${pct}%)</strong>
+                  </div>
+                  <div style="width: 100%; height: 6px; background: var(--bg-elevated); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="height: 100%; width: ${pct}%; background: var(--accent);"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+        
+        <button class="btn btn-secondary w-full active-poll-end-btn" data-id="${activePoll.id}" style="justify-content:center; border: 1px solid var(--accent); color: var(--accent); font-weight: 700;">
+          🛑 End Poll Now
+        </button>
+      </div>
+    `;
+  } else {
+    rightColumnHtml = `
+      <div class="card-glass" style="padding: var(--space-6); border-radius: var(--radius-xl);">
+        <h3 style="margin-bottom: var(--space-5); font-size: var(--text-lg);">Create New Poll</h3>
+        
+        <div class="form-group" style="margin-bottom: var(--space-4);">
+          <label class="form-label">Question</label>
+          <input class="form-input" type="text" id="poll-question" placeholder="e.g. What should I post next?">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: var(--space-4);">
+          <label class="form-label">Option 1</label>
+          <input class="form-input" type="text" id="poll-opt-1" placeholder="e.g. Lingerie photoshoot">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: var(--space-4);">
+          <label class="form-label">Option 2</label>
+          <input class="form-input" type="text" id="poll-opt-2" placeholder="e.g. Beach day video">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: var(--space-4);">
+          <label class="form-label">Option 3 (Optional)</label>
+          <input class="form-input" type="text" id="poll-opt-3" placeholder="e.g. Behind-the-scenes">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: var(--space-4);">
+          <label class="form-label">Option 4 (Optional)</label>
+          <input class="form-input" type="text" id="poll-opt-4" placeholder="e.g. Q&A session">
+        </div>
+
+        <div class="form-group" style="margin-bottom: var(--space-5);">
+          <label class="form-label">Duration (Hours)</label>
+          <input class="form-input" type="number" id="poll-duration" placeholder="e.g. 24" min="1" value="24">
+        </div>
+        
+        <button class="btn btn-primary w-full" id="poll-create-btn" style="justify-content:center;">Create Poll</button>
+      </div>
+    `;
+  }
+
+  return `
+<div style="max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+  <div>
+    <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-6);">
+      📊 Polls Manager
+    </h2>
+    
+    <!-- Manage Polls -->
+    <h3 style="margin-bottom: var(--space-4); font-size: var(--text-lg);">Your Polls</h3>
+    <div id="polls-list-container">
+      ${pollsListHtml}
+    </div>
+  </div>
+
+  <div>
+    ${rightColumnHtml}
+  </div>
+</div>
+  `;
+}
+
+// ------------------------------------
 // Main Admin Dashboard
 // ------------------------------------
 function renderDashboardLayout(activeTab = 'messages') {
@@ -1413,6 +1555,7 @@ function renderDashboardLayout(activeTab = 'messages') {
     { id: 'content', label: 'Content', icon: icons.content, badge: 0 },
     { id: 'upload', label: 'Upload', icon: icons.upload, badge: 0 },
     { id: 'promotions', label: 'Promotions', icon: icons.star, badge: 0 },
+    { id: 'polls', label: 'Polls', icon: icons.activity, badge: 0 },
     { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard, badge: 0 },
   ];
 
@@ -1422,6 +1565,7 @@ function renderDashboardLayout(activeTab = 'messages') {
     case 'content': contentHtml = renderContentTab(); break;
     case 'upload': contentHtml = renderUploadTab(); break;
     case 'promotions': contentHtml = renderPromotionsTab(); break;
+    case 'polls': contentHtml = renderPollsTab(); break;
     case 'dashboard': contentHtml = renderDashboardTab(); break;
   }
 
@@ -1474,6 +1618,7 @@ export function renderAdmin() {
 
   let currentTab = 'messages';
   let selectedUserId = null;
+  let activePollInterval = null;
 
   // Initial HTML
   const html = renderDashboardLayout(currentTab);
@@ -1501,6 +1646,11 @@ export function renderAdmin() {
         const contentEl = document.getElementById('admin-tab-content');
         if (!contentEl) return;
 
+        if (activePollInterval) {
+          clearInterval(activePollInterval);
+          activePollInterval = null;
+        }
+
         // Toggle overflow control class specifically for messages view
         contentEl.classList.toggle('admin-content--messages', tabId === 'messages');
 
@@ -1514,6 +1664,7 @@ export function renderAdmin() {
           case 'content': contentEl.innerHTML = renderContentTab(); wireContentTab(); break;
           case 'upload': contentEl.innerHTML = renderUploadTab(); wireUploadTab(); break;
           case 'promotions': contentEl.innerHTML = renderPromotionsTab(); wirePromotionsTab(); break;
+          case 'polls': contentEl.innerHTML = renderPollsTab(); wirePollsTab(); break;
           case 'dashboard': contentEl.innerHTML = renderDashboardTab(); break;
         }
       }
@@ -2007,6 +2158,106 @@ export function renderAdmin() {
             }
           });
         });
+      }
+
+      // =====================
+      // Polls Tab Wiring
+      // =====================
+      function wirePollsTab() {
+        const reRenderTab = () => {
+          if (activePollInterval) {
+            clearInterval(activePollInterval);
+            activePollInterval = null;
+          }
+          const contentEl = document.getElementById('admin-tab-content');
+          if (contentEl) {
+            contentEl.innerHTML = renderPollsTab();
+            wirePollsTab();
+          }
+        };
+
+        if (activePollInterval) {
+          clearInterval(activePollInterval);
+          activePollInterval = null;
+        }
+
+        // Countdown Timer for Active Poll
+        const countdownEl = document.getElementById('active-poll-countdown');
+        if (countdownEl) {
+          const expiry = countdownEl.dataset.expiry;
+          if (expiry) {
+            const updateCountdown = () => {
+              const now = Date.now();
+              const end = new Date(expiry).getTime();
+              const diff = end - now;
+              if (diff <= 0) {
+                countdownEl.textContent = 'Expired';
+                clearInterval(activePollInterval);
+                activePollInterval = null;
+                reRenderTab();
+                return;
+              }
+              const h = Math.floor(diff / 3600000);
+              const m = Math.floor((diff % 3600000) / 60000);
+              const s = Math.floor((diff % 60000) / 1000);
+              countdownEl.textContent = `${h}h ${m}m ${s}s`;
+            };
+            updateCountdown();
+            activePollInterval = setInterval(updateCountdown, 1000);
+          }
+        }
+
+        // End poll button
+        document.querySelector('.active-poll-end-btn')?.addEventListener('click', async (e) => {
+          if (confirm('Are you sure you want to end this poll now?')) {
+            const id = e.target.dataset.id;
+            const { endPoll } = await import('../store.js');
+            await endPoll(id);
+            reRenderTab();
+          }
+        });
+
+        // Create poll button
+        document.getElementById('poll-create-btn')?.addEventListener('click', async () => {
+          const question = document.getElementById('poll-question')?.value?.trim();
+          const opt1 = document.getElementById('poll-opt-1')?.value?.trim();
+          const opt2 = document.getElementById('poll-opt-2')?.value?.trim();
+          const opt3 = document.getElementById('poll-opt-3')?.value?.trim();
+          const opt4 = document.getElementById('poll-opt-4')?.value?.trim();
+          const durationHours = parseInt(document.getElementById('poll-duration')?.value) || 24;
+
+          if (!question) { showToast('Please enter a question', 'error'); return; }
+          if (!opt1 || !opt2) { showToast('Please enter at least Option 1 and Option 2', 'error'); return; }
+
+          const options = [
+            { id: 'a', text: opt1 },
+            { id: 'b', text: opt2 }
+          ];
+          if (opt3) options.push({ id: 'c', text: opt3 });
+          if (opt4) options.push({ id: 'd', text: opt4 });
+
+          const { createPoll } = await import('../store.js');
+          await createPoll({ question, options, durationHours });
+          reRenderTab();
+        });
+
+        // Delete poll button
+        document.querySelectorAll('.poll-delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete this poll?')) {
+              const id = btn.dataset.id;
+              const { deletePoll } = await import('../store.js');
+              await deletePoll(id);
+              reRenderTab();
+            }
+          });
+        });
+      }
+    },
+    cleanup() {
+      if (activePollInterval) {
+        clearInterval(activePollInterval);
+        activePollInterval = null;
       }
     }
   };

@@ -62,6 +62,7 @@ export const state = {
   allPromos: [],
   creatorId: null,
   bookmarks: [],
+  polls: [],
   ui: {
     authModalOpen: false,
     authMode: 'login',
@@ -355,6 +356,44 @@ export async function initStore() {
         state.allPromos = [];
         state.activePromo = null;
       }
+    }
+
+    // Fetch Polls
+    try {
+      const { data: dbPolls, error: pollsErr } = await supabase.from('polls').select('*').order('created_at', { ascending: false });
+      const { data: dbVotes, error: votesErr } = await supabase.from('poll_votes').select('*');
+      
+      if (!pollsErr) {
+        const mappedPolls = (dbPolls || []).map(p => {
+          const votesForPoll = (dbVotes || []).filter(v => v.poll_id === p.id);
+          const optionsWithVotes = (p.options || []).map(opt => {
+            const count = votesForPoll.filter(v => v.option_id === opt.id).length;
+            return { ...opt, votes: count };
+          });
+          const totalVotes = votesForPoll.length;
+          const userVote = session ? votesForPoll.find(v => v.user_id === session.user.id)?.option_id || null : null;
+          
+          const isExpired = p.expires_at ? new Date(p.expires_at) < new Date() : false;
+          
+          return {
+            id: p.id,
+            question: p.question,
+            options: optionsWithVotes,
+            totalVotes,
+            userVote,
+            createdAt: formatRelativeTime(p.created_at),
+            expiresAt: p.expires_at,
+            isExpired
+          };
+        });
+        
+        state.polls = mappedPolls;
+        polls.length = 0;
+        polls.push(...mappedPolls);
+        notify('polls');
+      }
+    } catch (e) {
+      console.error('Error loading polls:', e);
     }
 
   } catch (err) {
@@ -807,9 +846,13 @@ export async function incrementStoryView(storyId) {
   notify('content');
 
   try {
-    await supabase.from('content').update({ views: item.views }).eq('id', storyId);
+    const { error } = await supabase.rpc('increment_view', { content_id: storyId });
+    if (error) throw error;
   } catch (err) {
-    // Ignore DB errors in case schema hasn't updated
+    console.error('Failed to increment view via RPC:', err);
+    try {
+      await supabase.from('content').update({ views: item.views }).eq('id', storyId);
+    } catch (dbErr) {}
   }
 }
 
@@ -933,31 +976,98 @@ export async function uploadProfilePicture(file) {
 // ------------------------------------
 // Polls System
 // ------------------------------------
-export const polls = [
-  {
-    id: 'poll-1',
-    question: '🔥 What should I post next?',
-    options: [
-      { id: 'a', text: 'Lingerie photoshoot', votes: 847 },
-      { id: 'b', text: 'Beach day video', votes: 623 },
-      { id: 'c', text: 'Behind-the-scenes', votes: 512 },
-      { id: 'd', text: 'Q&A / Get to know me', votes: 394 },
-    ],
-    totalVotes: 2376,
-    userVote: null,
-    createdAt: '2 hours ago',
-    pinned: false
-  }
-];
+export const polls = [];
 
-export function votePoll(pollId, optionId) {
-  const poll = polls.find(p => p.id === pollId);
-  if (!poll || poll.userVote) return;
-  const option = poll.options.find(o => o.id === optionId);
-  if (!option) return;
-  option.votes++;
-  poll.totalVotes++;
-  poll.userVote = optionId;
+export async function votePoll(pollId, optionId) {
+  if (!state.user.id) {
+    showToast('Please login to vote', 'error');
+    return;
+  }
+  const poll = state.polls.find(p => p.id === pollId);
+  if (!poll) return;
+  if (poll.userVote) {
+    showToast('You have already voted', 'error');
+    return;
+  }
+  if (poll.isExpired) {
+    showToast('This poll has expired', 'error');
+    return;
+  }
+
+  const { error } = await supabase.from('poll_votes').insert([{
+    poll_id: pollId,
+    user_id: state.user.id,
+    option_id: optionId
+  }]);
+
+  if (error) {
+    if (error.code === '23505') {
+      showToast('You have already voted', 'error');
+    } else {
+      showToast('Failed to vote: ' + error.message, 'error');
+    }
+    return;
+  }
+
+  showToast('Vote submitted! 📊', 'success');
+  await initStore();
+  notify('polls');
+}
+
+export async function createPoll({ question, options, durationHours }) {
+  if (!state.isAdmin) return;
+  
+  const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+  const cleanedOptions = options.map((opt, i) => ({
+    id: opt.id || String.fromCharCode(97 + i),
+    text: opt.text
+  }));
+
+  const { data, error } = await supabase.from('polls').insert([{
+    question,
+    options: cleanedOptions,
+    expires_at: expiresAt
+  }]).select().single();
+
+  if (error) {
+    showToast('Failed to create poll: ' + error.message, 'error');
+    return null;
+  }
+
+  showToast('Poll created successfully! 📊', 'success');
+  await initStore();
+  notify('polls');
+  return data;
+}
+
+export async function endPoll(id) {
+  if (!state.isAdmin) return;
+
+  const { error } = await supabase.from('polls').update({
+    expires_at: new Date().toISOString()
+  }).eq('id', id);
+
+  if (error) {
+    showToast('Failed to end poll: ' + error.message, 'error');
+    return;
+  }
+
+  showToast('Poll ended successfully! 📊', 'success');
+  await initStore();
+  notify('polls');
+}
+
+export async function deletePoll(id) {
+  if (!state.isAdmin) return;
+
+  const { error } = await supabase.from('polls').delete().eq('id', id);
+  if (error) {
+    showToast('Failed to delete poll: ' + error.message, 'error');
+    return;
+  }
+
+  showToast('Poll deleted', 'success');
+  await initStore();
   notify('polls');
 }
 

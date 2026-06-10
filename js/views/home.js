@@ -3,7 +3,7 @@
 // Premium OnlyFans-style creator feed
 // ============================================================
 
-import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, incrementStoryView } from '../store.js';
+import { getState, canAccessTier, showToast, toggleLike, addComment, tipPost, toggleBookmark, isBookmarked, polls, votePoll, incrementStoryView, subscribe } from '../store.js';
 import { navigate } from '../router.js';
 
 const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>';
@@ -135,8 +135,9 @@ function renderFeedTabs() {
 // ------------------------------------
 function renderPollCard(poll, creatorProfile) {
   const totalVotes = poll.totalVotes || 0;
+  const showResults = poll.userVote || poll.isExpired;
   return `
-    <div class="post-card post-card--poll animate-fade-in-up">
+    <div class="post-card post-card--poll animate-fade-in-up" data-poll-id="${poll.id}">
       <div class="post-card__header">
         <img src="${creatorProfile.avatar}" class="post-card__avatar" alt="Avatar">
         <div>
@@ -149,14 +150,19 @@ function renderPollCard(poll, creatorProfile) {
         <h3 class="poll-card__question">${poll.question}</h3>
         <div class="poll-card__options">
           ${poll.options.map(opt => `
-            <button class="poll-option ${poll.userVote === opt.id ? 'poll-option--voted' : ''} ${poll.userVote ? 'poll-option--results' : ''}" data-poll="${poll.id}" data-option="${opt.id}">
+            <button class="poll-option ${poll.userVote === opt.id ? 'poll-option--voted' : ''} ${showResults ? 'poll-option--results' : ''}" data-poll="${poll.id}" data-option="${opt.id}" ${showResults ? 'disabled' : ''}>
               <span class="poll-option__text">${opt.text}</span>
-              ${poll.userVote ? `<span class="poll-option__pct">${totalVotes > 0 ? Math.round(opt.votes / totalVotes * 100) : 0}%</span>` : ''}
-              ${poll.userVote ? `<div class="poll-option__bar" style="width:${totalVotes > 0 ? Math.round(opt.votes / totalVotes * 100) : 0}%"></div>` : ''}
+              ${showResults ? `<span class="poll-option__pct">${totalVotes > 0 ? Math.round(opt.votes / totalVotes * 100) : 0}%</span>` : ''}
+              ${showResults ? `<div class="poll-option__bar" style="width:${totalVotes > 0 ? Math.round(opt.votes / totalVotes * 100) : 0}%"></div>` : ''}
             </button>
           `).join('')}
         </div>
-        <span class="poll-card__meta">${totalVotes.toLocaleString()} votes · ${poll.createdAt || ''}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:var(--space-3); font-size:var(--text-xs); color:var(--text-muted);">
+          <span>${totalVotes.toLocaleString()} votes</span>
+          <span class="poll-timer-home" data-expiry="${poll.expiresAt}" style="font-weight:600; color:${poll.isExpired ? 'var(--text-muted)' : 'var(--accent)'};">
+            ${poll.isExpired ? 'Completed' : 'Calculating time...'}
+          </span>
+        </div>
       </div>
     </div>`;
 }
@@ -246,9 +252,7 @@ function renderPostCard(item, creatorProfile) {
       <!-- Comments Section -->
       <div class="post-card__comments" id="comments-${item.id}">
         ${lastComments.map(c => {
-          const state = getState();
-          const isCurrentUserGold = state.currentTier === 'gold' && c.userName === (state.user?.name || '');
-          const showBadge = c.isCreator || isCurrentUserGold;
+          const showBadge = c.isCreator || c.tier === 'gold';
           return `
           <div class="post-comment">
             <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong>
@@ -317,6 +321,9 @@ export function renderHome() {
   const state = getState();
   const { creatorProfile, content, currentTier } = state;
   const isGold = currentTier === 'gold' || state.user?.tier === 'gold';
+
+  let storeUnsubscribe = null;
+  let pollTimerInterval = null;
 
   // Promo data from state
   const promo = state.activePromo;
@@ -542,8 +549,7 @@ export function renderHome() {
             post.comments.forEach(c => {
               const commentDiv = document.createElement('div');
               commentDiv.className = 'post-comment animate-fade-in-up';
-              const isCurrentUserGold = state.currentTier === 'gold' && c.userName === (state.user?.name || '');
-              const showBadge = c.isCreator || isCurrentUserGold;
+              const showBadge = c.isCreator || c.tier === 'gold';
               commentDiv.innerHTML = `<strong>${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong> <span>${c.text}</span>`;
               commentsContainer.insertBefore(commentDiv, inputWrap);
             });
@@ -664,6 +670,7 @@ export function renderHome() {
         const duration = 5000; // 5 seconds per story slide
         const intervalTime = 50; // Update every 50ms
         let isPaused = false;
+        const viewedStoryIds = new Set();
         
         let modal = document.getElementById('story-viewer-modal');
         if (!modal) {
@@ -833,7 +840,8 @@ export function renderHome() {
           updateLikeBtn();
           updateStats();
           
-          if (typeof incrementStoryView === 'function' && story.id) {
+          if (typeof incrementStoryView === 'function' && story.id && !viewedStoryIds.has(story.id)) {
+            viewedStoryIds.add(story.id);
             incrementStoryView(story.id);
             setTimeout(updateStats, 100);
           }
@@ -1073,9 +1081,101 @@ export function renderHome() {
           if (input) input.focus();
         });
       });
+
+      // ---- Home Polls Countdown Timers ----
+      pollTimerInterval = setInterval(() => {
+        document.querySelectorAll('.poll-timer-home').forEach(timerEl => {
+          const expiry = timerEl.dataset.expiry;
+          if (!expiry || timerEl.textContent.trim() === 'Completed') return;
+
+          const now = Date.now();
+          const end = new Date(expiry).getTime();
+          const diff = end - now;
+
+          if (diff <= 0) {
+            timerEl.textContent = 'Completed';
+            timerEl.style.color = 'var(--text-muted)';
+            
+            const card = timerEl.closest('.poll-card');
+            if (card) {
+              card.querySelectorAll('.poll-option').forEach(btn => {
+                btn.classList.add('poll-option--results');
+                btn.setAttribute('disabled', 'true');
+              });
+            }
+            return;
+          }
+
+          const h = Math.floor(diff / 3600000);
+          const m = Math.floor((diff % 3600000) / 60000);
+          const s = Math.floor((diff % 60000) / 1000);
+          timerEl.textContent = `⏰ ${h}h ${m}m ${s}s remaining`;
+        });
+      }, 1000);
+
+      // ---- Real-time Store Subscription ----
+      storeUnsubscribe = subscribe(['content', 'polls'], (newState) => {
+        // 1. Update Poll UI dynamically
+        newState.polls?.forEach(poll => {
+          const pollCard = document.querySelector(`[data-poll-id="${poll.id}"] .poll-card`);
+          if (pollCard) {
+            const showResults = poll.userVote || poll.isExpired;
+            poll.options.forEach(opt => {
+              const btn = pollCard.querySelector(`.poll-option[data-option="${opt.id}"]`);
+              if (btn) {
+                btn.classList.toggle('poll-option--results', !!showResults);
+                btn.classList.toggle('poll-option--voted', poll.userVote === opt.id);
+                if (showResults) {
+                  btn.setAttribute('disabled', 'true');
+                  const pct = poll.totalVotes > 0 ? Math.round(opt.votes / poll.totalVotes * 100) : 0;
+                  
+                  let pctEl = btn.querySelector('.poll-option__pct');
+                  if (!pctEl) {
+                    pctEl = document.createElement('span');
+                    pctEl.className = 'poll-option__pct';
+                    btn.appendChild(pctEl);
+                  }
+                  pctEl.textContent = `${pct}%`;
+                  
+                  let barEl = btn.querySelector('.poll-option__bar');
+                  if (!barEl) {
+                    barEl = document.createElement('div');
+                    barEl.className = 'poll-option__bar';
+                    btn.appendChild(barEl);
+                  }
+                  barEl.style.width = `${pct}%`;
+                } else {
+                  btn.removeAttribute('disabled');
+                  btn.querySelector('.poll-option__pct')?.remove();
+                  btn.querySelector('.poll-option__bar')?.remove();
+                }
+              }
+            });
+            
+            const votesEl = pollCard.querySelector('div > span:first-child');
+            if (votesEl) {
+              votesEl.textContent = `${(poll.totalVotes || 0).toLocaleString()} votes`;
+            }
+          }
+        });
+
+        // 2. Update Feed Post Likes UI dynamically
+        newState.content?.forEach(item => {
+          const likeBtn = document.querySelector(`.post-action[data-id="${item.id}"][data-action="like"]`);
+          if (likeBtn) {
+            likeBtn.classList.toggle('post-action--active', !!item.likedByUser);
+            const countEl = likeBtn.querySelector('.like-count');
+            if (countEl) {
+              countEl.textContent = item.likes || 0;
+            }
+          }
+        });
+      });
     },
 
     cleanup() {
+      if (storeUnsubscribe) storeUnsubscribe();
+      if (pollTimerInterval) clearInterval(pollTimerInterval);
       if (activeProgressInterval) clearInterval(activeProgressInterval);
       document.getElementById('story-viewer-modal')?.remove();
     }
