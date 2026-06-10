@@ -171,6 +171,51 @@ serve(async (req) => {
           console.log(`[Webhook] User ${userId} subscription expired/deleted. Downgraded to free tier.`)
         }
       }
+    } else if (event.type === 'charge.refunded') {
+      const charge = event.data.object as Stripe.Charge
+      const customerId = charge.customer as string
+
+      if (customerId) {
+        const { data: profile } = await adminClient
+          .from('profiles')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .single()
+
+        if (profile?.id) {
+          await adminClient
+            .from('profiles')
+            .update({ tier: 'free' })
+            .eq('id', profile.id)
+
+          console.log(`[Webhook] Refund detected. Revoked Gold access for user ${profile.id}.`)
+        }
+      }
+    } else if (event.type === 'charge.dispute.created') {
+      const dispute = event.data.object as Stripe.Dispute
+      const chargeId = dispute.charge as string
+
+      if (chargeId) {
+        const charge = await stripe.charges.retrieve(chargeId)
+        const customerId = charge.customer as string
+
+        if (customerId) {
+          const { data: profile } = await adminClient
+            .from('profiles')
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .single()
+
+          if (profile?.id) {
+            await adminClient
+              .from('profiles')
+              .update({ tier: 'free' })
+              .eq('id', profile.id)
+
+            console.log(`[Webhook] Charge dispute created. Revoked access for user ${profile.id}.`)
+          }
+        }
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {

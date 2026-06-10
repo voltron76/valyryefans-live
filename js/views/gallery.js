@@ -226,7 +226,7 @@ export function renderGallery() {
           }
           
           // Card on file logic
-          const hasCard = state.user?.tier === 'gold'; // Mock: Gold users have card on file
+          const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
           if (!hasCard) {
             navigate(`/checkout?tip=10&contentId=${btn.dataset.tipId}`);
             return;
@@ -265,14 +265,29 @@ export function renderGallery() {
       });
 
       // Send tip
-      tipSendBtn?.addEventListener('click', () => {
+      tipSendBtn?.addEventListener('click', async () => {
         if (selectedAmount <= 0) return;
         const msg = tipMessage?.value || '';
-        addTip(tipContentId, selectedAmount, msg);
-        showToast(`💝 $${selectedAmount} tip sent! Thank you!`, 'success');
+        const targetId = tipContentId;
+        const amount = selectedAmount;
+
         tipModal?.classList.remove('active');
         if (tipCustom) tipCustom.value = '';
         if (tipMessage) tipMessage.value = '';
+
+        import('../store.js').then(async ({ tipPost, showToast }) => {
+          const res = await tipPost(targetId, amount);
+          if (res && !res.success) {
+            if (res.error === 'no_card_on_file') {
+              navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
+            } else if (res.error === 'payment_failed') {
+              showToast('Saved card payment failed. Redirecting to checkout...', 'error');
+              setTimeout(() => {
+                navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
+              }, 1500);
+            }
+          }
+        });
       });
     }
   };

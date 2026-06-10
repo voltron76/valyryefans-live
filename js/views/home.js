@@ -553,22 +553,35 @@ export function renderHome() {
         });
       });
 
-      document.getElementById('tip-confirm')?.addEventListener('click', () => {
+      document.getElementById('tip-confirm')?.addEventListener('click', async () => {
         if (!selectedTipAmount) {
           showToast('Please select a tip amount', 'error');
           return;
         }
         const message = document.getElementById('tip-message')?.value || '';
-        if (typeof tipPost === 'function') {
-          tipPost(tipTargetId, selectedTipAmount, message);
-        }
-        showToast(`Tip of $${selectedTipAmount} sent! 💰 Thank you!`);
+        const targetId = tipTargetId;
+        const amount = selectedTipAmount;
+
         if (tipModal) tipModal.style.display = 'none';
         selectedTipAmount = null;
         tipTargetId = null;
         const msgInput = document.getElementById('tip-message');
         if (msgInput) msgInput.value = '';
         document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
+
+        if (typeof tipPost === 'function') {
+          const res = await tipPost(targetId, amount);
+          if (res && !res.success) {
+            if (res.error === 'no_card_on_file') {
+              navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
+            } else if (res.error === 'payment_failed') {
+              showToast('Saved card payment failed. Redirecting to checkout...', 'error');
+              setTimeout(() => {
+                navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
+              }, 1500);
+            }
+          }
+        }
       });
 
       // ---- Bookmark Buttons ----

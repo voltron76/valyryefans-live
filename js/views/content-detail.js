@@ -266,23 +266,32 @@ export function renderContentDetail(params) {
       });
 
       // Tip button
-      document.getElementById('tip-btn')?.addEventListener('click', () => {
+      document.getElementById('tip-btn')?.addEventListener('click', async () => {
         const state = getState();
         if (!state.isAuthenticated) {
           import('../main.js').then(({ openAuthModal }) => openAuthModal('login'));
           return;
         }
 
-        const hasCard = state.user?.tier === 'gold';
-        if (!hasCard) {
-          navigate(`/checkout?tip=10&contentId=${item.id}`);
-          return;
-        }
-
+        const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
         const amount = prompt('Enter tip amount ($):', '10');
-        if (amount && parseFloat(amount) > 0) {
-          addTip(item.id, parseFloat(amount));
-          showToast(`💝 $${parseFloat(amount)} tip sent! Thank you!`, 'success');
+        if (!amount || parseFloat(amount) <= 0) return;
+
+        if (hasCard) {
+          import('../store.js').then(async ({ chargeSavedCard, showToast }) => {
+            showToast('Processing payment...', 'info');
+            const res = await chargeSavedCard(parseFloat(amount), item.id);
+            if (res.success) {
+              showToast(`💝 $${parseFloat(amount).toFixed(2)} tip sent! Thank you!`, 'success');
+            } else {
+              showToast('Saved card payment failed. Redirecting to checkout...', 'error');
+              setTimeout(() => {
+                navigate(`/checkout?tip=${amount}&contentId=${item.id}`);
+              }, 1500);
+            }
+          });
+        } else {
+          navigate(`/checkout?tip=${amount}&contentId=${item.id}`);
         }
       });
 

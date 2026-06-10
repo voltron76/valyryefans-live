@@ -622,6 +622,25 @@ export async function addTip(contentId, amount, message = null) {
   }
 }
 
+export async function chargeSavedCard(amount, contentId = null) {
+  if (!state.user.id) return { success: false, error: 'User not logged in' };
+  try {
+    const { data, error } = await supabase.functions.invoke('charge-saved-card', {
+      body: { amount, contentId }
+    });
+    if (error || !data?.success) {
+      throw new Error(error?.message || data?.error || 'Payment failed');
+    }
+    // Update local state tip total
+    state.totalTips += parseFloat(amount);
+    notify('totalTips');
+    return { success: true };
+  } catch (e) {
+    console.error('[Store] Failed to charge saved card:', e);
+    return { success: false, error: e.message };
+  }
+}
+
 export function toggleBookmark(id) {
   const idx = state.bookmarks.indexOf(id);
   if (idx !== -1) {
@@ -781,15 +800,26 @@ export async function tipPost(contentId, amount) {
   const tipAmount = parseFloat(amount);
   if (state.user.tipLimit > 0 && tipAmount > state.user.tipLimit) {
     showToast(`Tip exceeds your limit of $${state.user.tipLimit.toFixed(2)}`, 'error');
-    return;
+    return { success: false, error: 'limit_exceeded' };
   }
-  await addTip(contentId, amount);
-  const item = state.content.find(c => c.id === contentId);
-  if (item) {
-    item.tips = (item.tips || 0) + tipAmount;
-    notify('content');
+
+  const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
+  if (hasCard) {
+    const res = await chargeSavedCard(tipAmount, contentId);
+    if (res.success) {
+      const item = state.content.find(c => c.id === contentId);
+      if (item) {
+        item.tips = (item.tips || 0) + tipAmount;
+        notify('content');
+      }
+      showToast(`💰 Sent $${tipAmount.toFixed(2)} tip! Thank you!`, 'success');
+      return { success: true };
+    } else {
+      return { success: false, error: res.error || 'payment_failed' };
+    }
+  } else {
+    return { success: false, error: 'no_card_on_file' };
   }
-  showToast(`💰 Sent $${tipAmount.toFixed(2)} tip!`, 'success');
 }
 
 export async function updateTipLimit(amount) {
