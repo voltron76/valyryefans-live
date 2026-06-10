@@ -69,9 +69,9 @@ function buildCard(item, idx) {
 
 export function renderGallery() {
   const state = getState();
-  const { content } = state;
-  const photoCount = content.filter(c => c.type === 'photo').length;
-  const videoCount = content.filter(c => c.type === 'video').length;
+  const galleryItems = (state.content || []).filter(c => c.category !== 'story' && c.category !== 'promo');
+  const photoCount = galleryItems.filter(c => c.type === 'photo').length;
+  const videoCount = galleryItems.filter(c => c.type === 'video').length;
 
   const html = `
     <div class="section" style="padding-top: var(--space-10);">
@@ -95,12 +95,12 @@ export function renderGallery() {
 
       <!-- Content count -->
       <div class="animate-fade-in-up stagger-3" style="margin-bottom: var(--space-6); color: var(--text-muted); font-size: var(--text-sm);">
-        <span id="gallery-count">${content.length}</span> items
+        <span id="gallery-count">${galleryItems.length}</span> items
       </div>
 
       <!-- Gallery Grid -->
       <div class="gallery-grid" id="gallery-grid">
-        ${content.map((item, i) => buildCard(item, i)).join('')}
+        ${galleryItems.map((item, i) => buildCard(item, i)).join('')}
       </div>
 
       <!-- Empty state for filtered results -->

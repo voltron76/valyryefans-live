@@ -3,7 +3,7 @@
 // Secured admin panel for creator (Valyrye) to manage platform
 // ============================================================
 
-import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo, publishPromo } from '../store.js';
+import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo, publishPromo, subscribe, markMessagesAsRead } from '../store.js';
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
 
@@ -860,13 +860,13 @@ function renderPinScreen() {
 // ------------------------------------
 // Messages Tab
 // ------------------------------------
-function renderMessagesTab() {
+function renderMessagesTab(selectedUserId) {
   const state = getState();
   const users = state.adminUsers || [];
-  const selectedUserId = users.length > 0 ? users[0].id : null;
+  const activeUserId = selectedUserId || (users.length > 0 ? users[0].id : null);
 
-  const userListHtml = users.map((user, i) => {
-    const isActive = i === 0;
+  const userListHtml = users.map((user) => {
+    const isActive = user.id === activeUserId;
     return `
       <div class="admin-user-item${isActive ? ' active' : ''}" data-user-id="${user.id}">
         ${renderAvatar(user.name, 36)}
@@ -897,7 +897,7 @@ function renderMessagesTab() {
 
       <!-- Chat thread -->
       <div class="admin-chat" id="admin-chat">
-        ${selectedUserId ? renderChatThread(selectedUserId) : `
+        ${activeUserId ? renderChatThread(activeUserId) : `
           <div class="admin-chat__empty">
             <div style="text-align:center;">
               <div style="font-size:var(--text-3xl);margin-bottom:var(--space-2);">💬</div>
@@ -1545,7 +1545,7 @@ function renderPollsTab() {
 // ------------------------------------
 // Main Admin Dashboard
 // ------------------------------------
-function renderDashboardLayout(activeTab = 'messages') {
+function renderDashboardLayout(activeTab = 'messages', selectedUserId = null) {
   const state = getState();
   const users = state.adminUsers || [];
   const totalUnread = users.reduce((sum, u) => sum + (u.unread || 0), 0);
@@ -1561,7 +1561,7 @@ function renderDashboardLayout(activeTab = 'messages') {
 
   let contentHtml = '';
   switch (activeTab) {
-    case 'messages': contentHtml = renderMessagesTab(); break;
+    case 'messages': contentHtml = renderMessagesTab(selectedUserId); break;
     case 'content': contentHtml = renderContentTab(); break;
     case 'upload': contentHtml = renderUploadTab(); break;
     case 'promotions': contentHtml = renderPromotionsTab(); break;
@@ -1619,9 +1619,10 @@ export function renderAdmin() {
   let currentTab = 'messages';
   let selectedUserId = null;
   let activePollInterval = null;
+  let adminMessagesSub = null;
 
   // Initial HTML
-  const html = renderDashboardLayout(currentTab);
+  const html = renderDashboardLayout(currentTab, selectedUserId);
 
   return {
     html,
@@ -1651,6 +1652,11 @@ export function renderAdmin() {
           activePollInterval = null;
         }
 
+        if (adminMessagesSub) {
+          adminMessagesSub();
+          adminMessagesSub = null;
+        }
+
         // Toggle overflow control class specifically for messages view
         contentEl.classList.toggle('admin-content--messages', tabId === 'messages');
 
@@ -1660,7 +1666,7 @@ export function renderAdmin() {
         });
 
         switch (tabId) {
-          case 'messages': contentEl.innerHTML = renderMessagesTab(); wireMessagesTab(); break;
+          case 'messages': contentEl.innerHTML = renderMessagesTab(selectedUserId); wireMessagesTab(); break;
           case 'content': contentEl.innerHTML = renderContentTab(); wireContentTab(); break;
           case 'upload': contentEl.innerHTML = renderUploadTab(); wireUploadTab(); break;
           case 'promotions': contentEl.innerHTML = renderPromotionsTab(); wirePromotionsTab(); break;
@@ -1696,8 +1702,13 @@ export function renderAdmin() {
         const chatContainer = document.getElementById('admin-chat');
         const searchInput = document.getElementById('admin-user-search');
 
+        // Mark messages as read on load
+        if (selectedUserId) {
+          markMessagesAsRead(selectedUserId);
+        }
+
         // Select user
-        userListItems?.addEventListener('click', (e) => {
+        userListItems?.addEventListener('click', async (e) => {
           const item = e.target.closest('.admin-user-item');
           if (!item) return;
 
@@ -1707,6 +1718,9 @@ export function renderAdmin() {
           // Update active state
           userListItems.querySelectorAll('.admin-user-item').forEach(el => el.classList.remove('active'));
           item.classList.add('active');
+
+          // Mark messages as read
+          await markMessagesAsRead(userId);
 
           // Render chat
           if (chatContainer) {
@@ -1731,6 +1745,83 @@ export function renderAdmin() {
           wireChatInput(selectedUserId);
           scrollChatToBottom();
         }
+
+        // Setup store subscription for messages and user list updates
+        if (adminMessagesSub) {
+          adminMessagesSub();
+          adminMessagesSub = null;
+        }
+
+        adminMessagesSub = subscribe(['adminMessages', 'adminUsers'], (newState) => {
+          // Re-render the user list items to update unread badge counts
+          const listContainer = document.getElementById('admin-user-list-items');
+          if (listContainer) {
+            const query = searchInput?.value?.toLowerCase() || '';
+            const activeUserId = selectedUserId || (newState.adminUsers?.length > 0 ? newState.adminUsers[0].id : null);
+            listContainer.innerHTML = newState.adminUsers.map((user) => {
+              const isActive = user.id === activeUserId;
+              const name = user.name || 'Fan';
+              const displayStyle = name.toLowerCase().includes(query) ? '' : 'none';
+              return `
+                <div class="admin-user-item${isActive ? ' active' : ''}" data-user-id="${user.id}" style="display: ${displayStyle};">
+                  ${renderAvatar(user.name, 36)}
+                  <div class="admin-user-item__info">
+                    <div class="admin-user-item__name">
+                      ${escapeHtml(user.name)}
+                      <span class="admin-tier-badge admin-tier-badge--${user.tier}">${user.tier}</span>
+                    </div>
+                    <div class="admin-user-item__meta">${user.lastSeen || 'Unknown'}</div>
+                  </div>
+                  ${user.unread > 0 ? `<div class="admin-user-item__badge">${user.unread}</div>` : ''}
+                </div>
+              `;
+            }).join('');
+          }
+
+          // Re-render the chat messages area dynamically
+          if (selectedUserId && chatContainer) {
+            const messages = newState.adminMessages[selectedUserId] || [];
+            const chatMsgsEl = document.getElementById('admin-chat-messages');
+            if (chatMsgsEl) {
+              if (messages.length === 0) {
+                chatMsgsEl.innerHTML = `
+                  <div class="admin-chat__empty">
+                    <div style="text-align:center;">
+                      <div style="font-size:var(--text-2xl);margin-bottom:var(--space-2);">📭</div>
+                      <div>No messages yet</div>
+                    </div>
+                  </div>
+                `;
+              } else {
+                chatMsgsEl.innerHTML = messages.map(msg => {
+                  const isValyrye = msg.sender === 'valyrye';
+                  const isRequest = msg.type === 'request';
+                  let cls = isValyrye ? 'admin-msg--valyrye' : 'admin-msg--fan';
+                  if (isRequest) cls = 'admin-msg--request';
+
+                  let mediaHtml = '';
+                  if (msg.mediaUrl) {
+                    const isVideo = msg.mediaUrl.toLowerCase().endsWith('.mp4') || msg.mediaUrl.toLowerCase().endsWith('.mov') || msg.mediaUrl.toLowerCase().endsWith('.webm');
+                    if (isVideo) {
+                      mediaHtml = `<div class="message-media" style="margin-bottom:var(--space-2); max-width:200px;"><video src="${msg.mediaUrl}" controls style="width:100%; display:block; border-radius:var(--radius-md);"></video></div>`;
+                    } else {
+                      mediaHtml = `<div class="message-media" style="margin-bottom:var(--space-2); max-width:200px;"><img src="${msg.mediaUrl}" style="width:100%; display:block; border-radius:var(--radius-md);" alt="Media"></div>`;
+                    }
+                  }
+
+                  return `
+                    <div class="admin-msg ${cls}">
+                      ${mediaHtml}
+                      <div>${escapeHtml(msg.content)}</div>
+                      <div class="admin-msg__time">${msg.time || ''}</div>
+                    </div>
+                  `;
+                }).join('');
+              }
+              scrollChatToBottom();
+            }
+          }
+        });
       }
 
       function wireChatInput(userId) {
@@ -1788,11 +1879,11 @@ export function renderAdmin() {
         photoInput?.addEventListener('change', () => handleAdminUpload(photoInput, false));
         videoInput?.addEventListener('change', () => handleAdminUpload(videoInput, true));
 
-        function sendReply() {
+        async function sendReply() {
           const text = input?.value?.trim();
           if (!text || !userId) return;
 
-          addAdminReply(userId, text);
+          await addAdminReply(userId, text);
           input.value = '';
 
           // Re-render chat thread
@@ -2255,6 +2346,10 @@ export function renderAdmin() {
       }
     },
     cleanup() {
+      if (adminMessagesSub) {
+        adminMessagesSub();
+        adminMessagesSub = null;
+      }
       if (activePollInterval) {
         clearInterval(activePollInterval);
         activePollInterval = null;

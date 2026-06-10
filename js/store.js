@@ -63,6 +63,7 @@ export const state = {
   creatorId: null,
   bookmarks: [],
   polls: [],
+  hasActiveRealtimeSub: false,
   ui: {
     authModalOpen: false,
     authMode: 'login',
@@ -392,6 +393,33 @@ export async function initStore() {
         polls.push(...mappedPolls);
         notify('polls');
       }
+    }
+
+    // Fetch Supabase Realtime message subscription
+    if (session && !state.hasActiveRealtimeSub) {
+      state.hasActiveRealtimeSub = true;
+      
+      supabase
+        .channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+          const newMsg = payload.new;
+          
+          const isRelevant = newMsg.sender_id === state.user.id || newMsg.recipient_id === state.user.id || state.isAdmin;
+          if (!isRelevant) return;
+
+          if (newMsg.sender_id !== state.user.id) {
+            playNotificationSound();
+            let senderName = 'Valyrye';
+            if (state.isAdmin) {
+              const profile = state.adminUsers.find(u => u.id === newMsg.sender_id);
+              senderName = profile ? (profile.name || 'A user') : 'A user';
+            }
+            showToast(`💬 New message from ${senderName}`, 'info');
+          }
+
+          await initStore();
+        })
+        .subscribe();
     } catch (e) {
       console.error('Error loading polls:', e);
     }
@@ -532,17 +560,58 @@ function generateNotifications(st, session) {
   notify('notifications');
 }
 
+function playNotificationSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc1.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1); // A5
+
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1174.66, ctx.currentTime); // D6
+    osc2.frequency.setValueAtTime(1760.00, ctx.currentTime + 0.1); // A6
+
+    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc1.start();
+    osc2.start();
+    osc1.stop(ctx.currentTime + 0.45);
+    osc2.stop(ctx.currentTime + 0.45);
+  } catch (e) {
+    console.error('AudioContext sound failed:', e);
+  }
+}
+
 async function loadAdminData() {
   // Fetch all profiles that aren't admin
   const { data: profiles } = await supabase.from('profiles').select('*').neq('tier', 'admin');
+  
+  // Fetch all messages
+  const { data: allMsgs } = await supabase.from('messages').select('*').order('created_at', { ascending: true });
+
   if (profiles) {
-    state.adminUsers = profiles.map(p => ({
-      id: p.id,
-      name: p.name || 'Fan',
-      tier: p.tier,
-      lastSeen: formatDate(p.created_at),
-      unread: 0
-    }));
+    state.adminUsers = profiles.map(p => {
+      const unreadCount = (allMsgs || []).filter(m => m.sender_id === p.id && !m.is_read).length;
+      return {
+        id: p.id,
+        name: p.name || 'Fan',
+        tier: p.tier,
+        lastSeen: formatDate(p.created_at),
+        unread: unreadCount
+      };
+    });
   }
 
   // Fetch all messages
@@ -1235,5 +1304,41 @@ export function markPostNotificationAsRead(postId) {
   if (changed) {
     localStorage.setItem('vf-read-notif-ids', JSON.stringify(readIds));
     notify('notifications');
+  }
+}
+
+export async function markMessagesAsRead(userId) {
+  if (!state.isAdmin || !userId) return;
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('sender_id', userId)
+      .eq('recipient_id', state.user.id)
+      .eq('is_read', false);
+      
+    if (!error) {
+      const user = state.adminUsers.find(u => u.id === userId);
+      if (user) {
+        user.unread = 0;
+        notify('adminUsers');
+      }
+    }
+  } catch (e) {
+    console.error('Failed to mark messages as read:', e);
+  }
+}
+
+export async function markFanMessagesAsRead() {
+  if (!state.user.id || state.isAdmin) return;
+  try {
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('sender_id', state.creatorId)
+      .eq('recipient_id', state.user.id)
+      .eq('is_read', false);
+  } catch (e) {
+    console.error('Failed to mark fan messages as read:', e);
   }
 }

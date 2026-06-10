@@ -3,7 +3,7 @@
 // Single direct chat with Valyrye
 // ============================================================
 
-import { getState, canAccessTier, showToast, addMessage, getRandomReply, addTip, markMessageNotificationsAsRead } from '../store.js';
+import { getState, canAccessTier, showToast, addMessage, getRandomReply, addTip, markMessageNotificationsAsRead, subscribe, markFanMessagesAsRead } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -193,12 +193,14 @@ export function renderMessages() {
     </div>`;
 
   let replyTimeout = null;
+  let storeUnsubscribe = null;
 
   return {
     html,
     afterRender() {
       // Clear message notifications
       markMessageNotificationsAsRead();
+      markFanMessagesAsRead();
 
       const chatMessages = document.getElementById('chat-messages');
       const chatInput = document.getElementById('chat-input');
@@ -220,6 +222,30 @@ export function renderMessages() {
         }
       }
       scrollToBottom();
+
+      // ---- Real-time Store Subscription ----
+      storeUnsubscribe = subscribe(['messages'], (newState) => {
+        const messagesContainer = document.getElementById('chat-messages');
+        if (messagesContainer) {
+          const typingIndicatorEl = document.getElementById('typing-indicator');
+          const isTypingVisible = typingIndicatorEl?.style.display || 'none';
+          
+          const dateSepHtml = `
+            <div style="text-align:center;color:var(--text-muted);font-size:var(--text-xs);padding:var(--space-4) 0;">
+              <span style="background:var(--bg-elevated);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);border:1px solid var(--border-light);">Today</span>
+            </div>
+          `;
+          const bubblesHtml = newState.messages.map(m => renderMessageBubble(m)).join('');
+          
+          messagesContainer.innerHTML = dateSepHtml + bubblesHtml + `
+            <div class="typing-indicator" id="typing-indicator" style="display:${isTypingVisible};">
+              <span></span><span></span><span></span>
+            </div>
+          `;
+          
+          scrollToBottom();
+        }
+      });
 
       // ── Append a bubble to DOM ──
       function appendBubble(msg, animate = true) {
@@ -594,6 +620,7 @@ export function renderMessages() {
     },
 
     cleanup() {
+      if (storeUnsubscribe) storeUnsubscribe();
       if (replyTimeout) clearTimeout(replyTimeout);
     }
   };
