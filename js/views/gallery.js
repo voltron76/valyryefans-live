@@ -33,8 +33,8 @@ function buildCard(item, idx) {
   if (locked) {
     return `
       <div class="gallery-card gallery-card--locked animate-fade-in-up ${stagger}"
-           data-id="${item.id}" data-type="${item.type}" data-tier="${item.minTier}" data-locked="true">
-        <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
+           data-id="${item.id}" data-type="${item.type}" data-tier="${item.minTier}" data-locked="true" oncontextmenu="return false;">
+        <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy" style="pointer-events: none; user-select: none; -webkit-user-drag: none;">
         ${isVideo ? `<div class="gallery-card__play-btn">${icons.play}</div>` : ''}
         <div class="gallery-card__overlay">
           <div class="lock-icon">${icons.lock}</div>
@@ -46,14 +46,15 @@ function buildCard(item, idx) {
 
   return `
     <div class="gallery-card animate-fade-in-up ${stagger}"
-       data-id="${item.id}" data-type="${item.type}" data-tier="${item.minTier}" style="cursor:pointer;">
-      <div style="display:block;width:100%;height:100%;" class="gallery-card__link">
-        <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
-        ${isCarousel ? `<div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 8px;border-radius:12px;color:#fff;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;">${icons.carousel} 1/${item.media.length}</div>` : ''}
+       data-id="${item.id}" data-type="${item.type}" data-tier="${item.minTier}" style="cursor:pointer;" oncontextmenu="return false;">
+      <div style="display:block;width:100%;height:100%;position:relative;" class="gallery-card__link">
+        <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy" style="pointer-events: none; user-select: none; -webkit-user-drag: none;">
+        <div class="drm-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
+        ${isCarousel ? `<div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 8px;border-radius:12px;color:#fff;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;z-index:6;">${icons.carousel} 1/${item.media.length}</div>` : ''}
       </div>
-      ${isVideo ? `<div class="gallery-card__play-btn">${icons.play}</div>` : ''}
-      <button class="gallery-card__tip-btn" data-tip-id="${item.id}" title="Send Tip">💝</button>
-      <div class="gallery-card__overlay">
+      ${isVideo ? `<div class="gallery-card__play-btn" style="z-index:6;">${icons.play}</div>` : ''}
+      <button class="gallery-card__tip-btn" data-tip-id="${item.id}" title="Send Tip" style="z-index:6;">💝</button>
+      <div class="gallery-card__overlay" style="z-index:6;">
         <div class="gallery-card__title">
           ${isVideo ? `<span style="margin-right:var(--space-1);">${icons.video}</span>` : ''}${item.title}
         </div>

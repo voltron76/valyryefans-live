@@ -261,9 +261,15 @@ export async function initStore() {
       // 3. Generate Signed URLs for the private media bucket
       const allPaths = [];
       contentData.forEach(c => {
+        const hasAccess = state.isAdmin || c.min_tier === 'free' || state.currentTier === 'gold';
+        
         if (c.thumbnail) allPaths.push(c.thumbnail);
-        if (c.video_url) allPaths.push(c.video_url);
-        if (c.media && Array.isArray(c.media)) allPaths.push(...c.media);
+        
+        // Only request signed URLs for main media if the user actually has access
+        if (hasAccess) {
+          if (c.video_url) allPaths.push(c.video_url);
+          if (c.media && Array.isArray(c.media)) allPaths.push(...c.media);
+        }
       });
 
       const uniquePaths = [...new Set(allPaths)].filter(p => p && !p.startsWith('http')); // Only sign relative supabase paths
@@ -280,7 +286,8 @@ export async function initStore() {
 
       // 4. Map content to state
       state.content = contentData.map(c => {
-        const mappedMedia = (c.media || []).map(m => urlMap[m] || m);
+        const hasAccess = state.isAdmin || c.min_tier === 'free' || state.currentTier === 'gold';
+        const mappedMedia = hasAccess ? (c.media || []).map(m => urlMap[m] || m) : [];
         const commentsList = commentsMap[c.id] || [];
         return {
           id: c.id,
@@ -288,7 +295,7 @@ export async function initStore() {
           description: c.description || '',
           type: c.type,
           thumbnail: urlMap[c.thumbnail] || c.thumbnail,
-          videoUrl: c.video_url ? (urlMap[c.video_url] || c.video_url) : null,
+          videoUrl: (hasAccess && c.video_url) ? (urlMap[c.video_url] || c.video_url) : null,
           media: mappedMedia,
           minTier: c.min_tier,
           likes: c.likes || 0,
@@ -966,5 +973,22 @@ export async function deletePromo() {
     showToast('Promo deactivated', 'success');
   } catch (e) {
     console.error('Error deleting promo:', e);
+  }
+}
+
+// ------------------------------------
+// Secure DRM Blob Helper
+// ------------------------------------
+export async function loadDrmBlob(url) {
+  if (!url) return '';
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch media blob');
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.warn('[DRM] Fallback to raw URL:', e);
+    return url;
   }
 }

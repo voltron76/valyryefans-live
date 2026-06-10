@@ -174,8 +174,8 @@ function renderPostCard(item, creatorProfile) {
   let mediaHtml = '';
   if (locked) {
     mediaHtml = `
-      <div class="post-card__media post-card__media--locked">
-        <img src="${item.thumbnail}" alt="Locked" class="post-card__img post-card__img--blur">
+      <div class="post-card__media post-card__media--locked" oncontextmenu="return false;">
+        <img src="${item.thumbnail}" alt="Locked" class="post-card__img post-card__img--blur" style="pointer-events: none; user-select: none; -webkit-user-drag: none;">
         <div class="post-card__lock-overlay">
           ${icons.lock}
           <span>Subscribe to unlock</span>
@@ -184,25 +184,27 @@ function renderPostCard(item, creatorProfile) {
       </div>`;
   } else if (item.type === 'video') {
     mediaHtml = `
-      <div class="post-card__media">
-        <video src="${item.videoUrl || item.media?.[0] || item.thumbnail}" controls poster="${item.thumbnail}" class="post-card__video"></video>
+      <div class="post-card__media" oncontextmenu="return false;" style="position: relative;">
+        <video data-drm-src="${item.videoUrl || item.media?.[0] || item.thumbnail}" controls controlslist="nodownload" disablepictureinpicture poster="${item.thumbnail}" class="post-card__video protect-media" style="-webkit-user-drag: none;"></video>
       </div>`;
   } else if (item.media?.length > 1) {
     mediaHtml = `
-      <div class="post-card__media post-card__carousel" data-post-id="${item.id}">
+      <div class="post-card__media post-card__carousel" data-post-id="${item.id}" oncontextmenu="return false;" style="position: relative;">
         <div class="post-card__carousel-track">
-          ${item.media.map((src, i) => `<img src="${src}" alt="${item.title} ${i + 1}" class="post-card__img ${i === 0 ? 'active' : ''}">`).join('')}
+          ${item.media.map((src, i) => `<img data-drm-src="${src}" alt="${item.title} ${i + 1}" class="post-card__img protect-media ${i === 0 ? 'active' : ''}" style="pointer-events: none; user-select: none; -webkit-user-drag: none;">`).join('')}
         </div>
-        <button class="carousel-arrow carousel-arrow--left" data-dir="-1" aria-label="Previous slide">&#8249;</button>
-        <button class="carousel-arrow carousel-arrow--right" data-dir="1" aria-label="Next slide">&#8250;</button>
-        <div class="post-card__carousel-dots">
+        <div class="drm-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none;"></div>
+        <button class="carousel-arrow carousel-arrow--left" data-dir="-1" aria-label="Previous slide" style="z-index: 6;">&#8249;</button>
+        <button class="carousel-arrow carousel-arrow--right" data-dir="1" aria-label="Next slide" style="z-index: 6;">&#8250;</button>
+        <div class="post-card__carousel-dots" style="z-index: 6;">
           ${item.media.map((_, i) => `<span class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join('')}
         </div>
       </div>`;
   } else {
     mediaHtml = `
-      <div class="post-card__media">
-        <img src="${item.media?.[0] || item.thumbnail}" alt="${item.title}" class="post-card__img">
+      <div class="post-card__media" oncontextmenu="return false;" style="position: relative;">
+        <img data-drm-src="${item.media?.[0] || item.thumbnail}" alt="${item.title}" class="post-card__img protect-media" style="pointer-events: none; user-select: none; -webkit-user-drag: none;">
+        <div class="drm-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none;"></div>
       </div>`;
   }
 
@@ -372,6 +374,17 @@ export function renderHome() {
     html,
 
     afterRender() {
+      // ---- Resolve DRM Blob URLs ----
+      document.querySelectorAll('[data-drm-src]').forEach(async (el) => {
+        const rawUrl = el.getAttribute('data-drm-src');
+        if (rawUrl) {
+          const { loadDrmBlob } = await import('../store.js');
+          const blobUrl = await loadDrmBlob(rawUrl);
+          el.src = blobUrl;
+          el.removeAttribute('data-drm-src');
+        }
+      });
+
       // ---- Close Promo Banner ----
       document.getElementById('close-promo')?.addEventListener('click', () => {
         const banner = document.getElementById('promo-banner');
@@ -746,17 +759,31 @@ export function renderHome() {
           mediaContainer.innerHTML = '';
           if (slide.type === 'video') {
             const video = document.createElement('video');
-            video.src = slide.url;
             video.autoplay = true;
             video.muted = true;
             video.playsInline = true;
+            video.setAttribute('controlslist', 'nodownload');
+            video.setAttribute('disablepictureinpicture', 'true');
+            video.setAttribute('oncontextmenu', 'return false;');
             video.className = 'story-viewer__media protect-media';
             mediaContainer.appendChild(video);
+            
+            // Resolve Blob url
+            import('../store.js').then(async ({ loadDrmBlob }) => {
+              video.src = await loadDrmBlob(slide.url);
+            });
           } else {
             const img = document.createElement('img');
-            img.src = slide.url;
             img.className = 'story-viewer__media protect-media';
+            img.style.pointerEvents = 'none';
+            img.style.userSelect = 'none';
+            img.setAttribute('oncontextmenu', 'return false;');
             mediaContainer.appendChild(img);
+            
+            // Resolve Blob url
+            import('../store.js').then(async ({ loadDrmBlob }) => {
+              img.src = await loadDrmBlob(slide.url);
+            });
           }
 
           updateLikeBtn();

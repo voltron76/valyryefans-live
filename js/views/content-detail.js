@@ -143,21 +143,28 @@ export function renderContentDetail(params) {
       <div class="content-detail__media animate-fade-in-up stagger-1" style="position:relative;">
         <div class="content-detail-media protect-media" style="position:relative; width: 100%; border-radius: var(--radius-xl); overflow: hidden; margin-bottom: var(--space-6); background: #000;">
         ${item.type === 'video'
-          ? `<video src="${item.videoUrl || item.thumbnail}" poster="${item.thumbnail}" controls controlsList="nodownload" preload="metadata" style="width:100%;display:block;"></video>`
+          ? `<video data-drm-src="${item.videoUrl || item.thumbnail}" poster="${item.thumbnail}" controls controlslist="nodownload" disablepictureinpicture class="protect-media" style="width:100%;display:block;" oncontextmenu="return false;"></video>`
           : item.type === 'carousel'
-          ? `<div class="carousel-container" style="position:relative;width:100%;overflow:hidden;background:#000;">
+          ? `<div class="carousel-container" style="position:relative;width:100%;overflow:hidden;background:#000;" oncontextmenu="return false;">
                <div class="carousel-track" style="display:flex;transition:transform 0.3s ease-in-out;width:100%;">
-                 ${item.media.map((m, i) => `<img src="${m}" class="content-detail-img protect-media" data-index="${i}" style="width:100%;flex-shrink:0;object-fit:contain;max-height:80vh;cursor:pointer;" />`).join('')}
+                 ${item.media.map((m, i) => `
+                   <div class="content-detail-img-wrap" data-index="${i}" style="position:relative;cursor:pointer;width:100%;flex-shrink:0;display:flex;justify-content:center;background:#000;">
+                     <img data-drm-src="${m}" class="content-detail-img protect-media" style="width:100%;object-fit:contain;max-height:80vh;pointer-events:none;user-select:none;-webkit-user-drag:none;" />
+                     <div class="drm-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
+                   </div>`).join('')}
                </div>
                ${item.media.length > 1 ? `
-               <button class="carousel-btn carousel-prev" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;">❮</button>
-               <button class="carousel-btn carousel-next" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;">❯</button>
-               <div class="carousel-dots" style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:2;">
+               <button class="carousel-btn carousel-prev" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center;">❮</button>
+               <button class="carousel-btn carousel-next" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center;">❯</button>
+               <div class="carousel-dots" style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:6;">
                  ${item.media.map((_, i) => `<div class="carousel-dot${i===0?' active':''}" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,${i===0?'1':'0.5'});transition:background 0.2s;"></div>`).join('')}
                </div>
                ` : ''}
              </div>`
-          : `<img src="${item.thumbnail}" alt="${item.title}" class="content-detail-img protect-media" style="width: 100%; cursor: pointer;">`
+          : `<div class="content-detail-img-wrap" style="position:relative;cursor:pointer;width:100%;display:flex;justify-content:center;background:#000;" oncontextmenu="return false;">
+               <img data-drm-src="${item.thumbnail}" alt="${item.title}" class="content-detail-img protect-media" style="width: 100%;pointer-events:none;user-select:none;-webkit-user-drag:none;">
+               <div class="drm-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
+             </div>`
         }
         </div>
       </div>
@@ -221,6 +228,17 @@ export function renderContentDetail(params) {
   return {
     html,
     afterRender() {
+      // ---- Resolve DRM Blob URLs ----
+      document.querySelectorAll('[data-drm-src]').forEach(async (el) => {
+        const rawUrl = el.getAttribute('data-drm-src');
+        if (rawUrl) {
+          const { loadDrmBlob } = await import('../store.js');
+          const blobUrl = await loadDrmBlob(rawUrl);
+          el.src = blobUrl;
+          el.removeAttribute('data-drm-src');
+        }
+      });
+
       let liked = false;
       const likeBtn = document.getElementById('like-btn');
       const likeCount = document.getElementById('like-count');
@@ -292,14 +310,15 @@ export function renderContentDetail(params) {
       }
 
       // Lightbox expansion for images
-      document.querySelectorAll('.content-detail-img').forEach(img => {
-        img.addEventListener('click', () => {
+      document.querySelectorAll('.content-detail-img-wrap').forEach(wrap => {
+        wrap.addEventListener('click', () => {
           import('../main.js').then(({ openLightbox }) => {
-            let src = img.getAttribute('src');
+            const img = wrap.querySelector('img');
+            let src = img?.getAttribute('src') || '';
             let date = formatDate(item.createdAt);
             let title = item.title;
             if (item.type === 'carousel') {
-               const idx = img.getAttribute('data-index');
+               const idx = wrap.getAttribute('data-index');
                title = `${item.title} (${parseInt(idx) + 1}/${item.media.length})`;
             }
             openLightbox({
