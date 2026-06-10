@@ -48,9 +48,6 @@ CREATE TRIGGER tr_protect_profile_tier
 -- 2. Storage Security Policies (Restrict Media Access)
 -- ------------------------------------------------------------
 
--- Enable RLS on storage if not already enabled
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
 -- Remove the old permissive select policy
 DROP POLICY IF EXISTS "Users can view media" ON storage.objects;
 DROP POLICY IF EXISTS "Users see media" ON storage.objects;
