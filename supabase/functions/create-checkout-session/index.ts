@@ -37,8 +37,9 @@ serve(async (req) => {
       throw new Error(authError?.message || 'Not authenticated')
     }
 
-    const { type, amount, contentId } = await req.json()
-    const origin = req.headers.get('origin') || 'http://localhost:8000'
+    const { type, amount, contentId, origin: customOrigin } = await req.json()
+    const requestOrigin = req.headers.get('origin') || 'http://localhost:8000'
+    const origin = customOrigin || requestOrigin
 
     let session;
 

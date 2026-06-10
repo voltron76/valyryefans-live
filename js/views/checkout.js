@@ -139,11 +139,13 @@ export function renderCheckout(params = {}) {
 
         try {
           const { supabase } = await import('../supabase.js');
+          const baseOrigin = window.location.origin + window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '');
           const { data, error } = await supabase.functions.invoke('create-checkout-session', {
             body: {
               type: isTip ? 'tip' : 'subscription',
               amount: parseFloat(amount),
-              contentId: params.contentId || null
+              contentId: params.contentId || null,
+              origin: baseOrigin
             }
           });
 

@@ -591,7 +591,8 @@ export async function uploadContent(item) {
     thumbnail: item.thumbnailPath, // Storage path
     video_url: item.videoPath,
     media: item.mediaPaths, // Array of storage paths
-    likes: 0
+    likes: 0,
+    is_public: item.minTier === 'free'
   };
 
   const { data, error } = await supabase.from('content').insert([newContent]).select().single();
@@ -979,7 +980,8 @@ export async function createPromo({ code, discount, description, color, expiresA
       category: 'promo',
       min_tier: 'free',
       thumbnail: 'promo',
-      likes: 0
+      likes: 0,
+      is_public: true
     }]).select().single();
 
     if (error) throw error;
