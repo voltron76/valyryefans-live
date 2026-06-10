@@ -753,6 +753,12 @@ const adminStyles = `
       grid-template-columns: 1fr 1fr;
       gap: var(--space-4);
     }
+    .admin-two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+      max-width: 1000px;
+    }
 
     /* Tier badge in admin */
     .admin-tier-badge {
@@ -825,6 +831,12 @@ const adminStyles = `
       }
       .admin-user-list {
         display: none;
+      }
+      .admin-dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .admin-two-col-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1329,7 +1341,7 @@ function renderPromotionsTab() {
     `).join('') : '<p style="color:var(--text-muted);">No promotions created yet.</p>';
 
   return `
-<div style="max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+<div class="admin-two-col-grid">
   <div>
     <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-6);">
       🏷️ Promotion Manager
@@ -1522,7 +1534,7 @@ function renderPollsTab() {
   }
 
   return `
-<div style="max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+<div class="admin-two-col-grid">
   <div>
     <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-6);">
       📊 Polls Manager

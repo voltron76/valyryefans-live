@@ -232,7 +232,7 @@
   --gradient-dark: linear-gradient(180deg, transparent 0%, rgba(253, 245, 248, 0.8) 60%, #fdf5f8 100%);
   --gradient-hero: linear-gradient(180deg, transparent 0%, rgba(253, 245, 248, 0.4) 40%, #fdf5f8 100%);
   --gradient-card: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.85) 100%);
-  --gradient-gold: linear-gradient(135deg, #d4547a 0%, #f0a0b8 40%, #d4547a 60%, #a83a5c 100%);
+  --gradient-gold: linear-gradient(135deg, #c9956b 0%, #f0d4a8 40%, #c9956b 60%, #a07550 100%);
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(180, 100, 140, 0.08);
@@ -260,7 +260,7 @@
   --sub-badge-free-bg: rgba(212, 84, 122, 0.08);
   --sub-badge-free-border: rgba(212, 84, 122, 0.2);
   --sub-badge-free-color: #d4547a;
-  --sub-badge-gold-bg: rgba(212, 84, 122, 0.12);
+  --sub-badge-gold-bg: rgba(201, 149, 107, 0.15);
 
   /* Tier card popular glow */
   --tier-popular-bg: linear-gradient(180deg, rgba(212, 84, 122, 0.06) 0%, var(--bg-card) 40%);
@@ -3708,7 +3708,7 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   stroke-width: 3;
 }
 [data-theme='light'] .verified-badge {
-  background: linear-gradient(135deg, #E91E8C, #FF6EC7);
+  background: linear-gradient(135deg, #FFD700, #FFA500);
 }
 
 /* Gold avatar ring */
@@ -3717,8 +3717,8 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
 }
 [data-theme='light'] .avatar-ring--gold {
-  border-color: #E91E8C !important;
-  box-shadow: 0 0 10px rgba(233, 30, 140, 0.4);
+  border-color: #FFD700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
 }
 
 /* Promo Banner */

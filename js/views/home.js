@@ -773,6 +773,7 @@ export function renderHome() {
 
         const showCircle = (circleIndex, startSlideIndex = 0) => {
           currentCircleIndex = circleIndex;
+          modal.setAttribute('data-current-circle-index', circleIndex);
           const story = allStories[currentCircleIndex];
           if (!story) {
             closeStoryViewer();
@@ -1170,6 +1171,35 @@ export function renderHome() {
             }
           }
         });
+
+        // 3. Update active story viewer stats dynamically if open
+        const storyViewer = document.getElementById('story-viewer-modal');
+        if (storyViewer) {
+          const circleIdx = parseInt(storyViewer.getAttribute('data-current-circle-index'));
+          if (!isNaN(circleIdx)) {
+            const story = allStories[circleIdx];
+            if (story) {
+              const originalItem = newState.content.find(c => c.id === story.id);
+              if (originalItem) {
+                // Update stats
+                const statsEl = document.getElementById('story-viewer-stats');
+                if (statsEl) {
+                  statsEl.innerHTML = `
+                    <span>❤️ ${originalItem.likes || 0} likes</span>
+                    <span>👁️ ${originalItem.views || 0} views</span>
+                  `;
+                }
+                // Update like button
+                const likeBtn = document.getElementById('story-viewer-like');
+                if (likeBtn) {
+                  const liked = originalItem.likedByUser;
+                  likeBtn.className = `story-viewer__like-btn ${liked ? 'story-viewer__like-btn--active' : ''}`;
+                  likeBtn.innerHTML = liked ? icons.heartFilled : icons.heart;
+                }
+              }
+            }
+          }
+        }
       });
     },
 

@@ -220,6 +220,7 @@ export async function initStore() {
             type: m.type,
             mediaUrl: m.media_url
           }));
+          notify('messages');
         }
       } else {
         // If Admin, fetch all users and messages
@@ -393,6 +394,8 @@ export async function initStore() {
         polls.push(...mappedPolls);
         notify('polls');
       }
+    } catch (e) {
+      console.error('Error loading polls:', e);
     }
 
     // Fetch Supabase Realtime message subscription
@@ -420,8 +423,6 @@ export async function initStore() {
           await initStore();
         })
         .subscribe();
-    } catch (e) {
-      console.error('Error loading polls:', e);
     }
 
   } catch (err) {
@@ -614,8 +615,6 @@ async function loadAdminData() {
     });
   }
 
-  // Fetch all messages
-  const { data: allMsgs } = await supabase.from('messages').select('*').order('created_at', { ascending: true });
   if (allMsgs) {
     state.adminMessages = {};
     allMsgs.forEach(m => {
@@ -633,6 +632,9 @@ async function loadAdminData() {
       }
     });
   }
+
+  notify('adminUsers');
+  notify('adminMessages');
 }
 
 // ------------------------------------
