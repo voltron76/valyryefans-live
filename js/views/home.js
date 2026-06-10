@@ -249,12 +249,12 @@ function renderPostCard(item, creatorProfile) {
           const state = getState();
           const isCurrentUserGold = state.currentTier === 'gold' && c.userName === (state.user?.name || '');
           const showBadge = c.isCreator || isCurrentUserGold;
-          return \`
+          return `
           <div class="post-comment">
-            <strong class="\${c.isCreator ? 'creator-name' : ''}">\${c.userName}\${showBadge ? verifiedBadgeSvg : ''}</strong>
-            <span>\${c.text}</span>
+            <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong>
+            <span>${c.text}</span>
           </div>
-        \`;
+        `;
         }).join('')}
         ${commentsArr.length > 2 ? `<button class="post-comments__more" data-id="${item.id}">View all ${commentsArr.length} comments</button>` : ''}
         <div class="post-comment-input" data-id="${item.id}">
