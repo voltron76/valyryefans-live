@@ -1,9 +1,9 @@
 // ============================================================
 // ValyryeFans — Welcome Gold View
-// Post-upgrade celebration page
+// Post-upgrade celebration and webhook confirmation page
 // ============================================================
 
-import { getState, showToast } from '../store.js';
+import { getState, showToast, initStore } from '../store.js';
 import { navigate } from '../router.js';
 
 const benefits = [
@@ -61,7 +61,121 @@ function generateConfettiParticles(count = 50) {
 
 export function renderWelcomeGold() {
   const state = getState();
+  const isUpgraded = state.currentTier === 'gold' || state.isAdmin;
 
+  if (!isUpgraded) {
+    // ------------------------------------
+    // Loading/Confirmation State (Race condition handling)
+    // ------------------------------------
+    const html = `
+      <div style="min-height: calc(100vh - var(--nav-height)); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
+        <div class="card-glass" style="max-width: 450px; width: 100%; text-align: center; padding: var(--space-12) var(--space-8); border-radius: var(--radius-2xl); border: 1px solid var(--glass-border);">
+          <div class="spinner-gold" style="
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--accent-subtle);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            margin: 0 auto var(--space-8);
+            animation: spin 1s linear infinite;
+          "></div>
+          <h1 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-4);">Confirming Payment...</h1>
+          <p style="color: var(--text-secondary); margin-bottom: var(--space-6); font-size: var(--text-sm); line-height: 1.6;">
+            Stripe is finalizing your upgrade. This usually takes just a few seconds. We will automatically activate your VIP access.
+          </p>
+          <div id="confirm-status-text" style="font-size: var(--text-xs); color: var(--text-muted);">Connecting to server...</div>
+          
+          <button id="force-check-btn" class="btn btn-secondary btn-sm" style="margin-top: var(--space-6); display: none;">
+            🔄 Check Status Manually
+          </button>
+        </div>
+      </div>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+    `;
+
+    let checkInterval = null;
+
+    return {
+      html,
+      afterRender() {
+        let attempts = 0;
+        const maxAttempts = 10; // ~15 seconds total
+
+        const checkStatus = async () => {
+          attempts++;
+          const statusText = document.getElementById('confirm-status-text');
+          if (statusText) {
+            statusText.textContent = `Checking activation status (attempt ${attempts}/${maxAttempts})...`;
+          }
+
+          try {
+            const { supabase } = await import('../supabase.js');
+            const sessionRes = await supabase.auth.getSession();
+            const userId = sessionRes.data?.session?.user?.id;
+
+            if (userId) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('tier')
+                .eq('id', userId)
+                .single();
+
+              if (profile && (profile.tier === 'gold' || profile.tier === 'admin')) {
+                if (checkInterval) clearInterval(checkInterval);
+                showToast('🎉 Your Gold account is active!', 'success');
+                // Refresh global store state
+                await initStore();
+                // Reload page to show celebration
+                navigate('/welcome-gold');
+                return true;
+              }
+            }
+          } catch (e) {
+            console.error('Error during status check:', e);
+          }
+
+          if (attempts >= maxAttempts) {
+            if (checkInterval) clearInterval(checkInterval);
+            if (statusText) {
+              statusText.innerHTML = `
+                <span style="color: var(--error); font-weight: 600;">Finalizing is taking a bit longer than expected.</span><br>
+                If your card was charged, your account will activate shortly. Please refresh the page or check your profile in a minute.
+              `;
+            }
+            const forceCheckBtn = document.getElementById('force-check-btn');
+            if (forceCheckBtn) {
+              forceCheckBtn.style.display = 'inline-flex';
+              forceCheckBtn.onclick = () => {
+                attempts = 0;
+                forceCheckBtn.style.display = 'none';
+                checkStatus();
+                // Restart polling
+                checkInterval = setInterval(checkStatus, 1500);
+              };
+            }
+          }
+          return false;
+        };
+
+        // Run check immediately, then poll
+        checkStatus();
+        checkInterval = setInterval(checkStatus, 1500);
+      },
+      cleanup() {
+        if (checkInterval) {
+          clearInterval(checkInterval);
+        }
+      }
+    };
+  }
+
+  // ------------------------------------
+  // Celebration State (Gold Tier Confirmed)
+  // ------------------------------------
   const html = `
     <div style="min-height: calc(100vh - var(--nav-height)); position: relative; overflow: hidden;">
 
