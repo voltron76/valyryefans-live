@@ -85,6 +85,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: 'subscription',
+        allow_promotion_codes: true,
         success_url: `${origin}/#/welcome-gold`,
         cancel_url: `${origin}/#/subscribe`,
         metadata: {
@@ -113,6 +114,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: 'payment',
+        allow_promotion_codes: true,
         success_url: `${origin}/#/gallery`,
         cancel_url: `${origin}/#/gallery`,
         metadata: {
