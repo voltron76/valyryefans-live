@@ -4,7 +4,7 @@
 // Generated dynamically from actual content/messages
 // ============================================================
 
-import { getState, showToast } from '../store.js';
+import { getState, showToast, markNotificationRead } from '../store.js';
 import { navigate } from '../router.js';
 
 const typeIcons = {
@@ -231,19 +231,9 @@ export function renderNotifications() {
         card.addEventListener('click', () => {
           const id = card.dataset.id;
           const link = card.dataset.link;
-          const s = getState();
-          if (s.notifications) {
-            const notif = s.notifications.find(n => n.id === id);
-            if (notif && !notif.read) {
-              notif.read = true;
-              // Update card visually
-              card.style.borderLeftColor = 'transparent';
-              card.style.background = 'var(--bg-card)';
-              const dot = card.querySelector('div[style*="width: 8px"]');
-              if (dot) dot.remove();
-              updateBadges();
-            }
-          }
+          
+          markNotificationRead(id);
+          
           // Navigate to the linked page
           if (link) {
             navigate(link);

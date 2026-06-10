@@ -3,7 +3,7 @@
 // Secured admin panel for creator (Valyrye) to manage platform
 // ============================================================
 
-import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo } from '../store.js';
+import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo, publishPromo } from '../store.js';
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
 
@@ -1310,68 +1310,90 @@ function renderDashboardTab() {
 // Promotions Tab
 // ------------------------------------
 function renderPromotionsTab() {
-  return `
-<div style="max-width: 600px;">
-  <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-6);">
-    🏷️ Promotion Manager
-  </h2>
-  
-  <!-- Active Promo Status -->
-  <div id="active-promo-status" style="margin-bottom: var(--space-6);"></div>
-  
-  <!-- Create New Promo Form -->
-  <div class="card-glass" style="padding: var(--space-6); border-radius: var(--radius-xl);">
-    <h3 style="margin-bottom: var(--space-5); font-size: var(--text-lg);">Create New Promotion</h3>
-    
-    <div class="form-group" style="margin-bottom: var(--space-4);">
-      <label class="form-label">Promo Code</label>
-      <input class="form-input" type="text" id="promo-code" placeholder="e.g. SUMMER40" style="text-transform: uppercase;">
-    </div>
-    
-    <div class="form-group" style="margin-bottom: var(--space-4);">
-      <label class="form-label">Discount Percentage (%)</label>
-      <input class="form-input" type="number" id="promo-discount" placeholder="20" min="1" max="100" value="20">
-    </div>
-    
-    <div class="form-group" style="margin-bottom: var(--space-4);">
-      <label class="form-label">Banner Text</label>
-      <input class="form-input" type="text" id="promo-text" placeholder="Limited time offer! Subscribe now!">
-    </div>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4);">
-      <div class="form-group">
-        <label class="form-label">Expiry Date & Time</label>
-        <input class="form-input" type="datetime-local" id="promo-expiry">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Banner Color</label>
-        <div style="display: flex; gap: var(--space-2); align-items: center;">
-          <input type="color" id="promo-color" value="#E91E8C" style="width: 48px; height: 40px; border: none; border-radius: var(--radius-md); cursor: pointer; background: none;">
-          <span id="promo-color-hex" style="font-size: var(--text-sm); color: var(--text-muted);">#E91E8C</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Preview -->
-    <div style="margin-bottom: var(--space-5);">
-      <label class="form-label">Preview</label>
-      <div id="promo-preview" class="promo-banner" style="color: #fff; padding: var(--space-4);">
-        <div class="promo-banner__shimmer"></div>
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);">
+  const stateRef = getState();
+  const promosListHtml = stateRef.allPromos && stateRef.allPromos.length > 0 ? 
+    stateRef.allPromos.map(p => `
+      <div class="card-glass" style="padding: var(--space-4); margin-bottom: var(--space-3); border-radius: var(--radius-lg); border-left: 3px solid ${p.status === 'active' ? 'var(--success)' : 'transparent'};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <div style="font-weight: 700; font-size: var(--text-lg);">🔥 <span id="preview-discount">20</span>% OFF</div>
-            <div style="font-size: var(--text-sm); opacity: 0.9;"><span id="preview-text">Limited time offer!</span></div>
+            <div style="font-weight: 600; margin-bottom: var(--space-1);">${p.code} — ${p.discount}% OFF ${p.status === 'active' ? '<span style="color:var(--success);font-size:var(--text-xs);"> (ACTIVE)</span>' : ''}</div>
+            <div style="font-size: var(--text-sm); color: var(--text-muted);">${p.description}</div>
+            ${p.expiresAt ? `<div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Expires: ${new Date(p.expiresAt).toLocaleString()}</div>` : ''}
           </div>
-          <div style="display: flex; align-items: center; gap: var(--space-3);">
-            <div style="padding: var(--space-1) var(--space-3); background: rgba(255,255,255,0.2); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm);">Code: <span id="preview-code">PROMO</span></div>
+          <div style="display: flex; gap: var(--space-2);">
+            ${p.status !== 'active' ? `<button class="btn btn-sm btn-primary promo-publish-btn" data-id="${p.id}">🚀 Publish</button>` : ''}
+            <button class="btn btn-sm promo-delete-btn" data-id="${p.id}" style="background: none; border: 1px solid var(--error); color: var(--error);">🗑️</button>
           </div>
         </div>
       </div>
-    </div>
+    `).join('') : '<p style="color:var(--text-muted);">No promotions created yet.</p>';
+
+  return `
+<div style="max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+  <div>
+    <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-6);">
+      🏷️ Promotion Manager
+    </h2>
     
-    <div style="display: flex; gap: var(--space-3);">
-      <button class="btn btn-primary" id="promo-create-btn">🚀 Launch Promotion</button>
-      <button class="btn btn-sm" id="promo-delete-btn" style="background: none; border: 1px solid var(--error); color: var(--error);">🗑️ Deactivate</button>
+    <!-- Manage Promos -->
+    <h3 style="margin-bottom: var(--space-4); font-size: var(--text-lg);">Your Promotions</h3>
+    <div id="promos-list-container">
+      ${promosListHtml}
+    </div>
+  </div>
+
+  <div>
+    <!-- Create New Promo Form -->
+    <div class="card-glass" style="padding: var(--space-6); border-radius: var(--radius-xl);">
+      <h3 style="margin-bottom: var(--space-5); font-size: var(--text-lg);">Create New Promotion</h3>
+      
+      <div class="form-group" style="margin-bottom: var(--space-4);">
+        <label class="form-label">Promo Code</label>
+        <input class="form-input" type="text" id="promo-code" placeholder="e.g. SUMMER40" style="text-transform: uppercase;">
+      </div>
+      
+      <div class="form-group" style="margin-bottom: var(--space-4);">
+        <label class="form-label">Discount Percentage (%)</label>
+        <input class="form-input" type="number" id="promo-discount" placeholder="20" min="1" max="100" value="20">
+      </div>
+      
+      <div class="form-group" style="margin-bottom: var(--space-4);">
+        <label class="form-label">Banner Text</label>
+        <input class="form-input" type="text" id="promo-text" placeholder="Limited time offer! Subscribe now!">
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">Expiry Date & Time</label>
+          <input class="form-input" type="datetime-local" id="promo-expiry">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Banner Color</label>
+          <div style="display: flex; gap: var(--space-2); align-items: center;">
+            <input type="color" id="promo-color" value="#E91E8C" style="width: 48px; height: 40px; border: none; border-radius: var(--radius-md); cursor: pointer; background: none;">
+            <span id="promo-color-hex" style="font-size: var(--text-sm); color: var(--text-muted);">#E91E8C</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Preview -->
+      <div style="margin-bottom: var(--space-5);">
+        <label class="form-label">Preview</label>
+        <div id="promo-preview" class="promo-banner" style="color: #fff; padding: var(--space-4);">
+          <div class="promo-banner__shimmer"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);">
+            <div>
+              <div style="font-weight: 700; font-size: var(--text-lg);">🔥 <span id="preview-discount">20</span>% OFF</div>
+              <div style="font-size: var(--text-sm); opacity: 0.9;"><span id="preview-text">Limited time offer!</span></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <div style="padding: var(--space-1) var(--space-3); background: rgba(255,255,255,0.2); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm);">Code: <span id="preview-code">PROMO</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn btn-primary w-full" id="promo-create-btn" style="justify-content:center;">Create Promotion</button>
     </div>
   </div>
 </div>
@@ -1503,8 +1525,13 @@ export function renderAdmin() {
       // Logout
       document.getElementById('admin-logout')?.addEventListener('click', () => {
         sessionStorage.removeItem('vf-admin-auth');
-        showToast('Signed out of admin panel', 'success');
-        navigate('/');
+        localStorage.removeItem('vf-state');
+        import('../supabase.js').then(({ supabase }) => {
+          supabase.auth.signOut().finally(() => {
+            window.location.hash = '#/';
+            window.location.reload();
+          });
+        });
       });
 
       // Wire up initial tab
@@ -1916,21 +1943,6 @@ export function renderAdmin() {
           previewEl.style.background = colorInput.value;
         }
 
-        // Show active promo status
-        const state = getState();
-        if (state.activePromo) {
-          const statusEl = document.getElementById('active-promo-status');
-          if (statusEl) {
-            statusEl.innerHTML = `
-              <div class="card-glass" style="padding: var(--space-4); border-radius: var(--radius-lg); border-left: 3px solid var(--success);">
-                <div style="font-weight: 600; color: var(--success); margin-bottom: var(--space-2);">✅ Active Promotion</div>
-                <div style="font-size: var(--text-sm);">Code: <strong>${state.activePromo.code}</strong> — ${state.activePromo.discount}% off</div>
-                ${state.activePromo.expiresAt ? `<div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Expires: ${new Date(state.activePromo.expiresAt).toLocaleString()}</div>` : ''}
-              </div>
-            `;
-          }
-        }
-
         // Live preview updates
         document.getElementById('promo-code')?.addEventListener('input', (e) => {
           const el = document.getElementById('preview-code');
@@ -1954,6 +1966,14 @@ export function renderAdmin() {
           if (hexLabel) hexLabel.textContent = e.target.value;
         });
 
+        const reRenderTab = () => {
+          const contentEl = document.getElementById('admin-tab-content');
+          if (contentEl) {
+            contentEl.innerHTML = renderPromotionsTab();
+            wirePromotionsTab();
+          }
+        };
+
         // Create promo button
         document.getElementById('promo-create-btn')?.addEventListener('click', async () => {
           const code = document.getElementById('promo-code')?.value?.trim().toUpperCase();
@@ -1966,13 +1986,26 @@ export function renderAdmin() {
           if (discount < 1 || discount > 100) { showToast('Discount must be 1-100%', 'error'); return; }
 
           await createPromo({ code, discount, description, color, expiresAt });
+          reRenderTab();
         });
 
-        // Delete promo button
-        document.getElementById('promo-delete-btn')?.addEventListener('click', async () => {
-          if (confirm('Deactivate the current promotion?')) {
-            await deletePromo();
-          }
+        // List buttons
+        document.querySelectorAll('.promo-publish-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            await publishPromo(id);
+            reRenderTab();
+          });
+        });
+
+        document.querySelectorAll('.promo-delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (confirm('Delete this promotion?')) {
+              const id = btn.dataset.id;
+              await deletePromo(id);
+              reRenderTab();
+            }
+          });
         });
       }
     }

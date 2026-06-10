@@ -3730,7 +3730,11 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   margin-bottom: var(--space-6);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  animation: promo-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: promo-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1), promo-flash 2s infinite ease-in-out 0.6s;
+}
+@keyframes promo-flash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50% { box-shadow: 0 0 20px 5px rgba(255,255,255,0.4); transform: scale(1.01); }
 }
 .promo-banner:hover {
   transform: translateY(-2px);

@@ -3,7 +3,7 @@
 // Individual content page with paywall & related section
 // ============================================================
 
-import { getState, canAccessTier, showToast, addTip } from '../store.js';
+import { getState, canAccessTier, showToast, addTip, markPostNotificationAsRead } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -228,6 +228,9 @@ export function renderContentDetail(params) {
   return {
     html,
     afterRender() {
+      // Clear notification for this post
+      markPostNotificationAsRead(item.id);
+
       // ---- Resolve DRM Blob URLs ----
       document.querySelectorAll('[data-drm-src]').forEach(async (el) => {
         const rawUrl = el.getAttribute('data-drm-src');

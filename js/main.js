@@ -22,9 +22,16 @@ import { renderAdmin } from './views/admin.js';
 import { renderAdminLogin } from './views/admin-login.js';
 import { renderPurchases } from './views/purchases.js';
 
+// ---- Global Auth State Tracking ----
+let initialized = false;
+let currentUserId = null;
+
 // ---- Initialize App ----
 async function initApp() {
   await initStore(); // Fetch live data from Supabase
+
+  const state = getState();
+  currentUserId = state.isAuthenticated ? state.user.id : null;
 
   // Render navbar
   const navbarEl = document.getElementById('navbar');
@@ -85,6 +92,34 @@ async function initApp() {
     }
   });
 
+  // Subscribe to auth state changes for auto-refresh
+  const { supabase } = await import('./supabase.js');
+  supabase.auth.onAuthStateChange((event, session) => {
+    const newUserId = session?.user?.id || null;
+    if (initialized && newUserId !== currentUserId) {
+      currentUserId = newUserId;
+      localStorage.removeItem('vf-state');
+      window.location.reload();
+    }
+  });
+
+  // Subscribe to store notifications & messages for dynamic navbar/mobile badge updates
+  import('./store.js').then(({ subscribe }) => {
+    subscribe(['notifications', 'messages'], () => {
+      const navbarEl = document.getElementById('navbar');
+      if (navbarEl) {
+        navbarEl.innerHTML = renderNavbar();
+        initNavbarEvents();
+        afterNavRender();
+      }
+      const mobileNav = document.getElementById('mobile-nav-container');
+      if (mobileNav) {
+        mobileNav.innerHTML = renderMobileNav();
+      }
+    });
+  });
+
+  initialized = true;
 }
 
 // ---- Navbar Events ----

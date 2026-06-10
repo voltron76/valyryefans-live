@@ -226,6 +226,7 @@ function renderPostCard(item, creatorProfile) {
       <!-- Media -->
       ${mediaHtml}
 
+      ${!locked ? `
       <!-- Action Bar -->
       <div class="post-card__actions">
         <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
@@ -248,12 +249,12 @@ function renderPostCard(item, creatorProfile) {
           const state = getState();
           const isCurrentUserGold = state.currentTier === 'gold' && c.userName === (state.user?.name || '');
           const showBadge = c.isCreator || isCurrentUserGold;
-          return `
+          return \`
           <div class="post-comment">
-            <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong>
-            <span>${c.text}</span>
+            <strong class="\${c.isCreator ? 'creator-name' : ''}">\${c.userName}\${showBadge ? verifiedBadgeSvg : ''}</strong>
+            <span>\${c.text}</span>
           </div>
-        `;
+        \`;
         }).join('')}
         ${commentsArr.length > 2 ? `<button class="post-comments__more" data-id="${item.id}">View all ${commentsArr.length} comments</button>` : ''}
         <div class="post-comment-input" data-id="${item.id}">
@@ -261,6 +262,7 @@ function renderPostCard(item, creatorProfile) {
           <button class="comment-send" data-id="${item.id}">Post</button>
         </div>
       </div>
+      ` : ''}
     </div>`;
 }
 
@@ -519,6 +521,35 @@ export function renderHome() {
             e.preventDefault();
             const sendBtn = document.querySelector(`.comment-send[data-id="${input.dataset.id}"]`);
             sendBtn?.click();
+          }
+        });
+      });
+
+      // ---- View all comments ----
+      document.querySelectorAll('.post-comments__more').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const post = state.content.find(c => c.id === id);
+          if (!post || !post.comments) return;
+
+          const commentsContainer = document.getElementById(`comments-${id}`);
+          if (commentsContainer) {
+            // Remove existing comment nodes
+            commentsContainer.querySelectorAll('.post-comment').forEach(el => el.remove());
+
+            // Render all comments
+            const inputWrap = commentsContainer.querySelector('.post-comment-input');
+            post.comments.forEach(c => {
+              const commentDiv = document.createElement('div');
+              commentDiv.className = 'post-comment animate-fade-in-up';
+              const isCurrentUserGold = state.currentTier === 'gold' && c.userName === (state.user?.name || '');
+              const showBadge = c.isCreator || isCurrentUserGold;
+              commentDiv.innerHTML = `<strong>${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong> <span>${c.text}</span>`;
+              commentsContainer.insertBefore(commentDiv, inputWrap);
+            });
+
+            // Remove the "View all" button
+            btn.remove();
           }
         });
       });

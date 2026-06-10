@@ -274,21 +274,9 @@ export function afterNavRender() {
           await supabase.auth.signOut();
         } catch(e) {}
 
-        const s = getState();
-        s.isAuthenticated = false;
-        s.user = null;
-        s.profile = null;
-        s.currentTier = 'free';
-        // Re-render navbar
-        const navbarEl = document.getElementById('navbar');
-        if (navbarEl) {
-          navbarEl.innerHTML = renderNavbar();
-          afterNavRender();
-        }
-        import('../store.js').then(({ showToast }) => {
-          showToast('Signed out successfully', 'success');
-        });
-        import('../router.js').then(({ navigate }) => navigate('/'));
+        localStorage.removeItem('vf-state');
+        window.location.hash = '#/';
+        window.location.reload();
       });
     }
   }

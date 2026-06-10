@@ -3,7 +3,7 @@
 // Single direct chat with Valyrye
 // ============================================================
 
-import { getState, canAccessTier, showToast, addMessage, getRandomReply, addTip } from '../store.js';
+import { getState, canAccessTier, showToast, addMessage, getRandomReply, addTip, markMessageNotificationsAsRead } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -197,6 +197,9 @@ export function renderMessages() {
   return {
     html,
     afterRender() {
+      // Clear message notifications
+      markMessageNotificationsAsRead();
+
       const chatMessages = document.getElementById('chat-messages');
       const chatInput = document.getElementById('chat-input');
       const sendBtn = document.getElementById('chat-send-btn');

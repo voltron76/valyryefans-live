@@ -58,7 +58,9 @@ export const state = {
   content: [], // Loaded from DB
   messages: [], // Loaded from DB
   notifications: [],
-  activePromo: null, // { id, code, discount, description, color, expiresAt }
+  activePromo: null,
+  allPromos: [],
+  creatorId: null,
   bookmarks: [],
   ui: {
     authModalOpen: false,
@@ -191,11 +193,21 @@ export async function initStore() {
         state.user.cardLast4 = profile.card_last4 || '';
       }
 
+      // Fetch Creator/Admin profile ID
+      try {
+        const { data: adminProf } = await supabase.from('profiles').select('id').eq('tier', 'admin').limit(1).maybeSingle();
+        if (adminProf) {
+          state.creatorId = adminProf.id;
+        }
+      } catch (e) {
+        console.error('Error fetching creator profile ID:', e);
+      }
+
       // Fetch user specific messages
       if (!state.isAdmin) {
         const { data: msgs } = await supabase.from('messages')
           .select('*')
-          .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id},recipient_id.is.null`)
+          .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
           .order('created_at', { ascending: true });
         if (msgs) {
           state.messages = msgs.map(m => ({
@@ -229,7 +241,7 @@ export async function initStore() {
     // 1.6 Fetch comments (Supabase table with localStorage fallback)
     let commentsMap = {};
     try {
-      const { data: commentsData, error: commentsErr } = await supabase.from('comments').select('*').order('created_at', { ascending: true });
+      const { data: commentsData, error: commentsErr } = await supabase.from('comments').select('*, profiles(tier)').order('created_at', { ascending: true });
       if (!commentsErr && commentsData) {
         commentsData.forEach(c => {
           if (!commentsMap[c.content_id]) commentsMap[c.content_id] = [];
@@ -237,6 +249,7 @@ export async function initStore() {
             id: c.id,
             userId: c.user_id,
             userName: c.user_name || 'Anonymous',
+            tier: c.profiles?.tier || 'free',
             text: c.text,
             time: formatTime(c.created_at),
             isCreator: c.user_name === 'Valyrye'
@@ -318,29 +331,29 @@ export async function initStore() {
         generateNotifications(state, session);
       }
 
-      // Load active promo
+      // Load all promos
       const { data: promos } = await supabase.from('content')
         .select('*')
         .eq('category', 'promo')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (promos && promos.length > 0) {
-        const p = promos[0];
-        const expiresAt = p.description ? p.description.split('|')[2] : null;
-        // Only show if not expired
-        if (!expiresAt || new Date(expiresAt) > new Date()) {
+        .order('created_at', { ascending: false });
+      if (promos) {
+        state.allPromos = promos.map(p => {
           const parts = (p.description || '').split('|');
-          state.activePromo = {
+          return {
             id: p.id,
             code: p.title || 'PROMO',
             discount: parseInt(parts[0]) || 20,
             description: parts[1] || 'Limited time offer!',
+            expiresAt: parts[2] || null,
             color: parts[3] || '#E91E8C',
-            expiresAt: expiresAt || null,
+            status: parts[4] || 'inactive'
           };
-        } else {
-          state.activePromo = null;
-        }
+        });
+        const active = state.allPromos.find(p => p.status === 'active' && (!p.expiresAt || new Date(p.expiresAt) > new Date()));
+        state.activePromo = active || null;
+      } else {
+        state.allPromos = [];
+        state.activePromo = null;
       }
     }
 
@@ -427,7 +440,7 @@ function generateNotifications(st, session) {
   const incomingMsgs = st.messages.filter(m => m.sender === 'valyrye');
   if (incomingMsgs.length > 0) {
     const latest = incomingMsgs[incomingMsgs.length - 1];
-    const msgNotifId = 'notif-msg-latest';
+    const msgNotifId = `notif-msg-${latest.id}`;
     notifications.push({
       id: msgNotifId,
       type: 'message',
@@ -442,27 +455,29 @@ function generateNotifications(st, session) {
 
   // 4. Subscription welcome notification
   if (userTier === 'gold') {
+    const notifId = 'notif-sub-welcome';
     notifications.push({
-      id: 'notif-sub-welcome',
+      id: notifId,
       type: 'subscription',
       title: '⭐ Gold VIP Active',
       message: 'You have full access to all exclusive content. Enjoy your Gold membership!',
       time: 'Active',
       rawTime: null,
-      read: true,
+      read: readIds.includes(notifId),
       link: '/profile'
     });
   }
 
   // 5. Welcome notification (always present)
+  const welcomeNotifId = 'notif-welcome';
   notifications.push({
-    id: 'notif-welcome',
+    id: welcomeNotifId,
     type: 'system',
     title: '👋 Welcome to ValyryeFans',
     message: 'Explore exclusive content and connect with Valyrye. Enjoy your experience!',
     time: 'Welcome',
     rawTime: null,
-    read: true,
+    read: readIds.includes(welcomeNotifId),
     link: '/'
   });
 
@@ -475,6 +490,7 @@ function generateNotifications(st, session) {
 
   // Limit to 30 most recent
   st.notifications = notifications.slice(0, 30);
+  notify('notifications');
 }
 
 async function loadAdminData() {
@@ -528,7 +544,7 @@ export async function addMessage(content, sender = 'fan', type = 'text', mediaUr
 
   const msg = {
     sender_id: state.user.id,
-    recipient_id: null, // Valyrye
+    recipient_id: state.creatorId || null, // Valyrye
     content,
     type,
     media_url: mediaUrl
@@ -591,8 +607,7 @@ export async function uploadContent(item) {
     thumbnail: item.thumbnailPath, // Storage path
     video_url: item.videoPath,
     media: item.mediaPaths, // Array of storage paths
-    likes: 0,
-    is_public: item.minTier === 'free'
+    likes: 0
   };
 
   const { data, error } = await supabase.from('content').insert([newContent]).select().single();
@@ -714,14 +729,13 @@ export async function toggleLike(contentId) {
       const { error: unlikeErr } = await supabase.from('content_likes').delete().eq('content_id', contentId).eq('user_id', state.user.id);
       if (unlikeErr) throw unlikeErr;
     }
-    // Update count in content table
-    await supabase.from('content').update({ likes: item.likes }).eq('id', contentId);
+    // DB trigger automatically updates content.likes count
   } catch (err) {
     // Revert if error
     item.likedByUser = originalLiked;
     item.likes = originalLikesCount;
     notify('content');
-    showToast('Failed to update like', 'error');
+    showToast('Failed to update like. You may not have access.', 'error');
   }
 }
 
@@ -744,12 +758,13 @@ export async function addComment(contentId, text) {
   let newComment = null;
 
   try {
-    const { data, error } = await supabase.from('comments').insert([commentObj]).select().single();
+    const { data, error } = await supabase.from('comments').insert([commentObj]).select('*, profiles(tier)').single();
     if (!error && data) {
       newComment = {
         id: data.id,
         userId: data.user_id,
         userName: data.user_name || 'Anonymous',
+        tier: data.profiles?.tier || state.user.tier || 'free',
         text: data.text,
         time: formatTime(data.created_at),
         isCreator: state.isAdmin
@@ -766,6 +781,7 @@ export async function addComment(contentId, text) {
       id: Date.now().toString(36),
       userId: state.user.id,
       userName: state.user.name || 'Anonymous',
+      tier: state.user.tier || 'free',
       text,
       time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
       isCreator: state.isAdmin
@@ -968,11 +984,7 @@ export async function sendWelcomeMessage() {
 // ------------------------------------
 export async function createPromo({ code, discount, description, color, expiresAt }) {
   try {
-    // Delete any existing promos first
-    await supabase.from('content').delete().eq('category', 'promo');
-
-    // Store promo data: description field = "discount|text|expiresAt|color"
-    const descStr = `${discount}|${description}|${expiresAt || ''}|${color || '#E91E8C'}`;
+    const descStr = `${discount}|${description}|${expiresAt || ''}|${color || '#E91E8C'}|inactive`;
     const { data, error } = await supabase.from('content').insert([{
       title: code,
       description: descStr,
@@ -980,15 +992,15 @@ export async function createPromo({ code, discount, description, color, expiresA
       category: 'promo',
       min_tier: 'free',
       thumbnail: 'promo',
-      likes: 0,
-      is_public: true
+      likes: 0
     }]).select().single();
 
     if (error) throw error;
 
-    state.activePromo = { id: data.id, code, discount, description, color, expiresAt };
-    notify('activePromo');
-    showToast('Promo created and live! 🎉', 'success');
+    const newPromo = { id: data.id, code, discount, description, color, expiresAt, status: 'inactive' };
+    state.allPromos.unshift(newPromo);
+    notify('activePromo'); // notify to re-render admin tab
+    showToast('Promo created! You can publish it now.', 'success');
     return data;
   } catch (e) {
     console.error('Error creating promo:', e);
@@ -997,14 +1009,38 @@ export async function createPromo({ code, discount, description, color, expiresA
   }
 }
 
-export async function deletePromo() {
+export async function deletePromo(id) {
   try {
-    await supabase.from('content').delete().eq('category', 'promo');
-    state.activePromo = null;
+    await supabase.from('content').delete().eq('id', id);
+    state.allPromos = state.allPromos.filter(p => p.id !== id);
+    if (state.activePromo?.id === id) {
+      state.activePromo = null;
+    }
     notify('activePromo');
-    showToast('Promo deactivated', 'success');
+    showToast('Promo deleted', 'success');
   } catch (e) {
     console.error('Error deleting promo:', e);
+  }
+}
+
+export async function publishPromo(id) {
+  try {
+    // Set all others to inactive and this one to active
+    for (const p of state.allPromos) {
+      if (p.id === id) {
+        p.status = 'active';
+        state.activePromo = p;
+      } else {
+        p.status = 'inactive';
+      }
+      const descStr = `${p.discount}|${p.description}|${p.expiresAt || ''}|${p.color || '#E91E8C'}|${p.status}`;
+      await supabase.from('content').update({ description: descStr }).eq('id', p.id);
+    }
+    notify('activePromo');
+    showToast('Promo published and live! 🎉', 'success');
+  } catch (e) {
+    console.error('Error publishing promo:', e);
+    showToast('Failed to publish promo', 'error');
   }
 }
 
@@ -1022,5 +1058,72 @@ export async function loadDrmBlob(url) {
   } catch (e) {
     console.warn('[DRM] Fallback to raw URL:', e);
     return url;
+  }
+}
+
+// ------------------------------------
+// Notification Read Helpers
+// ------------------------------------
+export function markNotificationRead(id) {
+  let readIds = [];
+  try { readIds = JSON.parse(localStorage.getItem('vf-read-notif-ids') || '[]'); } catch(e) {}
+  
+  let changed = false;
+  state.notifications?.forEach(n => {
+    if (n.id === id && !n.read) {
+      n.read = true;
+      if (!readIds.includes(id)) {
+        readIds.push(id);
+        changed = true;
+      }
+    }
+  });
+  
+  if (changed) {
+    localStorage.setItem('vf-read-notif-ids', JSON.stringify(readIds));
+    notify('notifications');
+  }
+}
+
+export function markMessageNotificationsAsRead() {
+  let readIds = [];
+  try { readIds = JSON.parse(localStorage.getItem('vf-read-notif-ids') || '[]'); } catch(e) {}
+  
+  let changed = false;
+  state.notifications?.forEach(n => {
+    if (n.type === 'message' && !n.read) {
+      n.read = true;
+      if (!readIds.includes(n.id)) {
+        readIds.push(n.id);
+        changed = true;
+      }
+    }
+  });
+  
+  if (changed) {
+    localStorage.setItem('vf-read-notif-ids', JSON.stringify(readIds));
+    notify('notifications');
+  }
+}
+
+export function markPostNotificationAsRead(postId) {
+  const notifId = `notif-post-${postId}`;
+  let readIds = [];
+  try { readIds = JSON.parse(localStorage.getItem('vf-read-notif-ids') || '[]'); } catch(e) {}
+  
+  let changed = false;
+  state.notifications?.forEach(n => {
+    if (n.id === notifId && !n.read) {
+      n.read = true;
+      if (!readIds.includes(notifId)) {
+        readIds.push(notifId);
+        changed = true;
+      }
+    }
+  });
+  
+  if (changed) {
+    localStorage.setItem('vf-read-notif-ids', JSON.stringify(readIds));
+    notify('notifications');
   }
 }
