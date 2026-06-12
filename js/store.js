@@ -443,6 +443,7 @@ export async function initStore() {
                   sender: n.sender_id === state.user.id ? 'valyryes' : 'fan',
                   content: n.content,
                   time: formatTime(n.created_at),
+                  createdAt: n.created_at,
                   type: n.type,
                   mediaUrl: n.media_url,
                   read: !!n.is_read
@@ -452,6 +453,10 @@ export async function initStore() {
                   const user = state.adminUsers.find(u => u.id === n.sender_id);
                   if (user) { user.unread = (user.unread || 0) + 1; }
                 }
+                
+                // Re-sort the user list since a new message arrived
+                sortAdminUsers();
+                
                 notify('adminMessages');
                 notify('adminUsers');
               }
@@ -707,6 +712,26 @@ function playNotificationSound() {
   }
 }
 
+function sortAdminUsers() {
+  if (!state.adminUsers) return;
+  state.adminUsers.sort((a, b) => {
+    const msgsA = state.adminMessages[a.id] || [];
+    const msgsB = state.adminMessages[b.id] || [];
+    
+    const lastA = msgsA.length > 0 ? new Date(msgsA[msgsA.length - 1].createdAt || 0).getTime() : 0;
+    const lastB = msgsB.length > 0 ? new Date(msgsB[msgsB.length - 1].createdAt || 0).getTime() : 0;
+    
+    if (lastA !== lastB) {
+      return lastB - lastA; // Latest message first
+    }
+    
+    // Fallback: profile creation date
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+}
+
 async function loadAdminData() {
   // Fetch all profiles that aren't admin
   const { data: profiles } = await supabase.from('profiles').select('*').neq('tier', 'admin');
@@ -722,6 +747,7 @@ async function loadAdminData() {
         name: p.name || 'Fan',
         tier: p.tier,
         lastSeen: formatDate(p.created_at),
+        createdAt: p.created_at, // raw timestamp for sorting fallback
         unread: unreadCount
       };
     });
@@ -738,6 +764,7 @@ async function loadAdminData() {
           sender: m.sender_id === state.user.id ? 'valyryes' : 'fan',
           content: m.content,
           time: formatTime(m.created_at),
+          createdAt: m.created_at, // raw timestamp for sorting
           type: m.type,
           mediaUrl: m.media_url,
           read: !!m.is_read
@@ -745,6 +772,9 @@ async function loadAdminData() {
       }
     });
   }
+
+  // Sort users so latest conversations are on top
+  sortAdminUsers();
 
   notify('adminUsers');
   notify('adminMessages');
@@ -822,11 +852,17 @@ export async function addAdminReply(userId, content, type = 'text', mediaUrl = n
       sender: 'valyryes',
       content: data.content,
       time: formatTime(data.created_at),
+      createdAt: data.created_at,
       type: data.type,
       mediaUrl: data.media_url,
       read: false
     });
+    
+    // Sort users so they jump to top on reply
+    sortAdminUsers();
+    
     notify('adminMessages');
+    notify('adminUsers');
   }
 }
 
@@ -1471,8 +1507,8 @@ export async function markFanMessagesAsRead() {
     await supabase
       .from('messages')
       .update({ is_read: true })
-      .eq('sender_id', state.creatorId)
       .eq('recipient_id', state.user.id)
+      .neq('sender_id', state.user.id)
       .eq('is_read', false);
   } catch (e) {
     console.error('Failed to mark fan messages as read:', e);

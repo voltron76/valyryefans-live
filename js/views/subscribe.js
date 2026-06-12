@@ -123,8 +123,8 @@ function renderTierCard(tier, index, currentTier, promoDiscount) {
 export function renderSubscribe() {
   const state = getState();
   const { tiers, currentTier, creatorProfile } = state;
-  const promoDiscount = state.activePromo?.discount || 0;
-  const promoCode = state.activePromo?.code || '';
+  const promoDiscount = 0; // Do not apply discount on our page
+  const promoCode = ''; // Do not auto-fill on our page
 
   const tiersHtml = tiers.map((tier, i) => renderTierCard(tier, i, currentTier, promoDiscount)).join('');
 
@@ -138,7 +138,7 @@ export function renderSubscribe() {
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); position: relative; z-index: 1;">
               <div>
                 <div style="font-weight: 800; font-size: var(--text-lg);">🔥 ${state.activePromo.discount}% OFF — Code: ${state.activePromo.code}</div>
-                <div style="font-size: var(--text-sm); opacity: 0.9;">${state.activePromo.description}</div>
+                <div style="font-size: var(--text-sm); opacity: 0.9;">${state.activePromo.description}. Apply this code on the Stripe checkout page for your discount!</div>
               </div>
             </div>
           </div>
@@ -233,11 +233,19 @@ export function renderSubscribe() {
         
         if (!code) { showToast('Please enter a promo code', 'error'); return; }
         
-        if (state.activePromo && state.activePromo.code.toUpperCase() === code) {
-          showToast(`🎉 Promo code "${code}" applied — ${state.activePromo.discount}% off!`, 'success');
-          // Store in session for checkout
-          sessionStorage.setItem('vf-promo', JSON.stringify(state.activePromo));
-          navigate('/subscribe'); // Re-render with discount
+        const matchedPromo = state.allPromos?.find(p => p.code.toUpperCase() === code && p.status === 'active');
+        
+        if (matchedPromo) {
+          showToast(`🎉 Code verified! Use code "${code}" on Stripe checkout for ${matchedPromo.discount}% off!`, 'success');
+          
+          // Copy to clipboard for user convenience
+          navigator.clipboard.writeText(code).then(() => {
+            showToast('Promo code copied to clipboard! 📋', 'success');
+          }).catch(() => {});
+
+          // Update button text to Verified
+          const btn = document.getElementById('apply-promo-btn');
+          if (btn) btn.textContent = '✓ Verified';
         } else {
           showToast('Invalid promo code', 'error');
         }

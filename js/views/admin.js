@@ -182,6 +182,7 @@ const adminStyles = `
       text-align: left;
       transition: all 0.2s;
       border-left: 3px solid transparent;
+      position: relative;
     }
     .admin-tab:hover {
       background: var(--bg-hover);
@@ -778,7 +779,7 @@ const adminStyles = `
       color: var(--text-muted);
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
       .admin-layout {
         grid-template-columns: 1fr;
       }
@@ -1765,6 +1766,15 @@ export function renderAdmin() {
         }
 
         adminMessagesSub = subscribe(['adminMessages', 'adminUsers'], (newState) => {
+          // If the currently selected user has unread messages, mark them as read immediately in DB/state
+          if (selectedUserId) {
+            const userObj = newState.adminUsers?.find(u => u.id === selectedUserId);
+            if (userObj && userObj.unread > 0) {
+              markMessagesAsRead(selectedUserId);
+              return; // Wait for the state update to notify again
+            }
+          }
+
           // Re-render the user list items to update unread badge counts
           const listContainer = document.getElementById('admin-user-list-items');
           if (listContainer) {
@@ -2319,7 +2329,8 @@ export function renderAdmin() {
         // End poll button
         document.querySelector('.active-poll-end-btn')?.addEventListener('click', async (e) => {
           if (confirm('Are you sure you want to end this poll now?')) {
-            const id = e.target.dataset.id;
+            const btn = e.currentTarget;
+            const id = btn.dataset.id;
             const { endPoll } = await import('../store.js');
             await endPoll(id);
             reRenderTab();

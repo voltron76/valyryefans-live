@@ -30,6 +30,11 @@ function renderPromoBanner(promo) {
   if (!promo) return '';
   // Don't show banner if user already dismissed it this session
   if (sessionStorage.getItem('promo-dismissed') === 'true') return '';
+
+  // Hide banner for Gold subscribers or Admin
+  const state = getState();
+  if (state.isAuthenticated && (state.currentTier === 'gold' || state.isAdmin)) return '';
+
   const color = promo.color || '#E91E8C';
   let countdownHtml = '';
   if (promo.expiresAt) {
@@ -38,12 +43,16 @@ function renderPromoBanner(promo) {
   return `
     <div class="promo-banner-top animate-fade-in-up" id="promo-banner" style="background: linear-gradient(135deg, ${color}, ${color}dd, ${color}); color: #fff;">
       <div class="promo-banner__shimmer"></div>
-      <span style="font-weight:800;letter-spacing:-0.3px;position:relative;z-index:1;">🔥 ${promo.discount}% OFF</span>
-      <span style="opacity:0.9;position:relative;z-index:1;">${promo.description || 'Limited time offer!'}</span>
-      <span style="padding:2px 10px;background:rgba(255,255,255,0.2);border-radius:var(--radius-full);font-weight:700;font-family:monospace;font-size:12px;position:relative;z-index:1;">Code: ${promo.code}</span>
-      ${countdownHtml ? `<span style="position:relative;z-index:1;">${countdownHtml}</span>` : ''}
-      <a href="#/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;">Subscribe →</a>
-      <button id="close-promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:auto;flex-shrink:0;">✕</button>
+      <div class="promo-banner-scroller">
+        <div class="promo-banner-scroller__inner">
+          <span style="font-weight:800;letter-spacing:-0.3px;position:relative;z-index:1;">🔥 ${promo.discount}% OFF</span>
+          <span style="opacity:0.9;position:relative;z-index:1;">${promo.description || 'Limited time offer!'}</span>
+          <span style="padding:2px 10px;background:rgba(255,255,255,0.2);border-radius:var(--radius-full);font-weight:700;font-family:monospace;font-size:12px;position:relative;z-index:1;">Code: ${promo.code}</span>
+          ${countdownHtml ? `<span style="position:relative;z-index:1;">${countdownHtml}</span>` : ''}
+        </div>
+      </div>
+      <a href="#/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;flex-shrink:0;">Subscribe →</a>
+      <button id="close-promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:var(--space-2);flex-shrink:0;">✕</button>
     </div>`;
 }
 
