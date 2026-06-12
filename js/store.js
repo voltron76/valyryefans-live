@@ -505,15 +505,15 @@ function generateNotifications(st, session) {
     });
   });
 
-  // 3. Message notifications (unread incoming messages)
-  const incomingMsgs = st.messages.filter(m => m.sender === 'valyryes');
-  if (incomingMsgs.length > 0) {
-    const latest = incomingMsgs[incomingMsgs.length - 1];
+  // 3. Message notifications (only UNREAD incoming messages)
+  const unreadIncoming = st.messages.filter(m => m.sender === 'valyryes' && !m.read);
+  if (unreadIncoming.length > 0) {
+    const latest = unreadIncoming[unreadIncoming.length - 1];
     const msgNotifId = `notif-msg-${latest.id}`;
     notifications.push({
       id: msgNotifId,
       type: 'message',
-      title: '💬 New Message from Valyryes',
+      title: `💬 ${unreadIncoming.length} New Message${unreadIncoming.length > 1 ? 's' : ''} from Valyryes`,
       message: latest.content?.substring(0, 80) + (latest.content?.length > 80 ? '...' : ''),
       time: latest.time || 'Recently',
       rawTime: null,

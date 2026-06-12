@@ -225,14 +225,7 @@ export function renderGallery() {
             return;
           }
           
-          // Card on file logic
-          const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
-          if (!hasCard) {
-            import('../store.js').then(({ tipPost }) => {
-              tipPost(btn.dataset.tipId, 10, null, '#/gallery');
-            });
-            return;
-          }
+          // Always show tip modal for amount selection
 
           tipContentId = btn.dataset.tipId;
           tipModal?.classList.add('active');
