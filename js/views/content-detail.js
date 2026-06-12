@@ -3,7 +3,7 @@
 // Individual content page with paywall & related section
 // ============================================================
 
-import { getState, canAccessTier, showToast, tipPost, markPostNotificationAsRead } from '../store.js';
+import { getState, canAccessTier, showToast, tipPost, markPostNotificationAsRead, toggleLike, subscribe } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -49,6 +49,7 @@ function renderRelatedCard(item) {
 
 export function renderContentDetail(params) {
   const state = getState();
+  let storeUnsubscribe = null;
   const { content } = state;
   const item = content.find(c => c.id === params.id);
 
@@ -242,18 +243,34 @@ export function renderContentDetail(params) {
         }
       });
 
-      let liked = false;
       const likeBtn = document.getElementById('like-btn');
       const likeCount = document.getElementById('like-count');
 
+      // Set initial liked state
+      if (likeBtn && item.likedByUser) {
+        likeBtn.innerHTML = icons.heartFilled;
+        likeBtn.classList.add('card-accent');
+        likeBtn.style.color = 'var(--accent-light)';
+      }
+
       likeBtn?.addEventListener('click', () => {
-        liked = !liked;
-        const count = item.likes + (liked ? 1 : 0);
-        likeCount.textContent = count.toLocaleString();
-        likeBtn.innerHTML = liked ? icons.heartFilled : icons.heart;
-        likeBtn.classList.toggle('card-accent', liked);
-        likeBtn.style.color = liked ? 'var(--accent-light)' : '';
+        if (typeof toggleLike === 'function') {
+          toggleLike(item.id);
+        }
       });
+
+      if (typeof subscribe === 'function') {
+        storeUnsubscribe = subscribe(['content'], (newState) => {
+          const updatedItem = newState.content.find(c => c.id === item.id);
+          if (updatedItem && likeBtn && likeCount) {
+            const liked = !!updatedItem.likedByUser;
+            likeBtn.innerHTML = liked ? icons.heartFilled : icons.heart;
+            likeBtn.classList.toggle('card-accent', liked);
+            likeBtn.style.color = liked ? 'var(--accent-light)' : '';
+            likeCount.textContent = updatedItem.likes.toLocaleString();
+          }
+        });
+      }
 
       document.getElementById('share-btn')?.addEventListener('click', () => {
         if (navigator.share) {
@@ -367,6 +384,11 @@ export function renderContentDetail(params) {
           });
         });
       });
+    },
+    cleanup() {
+      if (storeUnsubscribe) {
+        storeUnsubscribe();
+      }
     }
   };
 }

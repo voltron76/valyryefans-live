@@ -508,18 +508,6 @@ export function renderHome() {
           if (typeof toggleLike === 'function') {
             toggleLike(id);
           }
-          const isActive = btn.classList.toggle('post-action--active');
-          const countEl = btn.querySelector('.like-count');
-          if (countEl) {
-            let count = parseInt(countEl.textContent) || 0;
-            countEl.textContent = isActive ? count + 1 : Math.max(0, count - 1);
-          }
-          btn.innerHTML = (isActive ? icons.heartFilled : icons.heart) + ` <span class="like-count">${btn.querySelector('.like-count')?.textContent || countEl?.textContent || 0}</span>`;
-          // Re-read count after innerHTML replacement
-          const newCount = btn.querySelector('.like-count');
-          if (newCount && countEl) {
-            newCount.textContent = countEl.textContent;
-          }
         });
       });
 
@@ -1194,11 +1182,9 @@ export function renderHome() {
         newState.content?.forEach(item => {
           const likeBtn = document.querySelector(`.post-action[data-id="${item.id}"][data-action="like"]`);
           if (likeBtn) {
-            likeBtn.classList.toggle('post-action--active', !!item.likedByUser);
-            const countEl = likeBtn.querySelector('.like-count');
-            if (countEl) {
-              countEl.textContent = item.likes || 0;
-            }
+            const liked = !!item.likedByUser;
+            likeBtn.classList.toggle('post-action--active', liked);
+            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${item.likes || 0}</span>`;
           }
         });
 
