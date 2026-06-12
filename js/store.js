@@ -957,7 +957,7 @@ export async function tipPost(contentId, amount, message = null, successPath = n
 
   // Redirect to Stripe Checkout
   showToast('Redirecting to secure payment...', 'info');
-  let dest = `checkout?tip=${tipAmount}`;
+  let dest = `/checkout?tip=${tipAmount}`;
   if (contentId) dest += `&contentId=${encodeURIComponent(contentId)}`;
   if (message) dest += `&message=${encodeURIComponent(message)}`;
   if (successPath) dest += `&successPath=${encodeURIComponent(successPath)}`;
