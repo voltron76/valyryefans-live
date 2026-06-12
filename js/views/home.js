@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Home View (Social Post Feed)
+// ValyryesFans — Home View (Social Post Feed)
 // Premium OnlyFans-style creator feed
 // ============================================================
 
@@ -28,34 +28,22 @@ const icons = {
 // ------------------------------------
 function renderPromoBanner(promo) {
   if (!promo) return '';
+  // Don't show banner if user already dismissed it this session
+  if (sessionStorage.getItem('promo-dismissed') === 'true') return '';
   const color = promo.color || '#E91E8C';
   let countdownHtml = '';
   if (promo.expiresAt) {
-    countdownHtml = `<div class="promo-banner__countdown" id="promo-countdown">⏰ Calculating...</div>`;
+    countdownHtml = `<span id="promo-countdown" style="opacity:0.9;font-size:12px;">⏰ ...</span>`;
   }
   return `
     <div class="promo-banner-top animate-fade-in-up" id="promo-banner" style="background: linear-gradient(135deg, ${color}, ${color}dd, ${color}); color: #fff;">
       <div class="promo-banner__shimmer"></div>
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); position: relative; z-index: 1;">
-        <div style="flex: 1; min-width: 200px;">
-          <div style="font-weight: 800; font-size: var(--text-xl); letter-spacing: -0.5px; margin-bottom: var(--space-1);">
-            🔥 ${promo.discount}% OFF
-          </div>
-          <div style="font-size: var(--text-sm); opacity: 0.9;">
-            ${promo.description || 'Limited time offer!'}
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;">
-          <div style="padding: var(--space-2) var(--space-4); background: rgba(255,255,255,0.2); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.25);">
-            Code: ${promo.code}
-          </div>
-          ${countdownHtml}
-          <a href="#/subscribe" class="btn btn-sm" style="background: #fff; color: ${color}; font-weight: 700; border: none;">
-            Subscribe Now →
-          </a>
-        </div>
-      </div>
-      <button id="close-promo" style="position: absolute; top: var(--space-2); right: var(--space-3); background: rgba(255,255,255,0.2); border: none; color: #fff; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; z-index: 2;">✕</button>
+      <span style="font-weight:800;letter-spacing:-0.3px;position:relative;z-index:1;">🔥 ${promo.discount}% OFF</span>
+      <span style="opacity:0.9;position:relative;z-index:1;">${promo.description || 'Limited time offer!'}</span>
+      <span style="padding:2px 10px;background:rgba(255,255,255,0.2);border-radius:var(--radius-full);font-weight:700;font-family:monospace;font-size:12px;position:relative;z-index:1;">Code: ${promo.code}</span>
+      ${countdownHtml ? `<span style="position:relative;z-index:1;">${countdownHtml}</span>` : ''}
+      <a href="#/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;">Subscribe →</a>
+      <button id="close-promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:auto;flex-shrink:0;">✕</button>
     </div>`;
 }
 
@@ -307,6 +295,9 @@ function renderTipModal() {
           <button class="tip-amount-btn" data-amount="10">$10</button>
           <button class="tip-amount-btn" data-amount="25">$25</button>
           <button class="tip-amount-btn" data-amount="50">$50</button>
+        </div>
+        <div style="margin-top:var(--space-3);">
+          <input type="number" min="1" step="0.01" class="tip-modal__message" placeholder="Custom amount ($)" id="tip-custom-amount" style="width:100%;">
         </div>
         <input type="text" class="tip-modal__message" placeholder="Add a message (optional)" id="tip-message">
         <button class="btn btn-primary w-full" id="tip-confirm" style="justify-content:center;margin-top:var(--space-3);">Send Tip</button>
@@ -582,12 +573,21 @@ export function renderHome() {
       });
 
       let selectedTipAmount = null;
+      const tipCustomInput = document.getElementById('tip-custom-amount');
       document.querySelectorAll('.tip-amount-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           selectedTipAmount = parseInt(btn.dataset.amount);
+          if (tipCustomInput) tipCustomInput.value = '';
         });
+      });
+      tipCustomInput?.addEventListener('input', () => {
+        const val = parseFloat(tipCustomInput.value);
+        if (val > 0) {
+          selectedTipAmount = val;
+          document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
+        }
       });
 
       document.getElementById('tip-confirm')?.addEventListener('click', async () => {
@@ -1077,10 +1077,11 @@ export function renderHome() {
       pollTimerInterval = setInterval(() => {
         document.querySelectorAll('.poll-timer-home').forEach(timerEl => {
           const expiry = timerEl.dataset.expiry;
-          if (!expiry || timerEl.textContent.trim() === 'Completed') return;
+          if (!expiry || expiry === 'null' || expiry === 'undefined' || timerEl.textContent.trim() === 'Completed') return;
 
           const now = Date.now();
           const end = new Date(expiry).getTime();
+          if (isNaN(end)) { timerEl.textContent = 'Completed'; return; }
           const diff = end - now;
 
           if (diff <= 0) {

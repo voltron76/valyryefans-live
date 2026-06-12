@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — App Entry Point
+// ValyryesFans — App Entry Point
 // ============================================================
 
 import './theme.js';
@@ -184,7 +184,7 @@ export function openAuthModal(mode = 'login') {
   overlay.innerHTML = `
     <div class="modal">
       <button class="modal__close" id="auth-close" aria-label="Close">✕</button>
-      <div class="modal__title font-display">${mode === 'login' ? 'Welcome Back' : 'Join ValyryeFans'}</div>
+      <div class="modal__title font-display">${mode === 'login' ? 'Welcome Back' : 'Join ValyryesFans'}</div>
       <p class="modal__subtitle">${mode === 'login' ? 'Sign in to access your subscription' : 'Create an account to subscribe and unlock exclusive content'}</p>
 
       <form id="auth-form">

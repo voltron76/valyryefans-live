@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/voltron76/valyryefans-live/issues"
   },
-  "homepage": "https://github.com/voltron76/valyryefans-live#readme"
+  "homepage": "https://github.com/voltron76/valyryefans-live#readme",
+  "devDependencies": {
+    "wrangler": "^4.100.0"
+  }
 }

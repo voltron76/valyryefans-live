@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Welcome Gold View
+// ValyryesFans — Welcome Gold View
 // Post-upgrade celebration and webhook confirmation page
 // ============================================================
 
@@ -15,7 +15,7 @@ const benefits = [
   {
     emoji: '💬',
     title: 'Direct Messaging',
-    description: 'Chat with Valyrye directly',
+    description: 'Chat with Valyryes directly',
   },
   {
     emoji: '🎨',

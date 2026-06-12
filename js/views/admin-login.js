@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Admin Login View
+// ValyryesFans — Admin Login View
 // Separate login page for admin access
 // ============================================================
 

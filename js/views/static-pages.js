@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Static Pages
+// ValyryesFans — Static Pages
 // Terms, Privacy, Help Center, Support, Leaderboard,
 // Referrals, Become a Creator
 // ============================================================
@@ -41,7 +41,7 @@ export function renderTerms() {
       <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">1. Introduction</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          Welcome to ValyryeFans ("Platform", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of the ValyryeFans website, mobile applications, and all related services. By accessing or using our Platform, you agree to be bound by these Terms. If you do not agree, you may not access or use the Platform.
+          Welcome to ValyryesFans ("Platform", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of the ValyryesFans website, mobile applications, and all related services. By accessing or using our Platform, you agree to be bound by these Terms. If you do not agree, you may not access or use the Platform.
         </p>
       </div>
 
@@ -69,7 +69,7 @@ export function renderTerms() {
       <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">5. Intellectual Property</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          The Platform and its original content (excluding user-generated content), features, and functionality are owned by ValyryeFans and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws. Our trademarks, logos, and service marks may not be used in connection with any product or service without our prior written consent. By posting content on the Platform, you grant us a non-exclusive, worldwide, royalty-free license to display and distribute such content solely in connection with operating the Platform.
+          The Platform and its original content (excluding user-generated content), features, and functionality are owned by ValyryesFans and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws. Our trademarks, logos, and service marks may not be used in connection with any product or service without our prior written consent. By posting content on the Platform, you grant us a non-exclusive, worldwide, royalty-free license to display and distribute such content solely in connection with operating the Platform.
         </p>
       </div>
 
@@ -83,7 +83,7 @@ export function renderTerms() {
       <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">7. Limitation of Liability</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          In no event shall ValyryeFans, its directors, employees, partners, agents, suppliers, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of (or inability to access or use) the Platform. Our total aggregate liability shall not exceed the amount you paid us in the twelve (12) months preceding the event giving rise to the claim.
+          In no event shall ValyryesFans, its directors, employees, partners, agents, suppliers, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of (or inability to access or use) the Platform. Our total aggregate liability shall not exceed the amount you paid us in the twelve (12) months preceding the event giving rise to the claim.
         </p>
       </div>
 
@@ -97,7 +97,7 @@ export function renderTerms() {
       <div style="${glass} padding: var(--space-8);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">9. Contact Us</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          If you have any questions about these Terms, please contact us at <a href="mailto:legal@valyryefans.com" style="color: var(--accent-light);">legal@valyryefans.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
+          If you have any questions about these Terms, please contact us at <a href="mailto:legal@valyryesfans.com" style="color: var(--accent-light);">legal@valyryesfans.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
         </p>
       </div>
     </section>
@@ -156,7 +156,7 @@ export function renderPrivacy() {
       <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">6. Your Rights</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          Depending on your jurisdiction, you may have the right to access, correct, update, or delete your personal information; object to or restrict certain processing activities; request data portability; and withdraw consent at any time. To exercise these rights, please contact us at <a href="mailto:privacy@valyryefans.com" style="color: var(--accent-light);">privacy@valyryefans.com</a>. We will respond to your request within 30 days, in compliance with applicable data protection regulations including GDPR and CCPA.
+          Depending on your jurisdiction, you may have the right to access, correct, update, or delete your personal information; object to or restrict certain processing activities; request data portability; and withdraw consent at any time. To exercise these rights, please contact us at <a href="mailto:privacy@valyryesfans.com" style="color: var(--accent-light);">privacy@valyryesfans.com</a>. We will respond to your request within 30 days, in compliance with applicable data protection regulations including GDPR and CCPA.
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export function renderPrivacy() {
       <div style="${glass} padding: var(--space-8);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">9. Contact Us</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          For questions regarding this Privacy Policy or our data practices, please contact us at <a href="mailto:privacy@valyryefans.com" style="color: var(--accent-light);">privacy@valyryefans.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
+          For questions regarding this Privacy Policy or our data practices, please contact us at <a href="mailto:privacy@valyryesfans.com" style="color: var(--accent-light);">privacy@valyryesfans.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
         </p>
       </div>
     </section>
@@ -353,8 +353,8 @@ export function renderSupport() {
         <div style="${glass} padding: var(--space-6); text-align: center;">
           <div style="font-size: 28px; margin-bottom: var(--space-3);">📧</div>
           <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-2);">Email Us</h3>
-          <a href="mailto:support@valyryefans.com" style="color: var(--accent-light); font-size: var(--text-sm);">
-            support@valyryefans.com
+          <a href="mailto:support@valyryesfans.com" style="color: var(--accent-light); font-size: var(--text-sm);">
+            support@valyryesfans.com
           </a>
         </div>
         <div style="${glass} padding: var(--space-6); text-align: center;">
@@ -514,7 +514,7 @@ export function renderLeaderboard() {
 export function renderReferrals() {
   const state = getState();
   const refCode = state.user?.email ? btoa(state.user.email).slice(0, 8).toUpperCase() : 'VF' + Math.random().toString(36).slice(2, 8).toUpperCase();
-  const refLink = `https://valyryefans.com/ref/${refCode}`;
+  const refLink = `https://valyryesfans.com/ref/${refCode}`;
 
   const steps = [
     { icon: icons.share, title: 'Share Your Link', desc: 'Send your unique referral link to friends via social media, text, or email.' },
@@ -530,7 +530,7 @@ export function renderReferrals() {
           <span class="text-gradient">Referral Program</span>
         </h1>
         <p style="color: var(--text-secondary); font-size: var(--text-lg); max-width: 500px; margin: 0 auto;">
-          Share the love and earn rewards! Invite friends to ValyryeFans and earn credit for every subscription.
+          Share the love and earn rewards! Invite friends to ValyryesFans and earn credit for every subscription.
         </p>
       </div>
 
@@ -586,7 +586,7 @@ export function renderReferrals() {
           <li style="display: flex; align-items: start; gap: var(--space-2);">${icons.check} <span>Referral credits are applied after the referred user's first successful payment.</span></li>
           <li style="display: flex; align-items: start; gap: var(--space-2);">${icons.check} <span>Self-referrals or fraudulent referrals will result in disqualification.</span></li>
           <li style="display: flex; align-items: start; gap: var(--space-2);">${icons.check} <span>Credits are non-transferable and can only be used towards subscriptions.</span></li>
-          <li style="display: flex; align-items: start; gap: var(--space-2);">${icons.check} <span>ValyryeFans reserves the right to modify or terminate this program at any time.</span></li>
+          <li style="display: flex; align-items: start; gap: var(--space-2);">${icons.check} <span>ValyryesFans reserves the right to modify or terminate this program at any time.</span></li>
           <li style="display: flex; align-items: start; gap: var(--space-2);">${icons.check} <span>There is no limit to the number of referrals you can make.</span></li>
         </ul>
       </div>

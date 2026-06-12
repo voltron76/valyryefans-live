@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Footer Component
+// ValyryesFans — Footer Component
 // Social Hub style footer with creator info, socials, and links
 // ============================================================
 

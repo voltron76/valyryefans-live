@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Video Player Component
+// ValyryesFans — Video Player Component
 // ============================================================
 
 export function renderVideoPlayer(src, poster = '') {

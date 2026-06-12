@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Message Bubble Component
+// ValyryesFans — Message Bubble Component
 // ============================================================
 
 export function renderMessageBubble(msg) {

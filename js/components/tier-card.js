@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Tier Card Component
+// ValyryesFans — Tier Card Component
 // ============================================================
 
 export function renderTierCard(tier, isCurrentTier = false, index = 0) {

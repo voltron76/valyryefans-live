@@ -1,6 +1,6 @@
 // ============================================================
-// ValyryeFans — Admin Dashboard View
-// Secured admin panel for creator (Valyrye) to manage platform
+// ValyryesFans — Admin Dashboard View
+// Secured admin panel for creator (Valyryes) to manage platform
 // ============================================================
 
 import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo, publishPromo, subscribe, markMessagesAsRead } from '../store.js';
@@ -375,7 +375,7 @@ const adminStyles = `
       color: var(--text-primary);
       border-bottom-left-radius: var(--radius-sm);
     }
-    .admin-msg--valyrye {
+    .admin-msg--valyryes {
       align-self: flex-end;
       background: var(--accent);
       color: #fff;
@@ -401,7 +401,7 @@ const adminStyles = `
       opacity: 0.7;
       margin-top: var(--space-1);
     }
-    .admin-msg--valyrye .admin-msg__time {
+    .admin-msg--valyryes .admin-msg__time {
       color: rgba(255,255,255,0.7);
     }
     .admin-chat__input {
@@ -862,7 +862,7 @@ function renderPinScreen() {
           Unlock Dashboard
         </button>
         <p style="margin-top:var(--space-4);font-size:var(--text-xs);color:var(--text-muted);">
-          Secured access for Valyrye only
+          Secured access for Valyryes only
         </p>
       </div>
     </div>
@@ -929,9 +929,9 @@ function renderChatThread(userId) {
   if (!user) return '';
 
   const messagesHtml = messages.map(msg => {
-    const isValyrye = msg.sender === 'valyrye';
+    const isValyrye = msg.sender === 'valyryes';
     const isRequest = msg.type === 'request';
-    let cls = isValyrye ? 'admin-msg--valyrye' : 'admin-msg--fan';
+    let cls = isValyrye ? 'admin-msg--valyryes' : 'admin-msg--fan';
     if (isRequest) cls = 'admin-msg--request';
 
     let mediaHtml = '';
@@ -978,7 +978,7 @@ function renderChatThread(userId) {
         <button id="admin-photo-btn" title="Send photo" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:var(--radius-md); transition: background 0.2s;">${icons.photo}</button>
         <button id="admin-video-btn" title="Send video" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:var(--radius-md); transition: background 0.2s;">${icons.video}</button>
       </div>
-      <textarea id="admin-reply-input" placeholder="Reply as Valyrye..." rows="1"></textarea>
+      <textarea id="admin-reply-input" placeholder="Reply as Valyryes..." rows="1"></textarea>
       <button id="admin-reply-send" title="Send reply">${icons.send}</button>
     </div>
   `;
@@ -1269,7 +1269,7 @@ function renderDashboardTab() {
               <div class="admin-activity-item__content">
                 <div class="admin-activity-item__text">
                   <strong>${escapeHtml(msg.userName)}</strong>
-                  ${msg.sender === 'valyrye' ? 'received a reply' : msg.type === 'request' ? 'sent a request' : 'sent a message'}
+                  ${msg.sender === 'valyryes' ? 'received a reply' : msg.type === 'request' ? 'sent a request' : 'sent a message'}
                 </div>
                 <div style="font-size:var(--text-xs);color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">
                   "${escapeHtml(msg.content.substring(0, 60))}${msg.content.length > 60 ? '...' : ''}"
@@ -1590,7 +1590,7 @@ function renderDashboardLayout(activeTab = 'messages', selectedUserId = null) {
           <h3 class="font-display" style="display:flex;align-items:center;gap:var(--space-2);">
             <span style="color:var(--accent);">⚡</span> Admin Panel
           </h3>
-          <span>Valyrye Management</span>
+          <span>Valyryes Management</span>
         </div>
 
         ${tabs.map(tab => `
@@ -1806,9 +1806,9 @@ export function renderAdmin() {
                 `;
               } else {
                 chatMsgsEl.innerHTML = messages.map(msg => {
-                  const isValyrye = msg.sender === 'valyrye';
+                  const isValyrye = msg.sender === 'valyryes';
                   const isRequest = msg.type === 'request';
-                  let cls = isValyrye ? 'admin-msg--valyrye' : 'admin-msg--fan';
+                  let cls = isValyrye ? 'admin-msg--valyryes' : 'admin-msg--fan';
                   if (isRequest) cls = 'admin-msg--request';
 
                   let mediaHtml = '';

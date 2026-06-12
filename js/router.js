@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Hash-Based SPA Router
+// ValyryesFans — Hash-Based SPA Router
 // ============================================================
 
 const routes = {};

@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Paywall Overlay Component
+// ValyryesFans — Paywall Overlay Component
 // ============================================================
 
 export function renderPaywallOverlay(options = {}) {

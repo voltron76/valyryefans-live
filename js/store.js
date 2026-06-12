@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Supabase Reactive State Store
+// ValyryesFans — Supabase Reactive State Store
 // ============================================================
 
 import { supabase } from './supabase.js';
@@ -25,8 +25,8 @@ function formatTime(date) {
 // ------------------------------------
 export const state = {
   creatorProfile: {
-    name: 'Valyrye',
-    handle: '@valyrye',
+    name: 'Valyryes',
+    handle: '@valyryes',
     bio: `I'M ALWAYS HERE TO REPLY 🟢 LET'S CHAT 💬‼️\n\nWanna see what I don't post anywhere else? this is the only place you'll get the real me.\n\nAll natural, playful, and sweet. Slide in and let's have some fun. 😏\nNo agencies, no chatbots, no AI. Just me, all for you 🤭`,
     avatar: 'assets/images/avatar.jpg',
     banner: 'assets/images/hero-01.jpg',
@@ -214,7 +214,7 @@ export async function initStore() {
         if (msgs) {
           state.messages = msgs.map(m => ({
             id: m.id,
-            sender: m.sender_id === session.user.id ? 'fan' : 'valyrye',
+            sender: m.sender_id === session.user.id ? 'fan' : 'valyryes',
             content: m.content,
             time: formatTime(m.created_at),
             type: m.type,
@@ -255,7 +255,7 @@ export async function initStore() {
             tier: (Array.isArray(c.profiles) ? c.profiles[0]?.tier : c.profiles?.tier) || 'free',
             text: c.text,
             time: formatTime(c.created_at),
-            isCreator: c.user_name === 'Valyrye'
+            isCreator: c.user_name === 'Valyryes'
           });
         });
       } else {
@@ -412,7 +412,7 @@ export async function initStore() {
 
           if (newMsg.sender_id !== state.user.id) {
             playNotificationSound();
-            let senderName = 'Valyrye';
+            let senderName = 'Valyryes';
             if (state.isAdmin) {
               const profile = state.adminUsers.find(u => u.id === newMsg.sender_id);
               senderName = profile ? (profile.name || 'A user') : 'A user';
@@ -472,7 +472,7 @@ function generateNotifications(st, session) {
       id: notifId,
       type: 'new_post',
       title: `${typeLabel}${post.minTier === 'gold' ? ' (Gold Exclusive)' : ''}`,
-      message: `Valyrye posted "${post.title || 'New content'}"${post.minTier === 'gold' ? ' — exclusive for Gold members!' : ''}`,
+      message: `Valyryes posted "${post.title || 'New content'}"${post.minTier === 'gold' ? ' — exclusive for Gold members!' : ''}`,
       time: formatRelativeTime(post.rawCreatedAt),
       rawTime: post.rawCreatedAt,
       read: !isNew,
@@ -496,7 +496,7 @@ function generateNotifications(st, session) {
       id: notifId,
       type: 'new_post',
       title: '🔥 New Story',
-      message: `Valyrye added a new story — check it out before it disappears!`,
+      message: `Valyryes added a new story — check it out before it disappears!`,
       time: formatRelativeTime(story.rawCreatedAt),
       rawTime: story.rawCreatedAt,
       read: !isNew,
@@ -505,14 +505,14 @@ function generateNotifications(st, session) {
   });
 
   // 3. Message notifications (unread incoming messages)
-  const incomingMsgs = st.messages.filter(m => m.sender === 'valyrye');
+  const incomingMsgs = st.messages.filter(m => m.sender === 'valyryes');
   if (incomingMsgs.length > 0) {
     const latest = incomingMsgs[incomingMsgs.length - 1];
     const msgNotifId = `notif-msg-${latest.id}`;
     notifications.push({
       id: msgNotifId,
       type: 'message',
-      title: '💬 New Message from Valyrye',
+      title: '💬 New Message from Valyryes',
       message: latest.content?.substring(0, 80) + (latest.content?.length > 80 ? '...' : ''),
       time: latest.time || 'Recently',
       rawTime: null,
@@ -541,8 +541,8 @@ function generateNotifications(st, session) {
   notifications.push({
     id: welcomeNotifId,
     type: 'system',
-    title: '👋 Welcome to ValyryeFans',
-    message: 'Explore exclusive content and connect with Valyrye. Enjoy your experience!',
+    title: '👋 Welcome to ValyryesFans',
+    message: 'Explore exclusive content and connect with Valyryes. Enjoy your experience!',
     time: 'Welcome',
     rawTime: null,
     read: readIds.includes(welcomeNotifId),
@@ -623,7 +623,7 @@ async function loadAdminData() {
         if (!state.adminMessages[uId]) state.adminMessages[uId] = [];
         state.adminMessages[uId].push({
           id: m.id,
-          sender: m.sender_id === state.user.id ? 'valyrye' : 'fan',
+          sender: m.sender_id === state.user.id ? 'valyryes' : 'fan',
           content: m.content,
           time: formatTime(m.created_at),
           type: m.type,
@@ -695,7 +695,7 @@ export async function addAdminReply(userId, content, type = 'text', mediaUrl = n
     if (!state.adminMessages[userId]) state.adminMessages[userId] = [];
     state.adminMessages[userId].push({
       id: data.id,
-      sender: 'valyrye',
+      sender: 'valyryes',
       content: data.content,
       time: formatTime(data.created_at),
       type: data.type,
@@ -1158,7 +1158,7 @@ export async function sendWelcomeMessage() {
   const welcomeText = `Hey ${state.user.name || 'babe'}! 💕 Welcome to my VIP! I'm SO happy you're here. You just unlocked everything 🔓\n\nDM me anytime — I always reply to my Gold members first 😘`;
   const msg = {
     id: 'welcome-' + Date.now(),
-    sender: 'valyrye',
+    sender: 'valyryes',
     content: welcomeText,
     time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
     type: 'text'

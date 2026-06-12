@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Settings View
+// ValyryesFans — Settings View
 // Full settings page: Account, Appearance, Notifications, Privacy, Danger Zone
 // ============================================================
 

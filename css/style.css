@@ -1,5 +1,5 @@
 /* ============================================================
-   VALYRYEFANS — Premium Design System
+   VALYRYESFANS — Premium Design System
    Dual Theme: Deep Purple & Gold (Dark) / Fuchsia Pink & Rose Gold (Light)
    ============================================================ */
 
@@ -2735,15 +2735,21 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
 .promo-banner-top {
   background: var(--gradient-accent);
   color: white;
-  padding: var(--space-3) var(--space-6);
+  padding: var(--space-2) var(--space-6);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   font-size: var(--text-sm);
   font-weight: 600;
-  position: sticky;
+  position: fixed;
   top: var(--nav-height);
+  left: 0;
+  right: 0;
   z-index: 90;
+  white-space: nowrap;
+  overflow: hidden;
+  gap: var(--space-3);
+  height: 40px;
 }
 .promo-banner__content { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
 .promo-banner__code { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: var(--radius-full); font-family: monospace; }
@@ -2981,7 +2987,7 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
 }
 /* DRM Watermark */
 .post-card__media::after {
-  content: '@valyrye';
+  content: '@valyryes';
   position: absolute;
   bottom: 12px;
   right: 12px;

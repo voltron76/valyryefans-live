@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Subscribe View
+// ValyryesFans — Subscribe View
 // Subscription tiers selection with FAQ
 // ============================================================
 

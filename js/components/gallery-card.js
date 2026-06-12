@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Gallery Card Component
+// ValyryesFans — Gallery Card Component
 // ============================================================
 
 import { canAccessTier } from '../store.js';

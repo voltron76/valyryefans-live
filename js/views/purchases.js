@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Purchases / Media Collection View
+// ValyryesFans — Purchases / Media Collection View
 // ============================================================
 
 import { getState, canAccessTier } from '../store.js';
@@ -80,7 +80,7 @@ export function renderPurchases() {
           <div class="empty-state" style="padding: var(--space-24) var(--space-8);">
             <div class="empty-state__icon">🖼️</div>
             <h3 class="empty-state__title font-display">No media unlocked yet</h3>
-            <p class="empty-state__text">Subscribe to Gold to unlock Valyrye's exclusive premium collection.</p>
+            <p class="empty-state__text">Subscribe to Gold to unlock Valyryes' exclusive premium collection.</p>
             <a href="#/subscribe" class="btn btn-primary btn-lg" id="purchases-sub-btn">View Subscriptions</a>
           </div>
         </div>

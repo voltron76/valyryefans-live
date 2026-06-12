@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Gallery View
+// ValyryesFans — Gallery View
 // Filterable content gallery with paywall overlays, tips & video
 // ============================================================
 
@@ -69,7 +69,7 @@ function buildCard(item, idx) {
 
 export function renderGallery() {
   const state = getState();
-  const galleryItems = (state.content || []).filter(c => c.category !== 'story' && c.category !== 'promo');
+  const galleryItems = (state.content || []).filter(c => c.category !== 'story' && c.category !== 'promo' && c.category !== 'voucher' && c.category !== 'discount' && c.category !== 'coupon');
   const photoCount = galleryItems.filter(c => c.type === 'photo').length;
   const videoCount = galleryItems.filter(c => c.type === 'video').length;
 
@@ -81,7 +81,7 @@ export function renderGallery() {
           ${icons.grid}
           <h1 class="section__title font-display">Gallery</h1>
         </div>
-        <p class="section__subtitle">Browse Valyrye's collection — ${photoCount} photos${videoCount > 0 ? ` & ${videoCount} videos` : ''}</p>
+        <p class="section__subtitle">Browse Valyryes' collection — ${photoCount} photos${videoCount > 0 ? ` & ${videoCount} videos` : ''}</p>
       </div>
 
       <!-- Filter Tabs -->
@@ -118,7 +118,7 @@ export function renderGallery() {
           <h3 class="font-display" style="font-size:var(--text-xl);">💝 Send a Tip</h3>
           <button class="btn btn-ghost btn-sm" id="tip-modal-close" style="padding:var(--space-1);">✕</button>
         </div>
-        <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-6);">Show your appreciation to Valyrye!</p>
+        <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-6);">Show your appreciation to Valyryes!</p>
         <div class="tip-amounts">
           <button class="tip-amount-btn" data-amount="5">$5</button>
           <button class="tip-amount-btn selected" data-amount="10">$10</button>

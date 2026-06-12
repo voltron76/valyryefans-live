@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Frontend Configuration
+// ValyryesFans — Frontend Configuration
 // ============================================================
 
 // ONLY public/safe keys belong here. 

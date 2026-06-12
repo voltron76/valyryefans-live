@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Bookmarks View
+// ValyryesFans — Bookmarks View
 // Saved content gallery with remove functionality
 // ============================================================
 

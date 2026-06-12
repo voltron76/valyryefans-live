@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Messages View
+// ValyryesFans — Messages View
 // Single direct chat with Valyrye
 // ============================================================
 
@@ -45,7 +45,7 @@ function renderMessageBubble(msg) {
 
   const s = getState();
   const isGoldUser = s.currentTier === 'gold';
-  const senderName = isSent ? (s.user?.name || 'You') : 'Valyrye';
+  const senderName = isSent ? (s.user?.name || 'You') : 'Valyryes';
   const nameHtml = isSent && isGoldUser
     ? `<div style="font-size:var(--text-xs);font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:2px;color:var(--text-secondary);">${senderName}${verifiedBadgeSvg}</div>`
     : '';
@@ -71,7 +71,7 @@ export function renderMessages() {
           <div class="paywall-overlay animate-fade-in-up">
             <div class="paywall-overlay__icon animate-pulse-glow">${icons.lock}</div>
             <h2 class="paywall-overlay__title font-display">Sign In to Message</h2>
-            <p class="paywall-overlay__text">Create an account or sign in to access direct messaging with Valyrye.</p>
+            <p class="paywall-overlay__text">Create an account or sign in to access direct messaging with Valyryes.</p>
             <button class="btn btn-primary btn-lg" id="msg-auth-btn">
               ${icons.star} Sign In
             </button>
@@ -97,7 +97,7 @@ export function renderMessages() {
           <div class="paywall-overlay animate-fade-in-up">
             <div class="paywall-overlay__icon animate-pulse-glow">💬</div>
             <h2 class="paywall-overlay__title font-display">Upgrade to Message</h2>
-            <p class="paywall-overlay__text">Direct messaging is available to Gold subscribers. Upgrade your plan to start chatting with Valyrye.</p>
+            <p class="paywall-overlay__text">Direct messaging is available to Gold subscribers. Upgrade your plan to start chatting with Valyryes.</p>
             <a href="#/subscribe" class="btn btn-primary btn-lg">
               ${icons.star} Upgrade Plan
             </a>
@@ -116,16 +116,16 @@ export function renderMessages() {
         <!-- Chat Header -->
         <div class="chat-header" style="background:var(--glass-card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--glass-card-border);padding:var(--space-4) var(--space-6);display:flex;align-items:center;gap:var(--space-4);">
           <div style="position:relative;flex-shrink:0;">
-            <img src="assets/images/avatar.jpg" alt="Valyrye" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">
+            <img src="assets/images/avatar.jpg" alt="Valyryes" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">
             <span style="position:absolute;bottom:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#4ade80;border:2px solid var(--bg-primary);"></span>
           </div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:600;font-size:var(--text-lg);color:var(--text-primary);display:flex;align-items:center;gap:var(--space-2);">
-              Valyrye
+              Valyryes
               <span class="tier-badge" style="font-size:var(--text-xs);">👑 Creator</span>
             </div>
             <div style="font-size:var(--text-xs);color:var(--text-muted);display:flex;align-items:center;gap:var(--space-1);">
-              @valyrye · <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span> Online now
+              @valyryes · <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span> Online now
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@ export function renderMessages() {
         replyTimeout = setTimeout(async () => {
           if (typingIndicator) typingIndicator.style.display = 'none';
           const replyContent = getRandomReply();
-          const replyMsg = await addMessage(replyContent, 'valyrye');
+          const replyMsg = await addMessage(replyContent, 'valyryes');
           if (!replyMsg) return;
           appendBubble(replyMsg);
         }, delay);
@@ -349,7 +349,7 @@ export function renderMessages() {
               isVideo 
                 ? "Ooh, I love this video! You look so good babe! Thanks for sharing ❤️🎬" 
                 : "Omg, you look absolutely amazing! Thanks for sharing this photo babe! 😍💕", 
-              "valyrye"
+              "valyryes"
             );
             if (autoReply) appendBubble(autoReply);
           }, delay);
@@ -372,11 +372,11 @@ export function renderMessages() {
               </button>
               <div style="font-size: 32px; margin-bottom: var(--space-3);">${config.icon}</div>
               <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-2); color: var(--text-primary); font-weight:600;">${config.title}</h2>
-              <p style="color: var(--text-secondary); margin-bottom: var(--space-4); font-size: var(--text-sm);">Describe what you want Valyrye to create, and select the price you want to offer (minimum $${config.minAmount}).</p>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-4); font-size: var(--text-sm);">Describe what you want Valyryes to create, and select the price you want to offer (minimum $${config.minAmount}).</p>
               
               <div class="form-group" style="margin-bottom: var(--space-4);">
                 <label class="form-label" style="font-weight:600; font-size:12px; margin-bottom: 6px; display:block;">Request Description</label>
-                <textarea id="request-description" class="form-input" rows="4" placeholder="Tell Valyrye in detail what you want..." style="resize:none; font-size: var(--text-sm); width: 100%; box-sizing: border-box; padding:var(--space-2) var(--space-3); border-radius:var(--radius-md); border:1px solid var(--border); background:var(--bg-input); color:var(--text-primary); outline:none;"></textarea>
+                <textarea id="request-description" class="form-input" rows="4" placeholder="Tell Valyryes in detail what you want..." style="resize:none; font-size: var(--text-sm); width: 100%; box-sizing: border-box; padding:var(--space-2) var(--space-3); border-radius:var(--radius-md); border:1px solid var(--border); background:var(--bg-input); color:var(--text-primary); outline:none;"></textarea>
               </div>
 
               <div class="form-group" style="margin-bottom: var(--space-4);">
@@ -478,7 +478,7 @@ export function renderMessages() {
             const delay = 1500 + Math.random() * 1000;
             setTimeout(async () => {
               if (typingIndicator) typingIndicator.style.display = 'none';
-              const autoReply = await addMessage(`Ooh, I love this request! I'll get to work on this for you right away and send it to you as soon as it's ready. Thank you for the offer! 😘💕`, 'valyrye');
+              const autoReply = await addMessage(`Ooh, I love this request! I'll get to work on this for you right away and send it to you as soon as it's ready. Thank you for the offer! 😘💕`, 'valyryes');
               if (autoReply) appendBubble(autoReply);
             }, delay);
           }
@@ -594,7 +594,7 @@ export function renderMessages() {
           }
           replyTimeout = setTimeout(async () => {
             if (typingIndicator) typingIndicator.style.display = 'none';
-            const replyMsg = await addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyrye');
+            const replyMsg = await addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyryes');
             if (!replyMsg) return;
             appendBubble(replyMsg);
           }, 1500);

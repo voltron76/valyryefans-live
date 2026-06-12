@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Notifications View
+// ValyryesFans — Notifications View
 // Notification center with read/unread states
 // Generated dynamically from actual content/messages
 // ============================================================

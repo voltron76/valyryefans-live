@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Profile View (Single Column, no sidebar)
+// ValyryesFans — Profile View (Single Column, no sidebar)
 // Menu items are now in the navbar dropdown overlay
 // ============================================================
 

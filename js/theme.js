@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Theme Manager
+// ValyryesFans — Theme Manager
 // ============================================================
 
 const STORAGE_KEY = 'vf-theme';

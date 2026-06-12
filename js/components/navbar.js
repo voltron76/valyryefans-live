@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Navbar Component (with Profile Dropdown)
+// ValyryesFans — Navbar Component (with Profile Dropdown)
 // ============================================================
 
 let _escapeHandler = null;
@@ -90,7 +90,7 @@ export function renderNavbar() {
   return `
     <a class="nav-logo" href="#/">
       <span class="logo-icon">V</span>
-      <span>Valyrye<span style="color: var(--accent)">Fans</span></span>
+      <span>Valyryes<span style="color: var(--accent)">Fans</span></span>
     </a>
 
     <div class="nav-links" id="nav-links">
@@ -118,6 +118,26 @@ export function renderNavbar() {
       <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme">
         ${getTheme() === 'dark' ? SUN_ICON : MOON_ICON}
       </button>
+      ${isAuth ? `
+      <a href="#/messages" class="theme-toggle" style="position:relative;" aria-label="Messages" title="Messages">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        ${(s.messages?.filter(m => !m.read && m.sender !== 'user').length || 0) > 0 ? `
+          <span style="
+            position: absolute; top: 2px; right: 2px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gradient-accent);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg-primary);
+          ">${s.messages.filter(m => !m.read && m.sender !== 'user').length}</span>
+        ` : ''}
+      </a>
+      ` : ''}
       ${isAuth ? `
       <a href="#/notifications" class="theme-toggle" style="position:relative;" aria-label="Notifications" title="Notifications">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -233,7 +253,7 @@ export function afterNavRender() {
               </button>
               <div style="font-size: 32px; margin-bottom: var(--space-4);">🌐</div>
               <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-2);">Select Language</h2>
-              <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Choose your preferred language for ValyryeFans.</p>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Choose your preferred language for ValyryesFans.</p>
               
               <div style="display:flex; flex-direction:column; gap:var(--space-2);">
                 <button class="btn btn-secondary w-full" style="justify-content:center; border: 1px solid var(--accent);">English (US)</button>
@@ -311,8 +331,16 @@ export function renderMobileNav() {
             <span style="margin-top:2px;">Subscribe</span>
           </a>
         ` : `
-          <a href="#/messages" class="mobile-nav-item${window.location.hash === '#/messages' ? ' active' : ''}">
+          <a href="#/messages" class="mobile-nav-item${window.location.hash === '#/messages' ? ' active' : ''}" style="position:relative;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            ${(s.messages?.filter(m => !m.read && m.sender !== 'user').length || 0) > 0 ? `<span class="mobile-nav-badge" style="
+              position:absolute; top:2px; right:50%; transform:translateX(12px);
+              min-width:16px; height:16px; border-radius:8px;
+              background:var(--gradient-accent); color:#fff;
+              font-size:9px; font-weight:700;
+              display:flex; align-items:center; justify-content:center;
+              padding:0 3px; border:2px solid var(--bg-primary);
+            ">${s.messages.filter(m => !m.read && m.sender !== 'user').length}</span>` : ''}
             <span>Chat</span>
           </a>
         `}

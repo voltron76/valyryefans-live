@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Content Detail View
+// ValyryesFans — Content Detail View
 // Individual content page with paywall & related section
 // ============================================================
 

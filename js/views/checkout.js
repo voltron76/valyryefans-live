@@ -1,5 +1,5 @@
 // ============================================================
-// ValyryeFans — Checkout View (Compliant Stripe Checkout)
+// ValyryesFans — Checkout View (Compliant Stripe Checkout)
 // ============================================================
 
 import { getState, showToast } from '../store.js';
@@ -25,7 +25,7 @@ export function renderCheckout(params = {}) {
   const isTip = !!params.tip;
   const amount = isTip ? parseFloat(params.tip).toFixed(2) : '14.99';
   const title = isTip ? 'Send a Tip' : 'Secure Checkout';
-  const subtitle = isTip ? 'Show your appreciation to Valyrye' : 'Complete your subscription to unlock everything';
+  const subtitle = isTip ? 'Show your appreciation to Valyryes' : 'Complete your subscription to unlock everything';
   const itemTitle = isTip ? 'Tip Amount' : 'Gold Plan';
   const itemDesc = isTip ? 'One-time payment' : 'Monthly subscription';
   const unit = isTip ? '' : '/month';
