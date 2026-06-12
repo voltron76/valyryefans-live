@@ -218,7 +218,8 @@ export async function initStore() {
             content: m.content,
             time: formatTime(m.created_at),
             type: m.type,
-            mediaUrl: m.media_url
+            mediaUrl: m.media_url,
+            read: m.sender_id === session.user.id ? true : !!m.is_read
           }));
           notify('messages');
         }
@@ -1348,6 +1349,17 @@ export async function markMessagesAsRead(userId) {
 
 export async function markFanMessagesAsRead() {
   if (!state.user.id || state.isAdmin) return;
+  // Immediately update local state so navbar badge clears
+  let changed = false;
+  state.messages.forEach(m => {
+    if (m.sender !== 'fan' && !m.read) {
+      m.read = true;
+      changed = true;
+    }
+  });
+  if (changed) notify('messages');
+
+  // Persist to DB
   try {
     await supabase
       .from('messages')
