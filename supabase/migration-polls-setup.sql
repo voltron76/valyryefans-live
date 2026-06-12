@@ -39,7 +39,7 @@ CREATE POLICY "Admins can manage polls" ON public.polls
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND (tier = 'admin' OR role = 'creator')
+      WHERE id = auth.uid() AND tier = 'admin'
     )
   );
 

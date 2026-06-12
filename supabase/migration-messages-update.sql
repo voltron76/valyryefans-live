@@ -15,6 +15,6 @@ CREATE POLICY "Users can update their own received messages" ON public.messages
     auth.uid() = recipient_id
     OR EXISTS (
       SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND (tier = 'admin' OR role = 'creator')
+      WHERE id = auth.uid() AND tier = 'admin'
     )
   );
