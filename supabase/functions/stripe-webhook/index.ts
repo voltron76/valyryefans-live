@@ -94,6 +94,7 @@ serve(async (req) => {
       } else if (type === 'tip') {
         const amount = parseFloat(metadata.amount || '0')
         const contentId = metadata.contentId || null
+        const tipMessage = metadata.message || 'Paid via Stripe Checkout'
 
         // 1. Record tip in DB
         const { error: tipError } = await adminClient
@@ -102,7 +103,7 @@ serve(async (req) => {
             user_id: userId,
             content_id: contentId,
             amount: amount,
-            message: 'Paid via Stripe Checkout'
+            message: tipMessage
           }])
 
         if (tipError) {

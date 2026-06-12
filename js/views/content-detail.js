@@ -276,26 +276,12 @@ export function renderContentDetail(params) {
           return;
         }
 
-        const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
         const amount = prompt('Enter tip amount ($):', '10');
         if (!amount || parseFloat(amount) <= 0) return;
 
-        if (hasCard) {
-          import('../store.js').then(async ({ chargeSavedCard, showToast }) => {
-            showToast('Processing payment...', 'info');
-            const res = await chargeSavedCard(parseFloat(amount), item.id);
-            if (res.success) {
-              showToast(`💝 $${parseFloat(amount).toFixed(2)} tip sent! Thank you!`, 'success');
-            } else {
-              showToast('Saved card payment failed. Redirecting to checkout...', 'error');
-              setTimeout(() => {
-                navigate(`/checkout?tip=${amount}&contentId=${item.id}`);
-              }, 1500);
-            }
-          });
-        } else {
-          navigate(`/checkout?tip=${amount}&contentId=${item.id}`);
-        }
+        import('../store.js').then(async ({ tipPost }) => {
+          await tipPost(item.id, parseFloat(amount), null, `#/content/${item.id}`);
+        });
       });
 
       // Carousel wiring

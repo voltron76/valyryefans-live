@@ -37,7 +37,7 @@ serve(async (req) => {
       throw new Error(authError?.message || 'Not authenticated')
     }
 
-    const { amount, contentId } = await req.json()
+    const { amount, contentId, message } = await req.json()
 
     if (!amount || parseFloat(amount) <= 0) {
       throw new Error('Invalid tip amount')
@@ -102,7 +102,7 @@ serve(async (req) => {
         user_id: user.id,
         content_id: contentId || null,
         amount: parseFloat(amount),
-        message: 'Paid via One-Click Saved Card'
+        message: message || 'Paid via One-Click Saved Card'
       }])
 
     if (tipError) {

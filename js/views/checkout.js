@@ -145,6 +145,9 @@ export function renderCheckout(params = {}) {
               type: isTip ? 'tip' : 'subscription',
               amount: parseFloat(amount),
               contentId: params.contentId || null,
+              message: params.message || null,
+              successPath: params.successPath || null,
+              cancelPath: params.cancelPath || null,
               origin: baseOrigin
             }
           });

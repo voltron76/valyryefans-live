@@ -228,7 +228,9 @@ export function renderGallery() {
           // Card on file logic
           const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
           if (!hasCard) {
-            navigate(`/checkout?tip=10&contentId=${btn.dataset.tipId}`);
+            import('../store.js').then(({ tipPost }) => {
+              tipPost(btn.dataset.tipId, 10, null, '#/gallery');
+            });
             return;
           }
 
@@ -275,18 +277,8 @@ export function renderGallery() {
         if (tipCustom) tipCustom.value = '';
         if (tipMessage) tipMessage.value = '';
 
-        import('../store.js').then(async ({ tipPost, showToast }) => {
-          const res = await tipPost(targetId, amount);
-          if (res && !res.success) {
-            if (res.error === 'no_card_on_file') {
-              navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
-            } else if (res.error === 'payment_failed') {
-              showToast('Saved card payment failed. Redirecting to checkout...', 'error');
-              setTimeout(() => {
-                navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
-              }, 1500);
-            }
-          }
+        import('../store.js').then(async ({ tipPost }) => {
+          await tipPost(targetId, amount, msg, '#/gallery');
         });
       });
     }

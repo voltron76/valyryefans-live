@@ -3,7 +3,7 @@
 // Single direct chat with Valyrye
 // ============================================================
 
-import { getState, canAccessTier, showToast, addMessage, getRandomReply, addTip, markMessageNotificationsAsRead, subscribe, markFanMessagesAsRead } from '../store.js';
+import { getState, canAccessTier, showToast, addMessage, getRandomReply, tipPost, markMessageNotificationsAsRead, subscribe, markFanMessagesAsRead } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -445,44 +445,43 @@ export function renderMessages() {
           }
           
           const state = getState();
-          const hasCard = state.user?.tier === 'gold';
-          if (!hasCard) {
-            removeModal();
-            navigate(`/checkout?tip=${finalAmount}`);
-            return;
-          }
-          
           removeModal();
           
-          // Monetize: add tip
-          addTip(null, finalAmount, `Request: ${config.label} - ${desc}`);
-          showToast('💝 Request and offer sent!', 'success');
-          
-          // Send request bubble
-          const messageContent = `
-            <strong>${config.icon} ${config.label} Sent</strong><br>
-            <span style="color: var(--text-secondary); font-size: 13px; display: block; margin-top: 4px;">"${desc}"</span>
-            <div style="margin-top: 8px; font-weight: 600; color: #ffd700; display: flex; align-items: center; gap: 4px;">
-              <span>💰 Offer:</span>
-              <span style="font-size: 15px;">$${finalAmount.toFixed(2)}</span>
-            </div>
-          `;
-          
-          const msg = await addMessage(messageContent, 'fan', 'request');
-          if (msg) appendBubble(msg);
-          
-          // Auto reply
-          if (typingIndicator) {
-            typingIndicator.style.display = 'flex';
-            scrollToBottom();
+          // Monetize: process tip (saved card or Stripe checkout redirect)
+          const res = await tipPost(
+            null, 
+            finalAmount, 
+            `Request: ${config.label} - ${desc}`, 
+            '#/messages'
+          );
+
+          if (res && res.success && !res.redirecting) {
+            // Send request bubble (only for instant payments - for Stripe redirects, the DB trigger handles it)
+            const messageContent = `
+              <strong>${config.icon} ${config.label} Sent</strong><br>
+              <span style="color: var(--text-secondary); font-size: 13px; display: block; margin-top: 4px;">"${desc}"</span>
+              <div style="margin-top: 8px; font-weight: 600; color: #ffd700; display: flex; align-items: center; gap: 4px;">
+                <span>💰 Offer:</span>
+                <span style="font-size: 15px;">$${finalAmount.toFixed(2)}</span>
+              </div>
+            `;
+            
+            const msg = await addMessage(messageContent, 'fan', 'request');
+            if (msg) appendBubble(msg);
+            
+            // Auto reply
+            if (typingIndicator) {
+              typingIndicator.style.display = 'flex';
+              scrollToBottom();
+            }
+            
+            const delay = 1500 + Math.random() * 1000;
+            setTimeout(async () => {
+              if (typingIndicator) typingIndicator.style.display = 'none';
+              const autoReply = await addMessage(`Ooh, I love this request! I'll get to work on this for you right away and send it to you as soon as it's ready. Thank you for the offer! 😘💕`, 'valyrye');
+              if (autoReply) appendBubble(autoReply);
+            }, delay);
           }
-          
-          const delay = 1500 + Math.random() * 1000;
-          setTimeout(async () => {
-            if (typingIndicator) typingIndicator.style.display = 'none';
-            const autoReply = await addMessage(`Ooh, I love this request! I'll get to work on this for you right away and send it to you as soon as it's ready. Thank you for the offer! 😘💕`, 'valyrye');
-            if (autoReply) appendBubble(autoReply);
-          }, delay);
         });
       }
 
@@ -567,33 +566,13 @@ export function renderMessages() {
 
       // Send tip
       tipSendBtn?.addEventListener('click', async () => {
-        const state = getState();
-        const hasCard = state.user?.tier === 'gold';
-        
         const amount = selectedTipAmount || parseFloat(tipCustomAmount?.value);
         if (!amount || amount <= 0) {
           showToast('Please select or enter a tip amount', 'error');
           return;
         }
 
-        if (!hasCard) {
-          navigate(`/checkout?tip=${amount}`);
-          return;
-        }
-
         const tipMsg = tipMessageInput?.value?.trim() || '';
-
-        // Record the tip
-        addTip(null, amount, tipMsg);
-        showToast('💝 Tip sent! Thank you!');
-
-        // Send as a chat message
-        const content = tipMsg
-          ? `💝 Sent a $${amount} tip! "${tipMsg}"`
-          : `💝 Sent a $${amount} tip!`;
-        const msg = await addMessage(content, 'fan');
-        if (!msg) return;
-        appendBubble(msg);
 
         // Close tip UI & reset
         if (tipUI) tipUI.style.display = 'none';
@@ -605,17 +584,21 @@ export function renderMessages() {
           b.classList.add('btn-secondary');
         });
 
-        // Auto-reply
-        if (typingIndicator) {
-          typingIndicator.style.display = 'flex';
-          scrollToBottom();
+        const res = await tipPost(null, amount, tipMsg, '#/messages');
+
+        if (res && res.success && !res.redirecting) {
+          // Auto-reply
+          if (typingIndicator) {
+            typingIndicator.style.display = 'flex';
+            scrollToBottom();
+          }
+          replyTimeout = setTimeout(async () => {
+            if (typingIndicator) typingIndicator.style.display = 'none';
+            const replyMsg = await addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyrye');
+            if (!replyMsg) return;
+            appendBubble(replyMsg);
+          }, 1500);
         }
-        replyTimeout = setTimeout(async () => {
-          if (typingIndicator) typingIndicator.style.display = 'none';
-          const replyMsg = await addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyrye');
-          if (!replyMsg) return;
-          appendBubble(replyMsg);
-        }, 1500);
       });
     },
 

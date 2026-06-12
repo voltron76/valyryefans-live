@@ -252,7 +252,7 @@ export async function initStore() {
             id: c.id,
             userId: c.user_id,
             userName: c.user_name || 'Anonymous',
-            tier: c.profiles?.tier || 'free',
+            tier: (Array.isArray(c.profiles) ? c.profiles[0]?.tier : c.profiles?.tier) || 'free',
             text: c.text,
             time: formatTime(c.created_at),
             isCreator: c.user_name === 'Valyrye'
@@ -748,11 +748,11 @@ export async function addTip(contentId, amount, message = null) {
   }
 }
 
-export async function chargeSavedCard(amount, contentId = null) {
+export async function chargeSavedCard(amount, contentId = null, message = null) {
   if (!state.user.id) return { success: false, error: 'User not logged in' };
   try {
     const { data, error } = await supabase.functions.invoke('charge-saved-card', {
-      body: { amount, contentId }
+      body: { amount, contentId, message }
     });
     if (error || !data?.success) {
       throw new Error(error?.message || data?.error || 'Payment failed');
@@ -874,7 +874,7 @@ export async function addComment(contentId, text) {
         id: data.id,
         userId: data.user_id,
         userName: data.user_name || 'Anonymous',
-        tier: data.profiles?.tier || state.user.tier || 'free',
+        tier: (Array.isArray(data.profiles) ? data.profiles[0]?.tier : data.profiles?.tier) || state.user.tier || 'free',
         text: data.text,
         time: formatTime(data.created_at),
         isCreator: state.isAdmin
@@ -927,7 +927,7 @@ export async function incrementStoryView(storyId) {
   }
 }
 
-export async function tipPost(contentId, amount) {
+export async function tipPost(contentId, amount, message = null, successPath = null, cancelPath = null) {
   const tipAmount = parseFloat(amount);
   if (state.user.tipLimit > 0 && tipAmount > state.user.tipLimit) {
     showToast(`Tip exceeds your limit of $${state.user.tipLimit.toFixed(2)}`, 'error');
@@ -936,7 +936,7 @@ export async function tipPost(contentId, amount) {
 
   const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
   if (hasCard) {
-    const res = await chargeSavedCard(tipAmount, contentId);
+    const res = await chargeSavedCard(tipAmount, contentId, message);
     if (res.success) {
       const item = state.content.find(c => c.id === contentId);
       if (item) {
@@ -949,7 +949,16 @@ export async function tipPost(contentId, amount) {
       return { success: false, error: res.error || 'payment_failed' };
     }
   } else {
-    return { success: false, error: 'no_card_on_file' };
+    // Redirect to checkout with dynamic parameters
+    let dest = `checkout?tip=${tipAmount}`;
+    if (contentId) dest += `&contentId=${encodeURIComponent(contentId)}`;
+    if (message) dest += `&message=${encodeURIComponent(message)}`;
+    if (successPath) dest += `&successPath=${encodeURIComponent(successPath)}`;
+    if (cancelPath) dest += `&cancelPath=${encodeURIComponent(cancelPath)}`;
+    
+    const { navigate } = await import('./router.js');
+    navigate(dest);
+    return { success: true, redirecting: true };
   }
 }
 

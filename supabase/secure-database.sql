@@ -51,6 +51,7 @@ CREATE TRIGGER tr_protect_profile_tier
 -- Remove the old permissive select policy
 DROP POLICY IF EXISTS "Users can view media" ON storage.objects;
 DROP POLICY IF EXISTS "Users see media" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view authorized media" ON storage.objects;
 
 -- Create secure select policy
 CREATE POLICY "Users can view authorized media" ON storage.objects
@@ -90,3 +91,63 @@ CREATE POLICY "Users can view authorized media" ON storage.objects
       )
     )
   );
+
+
+-- ------------------------------------------------------------
+-- 3. Tipping & Chat Integration Trigger (Automatic Message on Tip)
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION auto_insert_tip_message()
+RETURNS TRIGGER AS $$
+DECLARE
+  creator_id UUID;
+  msg_text TEXT;
+BEGIN
+  -- Find the creator (admin) profile id
+  SELECT id INTO creator_id FROM public.profiles WHERE tier = 'admin' OR role = 'creator' LIMIT 1;
+  
+  -- Format message content
+  IF NEW.message IS NOT NULL AND NEW.message <> '' THEN
+    msg_text := '💝 Sent a $' || NEW.amount || ' tip! "' || NEW.message || '"';
+  ELSE
+    msg_text := '💝 Sent a $' || NEW.amount || ' tip!';
+  END IF;
+
+  -- Insert message into chat (only if a creator exists)
+  IF creator_id IS NOT NULL THEN
+    INSERT INTO public.messages (sender_id, recipient_id, content, type)
+    VALUES (NEW.user_id, creator_id, msg_text, 'tip');
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS tr_auto_insert_tip_message ON tips;
+CREATE TRIGGER tr_auto_insert_tip_message
+  AFTER INSERT ON tips
+  FOR EACH ROW EXECUTE FUNCTION auto_insert_tip_message();
+
+
+-- ------------------------------------------------------------
+-- 4. Tipping Security (Harden Tips Table Against Client Mocking)
+-- ------------------------------------------------------------
+
+-- Disable standard client roles (anon, authenticated) from inserting directly into tips
+DROP POLICY IF EXISTS "Users can insert their own tips" ON tips;
+DROP POLICY IF EXISTS "Users can insert own tips" ON tips;
+
+-- Revoke standard insert grant to prevent client SQL bypasses
+REVOKE INSERT ON public.tips FROM anon, authenticated;
+
+
+-- ------------------------------------------------------------
+-- 5. Profiles Select Policy (Allow Comment Author Tier Binding)
+-- ------------------------------------------------------------
+
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
+  FOR SELECT USING (true);
+

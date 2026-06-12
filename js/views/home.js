@@ -34,7 +34,7 @@ function renderPromoBanner(promo) {
     countdownHtml = `<div class="promo-banner__countdown" id="promo-countdown">⏰ Calculating...</div>`;
   }
   return `
-    <div class="promo-banner animate-fade-in-up" id="promo-banner" style="background: linear-gradient(135deg, ${color}, ${color}dd, ${color}); color: #fff;">
+    <div class="promo-banner-top animate-fade-in-up" id="promo-banner" style="background: linear-gradient(135deg, ${color}, ${color}dd, ${color}); color: #fff;">
       <div class="promo-banner__shimmer"></div>
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); position: relative; z-index: 1;">
         <div style="flex: 1; min-width: 200px;">
@@ -607,17 +607,7 @@ export function renderHome() {
         document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
 
         if (typeof tipPost === 'function') {
-          const res = await tipPost(targetId, amount);
-          if (res && !res.success) {
-            if (res.error === 'no_card_on_file') {
-              navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
-            } else if (res.error === 'payment_failed') {
-              showToast('Saved card payment failed. Redirecting to checkout...', 'error');
-              setTimeout(() => {
-                navigate(`/checkout?tip=${amount}&contentId=${targetId}`);
-              }, 1500);
-            }
-          }
+          await tipPost(targetId, amount, message, '#/');
         }
       });
 

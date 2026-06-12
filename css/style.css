@@ -2732,7 +2732,7 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
    ============================================================ */
 
 /* --- Promo Banner --- */
-.promo-banner {
+.promo-banner-top {
   background: var(--gradient-accent);
   color: white;
   padding: var(--space-3) var(--space-6);

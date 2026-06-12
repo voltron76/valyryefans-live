@@ -37,9 +37,16 @@ serve(async (req) => {
       throw new Error(authError?.message || 'Not authenticated')
     }
 
-    const { type, amount, contentId, origin: customOrigin } = await req.json()
+    const { type, amount, contentId, message, successPath, cancelPath, origin: customOrigin } = await req.json()
     const requestOrigin = req.headers.get('origin') || 'http://localhost:8000'
     const origin = customOrigin || requestOrigin
+
+    // Helper to securely build redirect URLs back to correct hash routes
+    const getRedirectUrl = (path: string | null | undefined, defaultPath: string) => {
+      const relativePath = path || defaultPath;
+      const separator = relativePath.startsWith('/') ? '' : '/';
+      return `${origin}${separator}${relativePath}`;
+    };
 
     let session;
 
@@ -87,8 +94,8 @@ serve(async (req) => {
         }],
         mode: 'subscription',
         allow_promotion_codes: true,
-        success_url: `${origin}/#/welcome-gold`,
-        cancel_url: `${origin}/#/subscribe`,
+        success_url: getRedirectUrl(successPath, '#/welcome-gold'),
+        cancel_url: getRedirectUrl(cancelPath, '#/subscribe'),
         metadata: {
           userId: user.id,
           type: 'subscription'
@@ -116,13 +123,14 @@ serve(async (req) => {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${origin}/#/gallery`,
-        cancel_url: `${origin}/#/gallery`,
+        success_url: getRedirectUrl(successPath, '#/gallery'),
+        cancel_url: getRedirectUrl(cancelPath, '#/gallery'),
         metadata: {
           userId: user.id,
           type: 'tip',
           amount: amount.toString(),
-          contentId: contentId || ''
+          contentId: contentId || '',
+          message: message || ''
         }
       });
     } else {
