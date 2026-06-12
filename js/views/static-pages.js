@@ -97,7 +97,7 @@ export function renderTerms() {
       <div style="${glass} padding: var(--space-8);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">9. Contact Us</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          If you have any questions about these Terms, please contact us at <a href="mailto:legal@valyryesfans.com" style="color: var(--accent-light);">legal@valyryesfans.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
+          If you have any questions about these Terms, please contact us at <a href="mailto:legal@valyryes.com" style="color: var(--accent-light);">legal@valyryes.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
         </p>
       </div>
     </section>
@@ -156,7 +156,7 @@ export function renderPrivacy() {
       <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">6. Your Rights</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          Depending on your jurisdiction, you may have the right to access, correct, update, or delete your personal information; object to or restrict certain processing activities; request data portability; and withdraw consent at any time. To exercise these rights, please contact us at <a href="mailto:privacy@valyryesfans.com" style="color: var(--accent-light);">privacy@valyryesfans.com</a>. We will respond to your request within 30 days, in compliance with applicable data protection regulations including GDPR and CCPA.
+          Depending on your jurisdiction, you may have the right to access, correct, update, or delete your personal information; object to or restrict certain processing activities; request data portability; and withdraw consent at any time. To exercise these rights, please contact us at <a href="mailto:privacy@valyryes.com" style="color: var(--accent-light);">privacy@valyryes.com</a>. We will respond to your request within 30 days, in compliance with applicable data protection regulations including GDPR and CCPA.
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export function renderPrivacy() {
       <div style="${glass} padding: var(--space-8);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">9. Contact Us</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          For questions regarding this Privacy Policy or our data practices, please contact us at <a href="mailto:privacy@valyryesfans.com" style="color: var(--accent-light);">privacy@valyryesfans.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
+          For questions regarding this Privacy Policy or our data practices, please contact us at <a href="mailto:privacy@valyryes.com" style="color: var(--accent-light);">privacy@valyryes.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
         </p>
       </div>
     </section>
@@ -353,8 +353,8 @@ export function renderSupport() {
         <div style="${glass} padding: var(--space-6); text-align: center;">
           <div style="font-size: 28px; margin-bottom: var(--space-3);">📧</div>
           <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-2);">Email Us</h3>
-          <a href="mailto:support@valyryesfans.com" style="color: var(--accent-light); font-size: var(--text-sm);">
-            support@valyryesfans.com
+          <a href="mailto:support@valyryes.com" style="color: var(--accent-light); font-size: var(--text-sm);">
+            support@valyryes.com
           </a>
         </div>
         <div style="${glass} padding: var(--space-6); text-align: center;">
@@ -514,7 +514,7 @@ export function renderLeaderboard() {
 export function renderReferrals() {
   const state = getState();
   const refCode = state.user?.email ? btoa(state.user.email).slice(0, 8).toUpperCase() : 'VF' + Math.random().toString(36).slice(2, 8).toUpperCase();
-  const refLink = `https://valyryesfans.com/ref/${refCode}`;
+  const refLink = `https://valyryes.com/ref/${refCode}`;
 
   const steps = [
     { icon: icons.share, title: 'Share Your Link', desc: 'Send your unique referral link to friends via social media, text, or email.' },
