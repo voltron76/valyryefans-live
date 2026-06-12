@@ -60,10 +60,25 @@ function renderPromoBanner(promo) {
 // Creator Profile Header
 // ------------------------------------
 function renderCreatorHeader(creatorProfile, isGold) {
+  const banners = creatorProfile.banners && creatorProfile.banners.length > 0
+    ? creatorProfile.banners
+    : [creatorProfile.banner || 'assets/images/hero-01.jpg'];
+
   return `
     <div class="creator-header">
-      <div class="creator-header__banner">
-        <img src="${creatorProfile.banner}" alt="Banner">
+      <div class="creator-header__banner" style="position: relative; overflow: hidden; height: 240px; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+        ${banners.map((src, i) => `
+          <img src="${src}" alt="Banner ${i+1}" class="creator-header__banner-slide" style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: ${i === 0 ? 1 : 0};
+            transition: opacity 1.5s ease-in-out;
+          ">
+        `).join('')}
       </div>
       <div class="creator-header__info">
         <div class="creator-header__avatar-wrap">
@@ -324,6 +339,7 @@ export function renderHome() {
 
   let storeUnsubscribe = null;
   let pollTimerInterval = null;
+  let bannerInterval = null;
 
   // Promo data from state
   const promo = state.activePromo;
@@ -393,6 +409,17 @@ export function renderHome() {
           el.removeAttribute('data-drm-src');
         }
       });
+
+      // ---- Auto-scrolling Hero Banner Carousel ----
+      const bannerSlides = document.querySelectorAll('.creator-header__banner-slide');
+      if (bannerSlides.length > 1) {
+        let currentSlide = 0;
+        bannerInterval = setInterval(() => {
+          bannerSlides[currentSlide].style.opacity = 0;
+          currentSlide = (currentSlide + 1) % bannerSlides.length;
+          bannerSlides[currentSlide].style.opacity = 1;
+        }, 5000);
+      }
 
       // ---- Close Promo Banner ----
       document.getElementById('close-promo')?.addEventListener('click', () => {
@@ -1210,6 +1237,7 @@ export function renderHome() {
       if (storeUnsubscribe) storeUnsubscribe();
       if (pollTimerInterval) clearInterval(pollTimerInterval);
       if (activeProgressInterval) clearInterval(activeProgressInterval);
+      if (bannerInterval) clearInterval(bannerInterval);
       document.getElementById('story-viewer-modal')?.remove();
     }
   };
