@@ -1054,10 +1054,20 @@ function renderEditModal(item) {
           <button class="admin-modal__close" id="admin-modal-close">${icons.close}</button>
         </div>
 
-        <!-- Thumbnail preview -->
-        <div style="margin-bottom:var(--space-4);border-radius:var(--radius-md);overflow:hidden;max-height:200px;">
-          <img src="${item.thumbnail}" alt="${escapeHtml(item.title)}" style="width:100%;max-height:200px;object-fit:cover;display:block;"
-               onerror="this.style.display='none';" />
+        <!-- Media Items Grid (For editing/deleting individual images) -->
+        <div style="margin-bottom:var(--space-4);">
+          <label class="form-label" style="margin-bottom: var(--space-2); display: block;">Media Gallery (${item.media?.length || 0} images)</label>
+          <div class="edit-media-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 180px; overflow-y: auto; padding: 6px; background: rgba(0, 0, 0, 0.2); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            ${(item.media || []).map((url, index) => {
+              const rawPath = item.rawMedia?.[index] || '';
+              return `
+                <div class="edit-media-item" data-index="${index}" data-raw-path="${rawPath}" style="position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);">
+                  <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" />
+                  <button class="edit-media-delete-btn" data-index="${index}" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; line-height: 1;">✕</button>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
 
         <div class="form-group">
@@ -1961,8 +1971,7 @@ export function renderAdmin() {
           const state = getState();
           let filtered = [...state.content];
 
-          // Filter
-          if (activeFilter === 'image') filtered = filtered.filter(c => c.type === 'image');
+          if (activeFilter === 'image') filtered = filtered.filter(c => c.type === 'photo' || c.type === 'carousel');
           else if (activeFilter === 'video') filtered = filtered.filter(c => c.type === 'video');
           else if (activeFilter === 'free') filtered = filtered.filter(c => c.minTier === 'free');
           else if (activeFilter === 'gold') filtered = filtered.filter(c => c.minTier === 'gold');
@@ -2027,27 +2036,107 @@ export function renderAdmin() {
           if (e.target === overlay) closeModal();
         });
 
-        // Save
-        saveBtn?.addEventListener('click', () => {
-          const state = getState();
-          const idx = state.content.findIndex(c => c.id === item.id);
-          if (idx === -1) return;
+        // Delete individual image buttons
+        modalContainer.querySelectorAll('.edit-media-delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            if (isNaN(index)) return;
 
-          state.content[idx] = {
-            ...state.content[idx],
-            title: document.getElementById('edit-title')?.value || item.title,
-            description: document.getElementById('edit-description')?.value || item.description,
-            category: document.getElementById('edit-category')?.value || item.category,
-            minTier: document.querySelector('input[name="edit-tier"]:checked')?.value || item.minTier,
-            isPublic: (document.querySelector('input[name="edit-tier"]:checked')?.value || item.minTier) === 'free',
-          };
+            if (item.media.length <= 1) {
+              showToast('Cannot delete the last image. A post must have at least one image.', 'error');
+              return;
+            }
 
-          closeModal();
-          refreshGrid();
-          showToast('Content updated! ✨', 'success');
+            if (!confirm('Remove this image from the carousel?')) return;
+
+            // Remove from local array
+            item.media.splice(index, 1);
+            if (item.rawMedia) item.rawMedia.splice(index, 1);
+
+            // Remove item from DOM
+            const itemElement = btn.closest('.edit-media-item');
+            itemElement?.remove();
+
+            // Re-index remaining elements
+            const remainingItems = modalContainer.querySelectorAll('.edit-media-item');
+            remainingItems.forEach((el, newIdx) => {
+              el.setAttribute('data-index', newIdx);
+              const delBtn = el.querySelector('.edit-media-delete-btn');
+              if (delBtn) delBtn.setAttribute('data-index', newIdx);
+            });
+
+            // Update label count
+            const gridEl = modalContainer.querySelector('.edit-media-grid');
+            const label = gridEl?.previousElementSibling;
+            if (label) {
+              label.textContent = `Media Gallery (${item.media.length} images)`;
+            }
+          });
         });
 
-        // Delete
+        // Save Changes
+        saveBtn?.addEventListener('click', async () => {
+          const title = document.getElementById('edit-title')?.value?.trim() || item.title;
+          const description = document.getElementById('edit-description')?.value?.trim() || item.description;
+          const category = document.getElementById('edit-category')?.value || item.category;
+          const minTier = document.querySelector('input[name="edit-tier"]:checked')?.value || item.minTier;
+          const isPublic = minTier === 'free';
+
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = `${icons.spinner || '...'} Saving...`;
+
+          try {
+            const { supabase } = await import('../supabase.js');
+
+            const newType = item.rawMedia.length > 1 ? 'carousel' : 'photo';
+            const newThumbnail = item.rawMedia[0];
+
+            const { error } = await supabase.from('content').update({
+              title,
+              description,
+              category,
+              min_tier: minTier,
+              type: newType,
+              thumbnail: newThumbnail,
+              media: item.rawMedia
+            }).eq('id', item.id);
+
+            if (error) throw error;
+
+            // Update local state
+            const state = getState();
+            const idx = state.content.findIndex(c => c.id === item.id);
+            if (idx !== -1) {
+              state.content[idx] = {
+                ...state.content[idx],
+                title,
+                description,
+                category,
+                minTier,
+                isPublic,
+                type: newType,
+                thumbnail: item.media[0],
+                media: item.media,
+                rawThumbnail: newThumbnail,
+                rawMedia: item.rawMedia
+              };
+            }
+
+            closeModal();
+            refreshGrid();
+            showToast('Changes saved successfully! ✨', 'success');
+          } catch (err) {
+            console.error('Update content error:', err);
+            showToast('Failed to save changes', 'error');
+          } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = 'Save Changes';
+          }
+        });
+
+        // Delete Post
         deleteBtn?.addEventListener('click', async () => {
           if (!confirm('Are you sure you want to permanently delete this content from the server?')) return;
           try {

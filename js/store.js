@@ -317,6 +317,9 @@ export async function initStore() {
           thumbnail: urlMap[c.thumbnail] || c.thumbnail,
           videoUrl: (hasAccess && c.video_url) ? (urlMap[c.video_url] || c.video_url) : null,
           media: mappedMedia,
+          rawThumbnail: c.thumbnail,
+          rawMedia: c.media || [],
+          rawVideoUrl: c.video_url || null,
           minTier: c.min_tier,
           likes: c.likes || 0,
           likedByUser: likedContentIds.has(c.id),
@@ -330,7 +333,9 @@ export async function initStore() {
 
       // Update Creator Stats
       state.creatorProfile.stats.posts = state.content.filter(c => c.category !== 'story' && c.category !== 'promo').length;
-      state.creatorProfile.stats.photos = state.content.filter(c => (c.type === 'photo' || c.type === 'carousel') && c.category !== 'story' && c.category !== 'promo').length;
+      state.creatorProfile.stats.photos = state.content
+        .filter(c => (c.type === 'photo' || c.type === 'carousel') && c.category !== 'story' && c.category !== 'promo')
+        .reduce((sum, c) => sum + (Array.isArray(c.rawMedia) && c.rawMedia.length > 0 ? c.rawMedia.length : 1), 0);
       state.creatorProfile.stats.videos = state.content.filter(c => c.type === 'video' && c.category !== 'story' && c.category !== 'promo').length;
 
       // Generate notifications from actual content/messages

@@ -70,7 +70,7 @@ function buildCard(item, idx) {
 export function renderGallery() {
   const state = getState();
   const galleryItems = (state.content || []).filter(c => c.category !== 'story' && c.category !== 'promo' && c.category !== 'voucher' && c.category !== 'discount' && c.category !== 'coupon');
-  const photoCount = galleryItems.filter(c => c.type === 'photo').length;
+  const photoCount = galleryItems.filter(c => c.type === 'photo' || c.type === 'carousel').length;
   const videoCount = galleryItems.filter(c => c.type === 'video').length;
 
   const html = `
