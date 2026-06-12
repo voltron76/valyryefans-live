@@ -114,7 +114,7 @@ serve(async (req) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Support Tip to Valyrye',
+              name: 'Support Tip to Valyryes',
               description: contentId ? `Tip for post #${contentId.substring(0, 8)}` : 'One-time support tip'
             },
             unit_amount: Math.round(amount * 100), // in cents

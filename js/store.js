@@ -929,13 +929,18 @@ export async function incrementStoryView(storyId) {
 
 export async function tipPost(contentId, amount, message = null, successPath = null, cancelPath = null) {
   const tipAmount = parseFloat(amount);
+  if (!tipAmount || tipAmount <= 0) {
+    showToast('Please enter a valid tip amount', 'error');
+    return { success: false, error: 'invalid_amount' };
+  }
   if (state.user.tipLimit > 0 && tipAmount > state.user.tipLimit) {
     showToast(`Tip exceeds your limit of $${state.user.tipLimit.toFixed(2)}`, 'error');
     return { success: false, error: 'limit_exceeded' };
   }
 
-  const hasCard = state.user?.cardOnFile || state.user?.tier === 'gold';
+  const hasCard = state.user?.cardOnFile;
   if (hasCard) {
+    // Try charging the saved card first
     const res = await chargeSavedCard(tipAmount, contentId, message);
     if (res.success) {
       const item = state.content.find(c => c.id === contentId);
@@ -945,21 +950,22 @@ export async function tipPost(contentId, amount, message = null, successPath = n
       }
       showToast(`💰 Sent $${tipAmount.toFixed(2)} tip! Thank you!`, 'success');
       return { success: true };
-    } else {
-      return { success: false, error: res.error || 'payment_failed' };
     }
-  } else {
-    // Redirect to checkout with dynamic parameters
-    let dest = `checkout?tip=${tipAmount}`;
-    if (contentId) dest += `&contentId=${encodeURIComponent(contentId)}`;
-    if (message) dest += `&message=${encodeURIComponent(message)}`;
-    if (successPath) dest += `&successPath=${encodeURIComponent(successPath)}`;
-    if (cancelPath) dest += `&cancelPath=${encodeURIComponent(cancelPath)}`;
-    
-    const { navigate } = await import('./router.js');
-    navigate(dest);
-    return { success: true, redirecting: true };
+    // If saved card charge fails, fall through to checkout redirect
+    console.warn('[tipPost] Saved card charge failed, redirecting to Stripe checkout:', res.error);
   }
+
+  // Redirect to Stripe Checkout
+  showToast('Redirecting to secure payment...', 'info');
+  let dest = `checkout?tip=${tipAmount}`;
+  if (contentId) dest += `&contentId=${encodeURIComponent(contentId)}`;
+  if (message) dest += `&message=${encodeURIComponent(message)}`;
+  if (successPath) dest += `&successPath=${encodeURIComponent(successPath)}`;
+  if (cancelPath) dest += `&cancelPath=${encodeURIComponent(cancelPath)}`;
+  
+  const { navigate } = await import('./router.js');
+  navigate(dest);
+  return { success: true, redirecting: true };
 }
 
 export async function updateTipLimit(amount) {
