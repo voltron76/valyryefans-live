@@ -4,3 +4,6 @@ swapped/
 .DS_Store
 *.log
 .system_generated/
+bulk_uploader.js
+sorted_carousels/
+temp_query.sql
