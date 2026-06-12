@@ -35,7 +35,6 @@ export const state = {
       'assets/images/hero-02.jpg',
       'assets/images/hero-03.jpg',
       'assets/images/hero-04.jpg',
-      'assets/images/hero-05.jpg',
     ],
     stats: { posts: 0, photos: 0, videos: 0, fans: '12.4K' },
     verified: true,
