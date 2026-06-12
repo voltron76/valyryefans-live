@@ -3,7 +3,7 @@
 // Secured admin panel for creator (Valyryes) to manage platform
 // ============================================================
 
-import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo, publishPromo, subscribe, markMessagesAsRead } from '../store.js';
+import { getState, uploadContent, showToast, addAdminReply, createPromo, deletePromo, publishPromo, subscribe, markMessagesAsRead, sendTypingIndicator } from '../store.js';
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
 
@@ -948,7 +948,7 @@ function renderChatThread(userId) {
       <div class="admin-msg ${cls}">
         ${mediaHtml}
         <div>${escapeHtml(msg.content)}</div>
-        <div class="admin-msg__time">${msg.time || ''}</div>
+        <div class="admin-msg__time">${msg.time || ''}${isValyrye ? `<span style="margin-left:4px;font-size:10px;${msg.read ? 'color:var(--accent-light);' : 'opacity:0.6;'}">${msg.read ? '✓✓' : '✓'}</span>` : ''}</div>
       </div>
     `;
   }).join('');
@@ -958,7 +958,7 @@ function renderChatThread(userId) {
       ${renderAvatar(user.name, 36)}
       <div class="admin-chat__header-info">
         <h4>${escapeHtml(user.name)} <span class="admin-tier-badge admin-tier-badge--${user.tier}" style="margin-left:var(--space-2);">${user.tier}</span></h4>
-        <span>Last seen: ${user.lastSeen || 'Unknown'}</span>
+        <span>${user.online ? '<span style="color:#4ade80;">● Online</span>' : `Last seen: ${user.lastSeen || 'Unknown'}`}</span>
       </div>
     </div>
     <div class="admin-chat__messages" id="admin-chat-messages">
@@ -1895,6 +1895,7 @@ export function renderAdmin() {
           const text = input?.value?.trim();
           if (!text || !userId) return;
 
+          sendTypingIndicator(false);
           await addAdminReply(userId, text);
           input.value = '';
 
@@ -1916,12 +1917,17 @@ export function renderAdmin() {
           }
         });
 
-        // Auto-resize textarea
+        // Auto-resize textarea + typing indicator broadcast
+        let adminTypingTimer = null;
         input?.addEventListener('input', () => {
           if (input) {
             input.style.height = 'auto';
             input.style.height = Math.min(input.scrollHeight, 100) + 'px';
           }
+          // Broadcast typing
+          sendTypingIndicator(true);
+          clearTimeout(adminTypingTimer);
+          adminTypingTimer = setTimeout(() => sendTypingIndicator(false), 2000);
         });
       }
 

@@ -114,7 +114,7 @@ serve(async (req) => {
         const { data: creatorProfile } = await adminClient
           .from('profiles')
           .select('balance')
-          .eq('role', 'creator')
+          .eq('tier', 'admin')
           .single()
 
         if (creatorProfile) {
@@ -122,7 +122,7 @@ serve(async (req) => {
           await adminClient
             .from('profiles')
             .update({ balance: newBalance })
-            .eq('role', 'creator')
+            .eq('tier', 'admin')
         }
 
         console.log(`[Webhook] Tip of $${amount} recorded for user ${userId}.`)

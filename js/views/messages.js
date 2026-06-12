@@ -3,7 +3,7 @@
 // Single direct chat with Valyrye
 // ============================================================
 
-import { getState, canAccessTier, showToast, addMessage, getRandomReply, tipPost, markMessageNotificationsAsRead, subscribe, markFanMessagesAsRead } from '../store.js';
+import { getState, canAccessTier, showToast, addMessage, tipPost, markMessageNotificationsAsRead, subscribe, markFanMessagesAsRead, sendTypingIndicator } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -55,7 +55,7 @@ function renderMessageBubble(msg) {
       ${nameHtml}
       ${mediaHtml}
       <div>${msg.content}</div>
-      <div class="message-time">${msg.time}</div>
+      <div class="message-time">${msg.time}${isSent ? `<span style="margin-left:4px;font-size:10px;${msg.read ? 'color:var(--accent-light);' : 'opacity:0.6;'}">${msg.read ? '✓✓' : '✓'}</span>` : ''}</div>
     </div>`;
 }
 
@@ -125,7 +125,7 @@ export function renderMessages() {
               <span class="tier-badge" style="font-size:var(--text-xs);">👑 Creator</span>
             </div>
             <div style="font-size:var(--text-xs);color:var(--text-muted);display:flex;align-items:center;gap:var(--space-1);">
-              @valyryes · <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span> Online now
+              @valyryes · ${state.creatorProfile.online ? '<span style="color:#4ade80;">● Online now</span>' : '<span style="color:var(--text-muted);">○ Offline</span>'}
             </div>
           </div>
         </div>
@@ -192,8 +192,9 @@ export function renderMessages() {
       </main>
     </div>`;
 
-  let replyTimeout = null;
   let storeUnsubscribe = null;
+  let typingUnsub = null;
+  let msgReadUnsub = null;
 
   return {
     html,
@@ -247,6 +248,28 @@ export function renderMessages() {
         }
       });
 
+      // ---- Typing state subscription ----
+      typingUnsub = subscribe(['typing'], (s) => {
+        const typingEl = document.getElementById('typing-indicator');
+        if (typingEl) {
+          typingEl.style.display = s.creatorTyping ? 'flex' : 'none';
+        }
+      });
+
+      // ---- Mark incoming messages as read ----
+      msgReadUnsub = subscribe(['messages'], (s) => {
+        const hasUnread = s.messages.some(m => m.sender === 'valyryes' && !m.read);
+        if (hasUnread) markFanMessagesAsRead();
+      });
+
+      // ---- Typing broadcast on input ----
+      let typingTimer = null;
+      chatInput?.addEventListener('input', () => {
+        sendTypingIndicator(true);
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => sendTypingIndicator(false), 2000);
+      });
+
       // ── Append a bubble to DOM ──
       function appendBubble(msg, animate = true) {
         const wrapper = document.createElement('div');
@@ -261,29 +284,10 @@ export function renderMessages() {
       async function sendMessage() {
         const text = chatInput?.value?.trim();
         if (!text) return;
-
-        // Add to store & render
-        const msg = await addMessage(text, 'fan');
-        if (!msg) return;
-        appendBubble(msg);
         chatInput.value = '';
-        chatInput.style.height = 'auto';
-
-        // Show typing indicator
-        if (typingIndicator) {
-          typingIndicator.style.display = 'flex';
-          scrollToBottom();
-        }
-
-        // Auto-reply after 2-3s
-        const delay = 2000 + Math.random() * 1000;
-        replyTimeout = setTimeout(async () => {
-          if (typingIndicator) typingIndicator.style.display = 'none';
-          const replyContent = getRandomReply();
-          const replyMsg = await addMessage(replyContent, 'valyryes');
-          if (!replyMsg) return;
-          appendBubble(replyMsg);
-        }, delay);
+        sendTypingIndicator(false);
+        await addMessage(text);
+        // Realtime handler will append the message and scroll
       }
 
       sendBtn?.addEventListener('click', sendMessage);
@@ -333,26 +337,9 @@ export function renderMessages() {
           const mediaUrl = data.publicUrl;
           
           const msgText = isVideo ? '🎬 Sent a video' : '📸 Sent a photo';
-          const msg = await addMessage(msgText, 'fan', 'media', mediaUrl);
-          if (msg) appendBubble(msg);
+          await addMessage(msgText, 'media', mediaUrl);
           
           input.value = '';
-          
-          if (typingIndicator) {
-            typingIndicator.style.display = 'flex';
-            scrollToBottom();
-          }
-          const delay = 2000 + Math.random() * 1000;
-          replyTimeout = setTimeout(async () => {
-            if (typingIndicator) typingIndicator.style.display = 'none';
-            const autoReply = await addMessage(
-              isVideo 
-                ? "Ooh, I love this video! You look so good babe! Thanks for sharing ❤️🎬" 
-                : "Omg, you look absolutely amazing! Thanks for sharing this photo babe! 😍💕", 
-              "valyryes"
-            );
-            if (autoReply) appendBubble(autoReply);
-          }, delay);
           
         } catch (e) {
           showToast(e.message || 'Media upload failed', 'error');
@@ -466,21 +453,7 @@ export function renderMessages() {
               </div>
             `;
             
-            const msg = await addMessage(messageContent, 'fan', 'request');
-            if (msg) appendBubble(msg);
-            
-            // Auto reply
-            if (typingIndicator) {
-              typingIndicator.style.display = 'flex';
-              scrollToBottom();
-            }
-            
-            const delay = 1500 + Math.random() * 1000;
-            setTimeout(async () => {
-              if (typingIndicator) typingIndicator.style.display = 'none';
-              const autoReply = await addMessage(`Ooh, I love this request! I'll get to work on this for you right away and send it to you as soon as it's ready. Thank you for the offer! 😘💕`, 'valyryes');
-              if (autoReply) appendBubble(autoReply);
-            }, delay);
+            await addMessage(messageContent, 'request');
           }
         });
       }
@@ -587,24 +560,15 @@ export function renderMessages() {
         const res = await tipPost(null, amount, tipMsg, '#/messages');
 
         if (res && res.success && !res.redirecting) {
-          // Auto-reply
-          if (typingIndicator) {
-            typingIndicator.style.display = 'flex';
-            scrollToBottom();
-          }
-          replyTimeout = setTimeout(async () => {
-            if (typingIndicator) typingIndicator.style.display = 'none';
-            const replyMsg = await addMessage('Omg thank you so much! You\'re incredibly generous! 💕🥰', 'valyryes');
-            if (!replyMsg) return;
-            appendBubble(replyMsg);
-          }, 1500);
+          // Tip processed successfully — realtime will handle any creator response
         }
       });
     },
 
     cleanup() {
       if (storeUnsubscribe) storeUnsubscribe();
-      if (replyTimeout) clearTimeout(replyTimeout);
+      if (typingUnsub) typingUnsub();
+      if (msgReadUnsub) msgReadUnsub();
     }
   };
 }

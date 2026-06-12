@@ -3,7 +3,7 @@
 // Individual content page with paywall & related section
 // ============================================================
 
-import { getState, canAccessTier, showToast, addTip, markPostNotificationAsRead } from '../store.js';
+import { getState, canAccessTier, showToast, tipPost, markPostNotificationAsRead } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
@@ -275,13 +275,52 @@ export function renderContentDetail(params) {
           import('../main.js').then(({ openAuthModal }) => openAuthModal('login'));
           return;
         }
+        // Show inline tip selector
+        const amounts = [5, 10, 25, 50];
+        const existingPicker = document.getElementById('tip-picker-overlay');
+        if (existingPicker) { existingPicker.remove(); return; }
 
-        const amount = prompt('Enter tip amount ($):', '10');
-        if (!amount || parseFloat(amount) <= 0) return;
+        const picker = document.createElement('div');
+        picker.id = 'tip-picker-overlay';
+        picker.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;';
+        picker.innerHTML = `
+          <div style="background:var(--bg-secondary);border-radius:var(--radius-xl);padding:var(--space-6);max-width:320px;width:90%;border:1px solid var(--glass-border);">
+            <h3 style="font-size:var(--text-lg);font-weight:600;margin-bottom:var(--space-4);text-align:center;">Send a Tip \ud83d\udc9d</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-4);">
+              ${amounts.map(a => `<button class="btn btn-secondary tip-pick-amt" data-amt="${a}" style="justify-content:center;">$${a}</button>`).join('')}
+            </div>
+            <div style="margin-bottom:var(--space-4);">
+              <input type="number" id="tip-pick-custom" class="form-input" placeholder="Custom amount..." min="1" step="1">
+            </div>
+            <button class="btn btn-primary w-full" id="tip-pick-send" style="justify-content:center;">Send Tip</button>
+          </div>
+        `;
+        document.body.appendChild(picker);
 
-        import('../store.js').then(async ({ tipPost }) => {
-          await tipPost(item.id, parseFloat(amount), null, `#/content/${item.id}`);
+        let selectedAmt = null;
+        picker.querySelectorAll('.tip-pick-amt').forEach(btn => {
+          btn.addEventListener('click', () => {
+            picker.querySelectorAll('.tip-pick-amt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedAmt = parseFloat(btn.dataset.amt);
+            const customEl = document.getElementById('tip-pick-custom');
+            if (customEl) customEl.value = '';
+          });
         });
+        document.getElementById('tip-pick-custom')?.addEventListener('input', (e) => {
+          const v = parseFloat(e.target.value);
+          if (v > 0) {
+            selectedAmt = v;
+            picker.querySelectorAll('.tip-pick-amt').forEach(b => b.classList.remove('active'));
+          }
+        });
+        document.getElementById('tip-pick-send')?.addEventListener('click', async () => {
+          if (!selectedAmt || selectedAmt <= 0) { import('../store.js').then(({showToast}) => showToast('Select an amount', 'error')); return; }
+          picker.remove();
+          const { tipPost } = await import('../store.js');
+          await tipPost(item.id, selectedAmt, null, `#/content/${item.id}`);
+        });
+        picker.addEventListener('click', (e) => { if (e.target === picker) picker.remove(); });
       });
 
       // Carousel wiring

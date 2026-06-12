@@ -39,7 +39,7 @@ export const state = {
     ],
     stats: { posts: 0, photos: 0, videos: 0, fans: '12.4K' },
     verified: true,
-    online: true,
+    online: false,
   },
   user: {
     name: 'Guest User',
@@ -64,6 +64,10 @@ export const state = {
   bookmarks: [],
   polls: [],
   hasActiveRealtimeSub: false,
+  presenceChannel: null,
+  typingChannel: null,
+  creatorTyping: false,
+  fanTyping: {},
   ui: {
     authModalOpen: false,
     authMode: 'login',
@@ -399,29 +403,136 @@ export async function initStore() {
       console.error('Error loading polls:', e);
     }
 
-    // Fetch Supabase Realtime message subscription
+    // ---- Real-time Messaging (incremental, no full reload) ----
     if (session && !state.hasActiveRealtimeSub) {
       state.hasActiveRealtimeSub = true;
-      
+
+      // 1. Message INSERT — new messages arrive in real-time
       supabase
-        .channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
-          const newMsg = payload.new;
-          
-          const isRelevant = newMsg.sender_id === state.user.id || newMsg.recipient_id === state.user.id || state.isAdmin;
+        .channel('realtime:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+          const n = payload.new;
+          const isRelevant = n.sender_id === state.user.id || n.recipient_id === state.user.id || state.isAdmin;
           if (!isRelevant) return;
 
-          if (newMsg.sender_id !== state.user.id) {
+          if (!state.isAdmin) {
+            // Fan side — append to state.messages if not duplicate
+            if (!state.messages.find(m => m.id === n.id)) {
+              const mapped = {
+                id: n.id,
+                sender: n.sender_id === state.user.id ? 'fan' : 'valyryes',
+                content: n.content,
+                time: formatTime(n.created_at),
+                type: n.type,
+                mediaUrl: n.media_url,
+                read: n.sender_id === state.user.id ? true : !!n.is_read
+              };
+              state.messages.push(mapped);
+              notify('messages');
+              generateNotifications(state);
+              notify('notifications');
+            }
+          } else {
+            // Admin side — append to adminMessages
+            const uId = n.sender_id === state.user.id ? n.recipient_id : n.sender_id;
+            if (uId && uId !== state.user.id) {
+              if (!state.adminMessages[uId]) state.adminMessages[uId] = [];
+              if (!state.adminMessages[uId].find(m => m.id === n.id)) {
+                state.adminMessages[uId].push({
+                  id: n.id,
+                  sender: n.sender_id === state.user.id ? 'valyryes' : 'fan',
+                  content: n.content,
+                  time: formatTime(n.created_at),
+                  type: n.type,
+                  mediaUrl: n.media_url,
+                  read: !!n.is_read
+                });
+                // Update unread count for this user
+                if (n.sender_id !== state.user.id) {
+                  const user = state.adminUsers.find(u => u.id === n.sender_id);
+                  if (user) { user.unread = (user.unread || 0) + 1; }
+                }
+                notify('adminMessages');
+                notify('adminUsers');
+              }
+            }
+          }
+
+          // Play sound + toast for incoming messages
+          if (n.sender_id !== state.user.id) {
             playNotificationSound();
             let senderName = 'Valyryes';
             if (state.isAdmin) {
-              const profile = state.adminUsers.find(u => u.id === newMsg.sender_id);
+              const profile = state.adminUsers.find(u => u.id === n.sender_id);
               senderName = profile ? (profile.name || 'A user') : 'A user';
             }
             showToast(`💬 New message from ${senderName}`, 'info');
           }
+        })
+        // 2. Message UPDATE — read receipts in real-time
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+          const updated = payload.new;
+          if (!state.isAdmin) {
+            // Fan side — update read status (for sent messages: see if creator read them)
+            const msg = state.messages.find(m => m.id === updated.id);
+            if (msg && msg.read !== !!updated.is_read) {
+              msg.read = !!updated.is_read;
+              notify('messages');
+            }
+          } else {
+            // Admin side — update read status in admin messages
+            for (const userId of Object.keys(state.adminMessages)) {
+              const msg = state.adminMessages[userId].find(m => m.id === updated.id);
+              if (msg) { msg.read = !!updated.is_read; notify('adminMessages'); break; }
+            }
+          }
+        })
+        .subscribe();
 
-          await initStore();
+      // 3. Presence — online/offline tracking
+      state.presenceChannel = supabase.channel('presence:chat', { config: { presence: { key: state.user.id } } });
+      state.presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+          const presenceState = state.presenceChannel.presenceState();
+          // Check if creator (admin) is online
+          if (!state.isAdmin && state.creatorId) {
+            const wasOnline = state.creatorProfile.online;
+            state.creatorProfile.online = !!presenceState[state.creatorId];
+            if (wasOnline !== state.creatorProfile.online) notify('presence');
+          }
+          // Admin: track which fans are online
+          if (state.isAdmin) {
+            let changed = false;
+            state.adminUsers.forEach(u => {
+              const isOnline = !!presenceState[u.id];
+              if (u.online !== isOnline) { u.online = isOnline; changed = true; }
+            });
+            if (changed) notify('adminUsers');
+          }
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await state.presenceChannel.track({ user_id: state.user.id, online_at: new Date().toISOString() });
+          }
+        });
+
+      // 4. Typing indicators — broadcast channel
+      state.typingChannel = supabase.channel('typing:chat');
+      state.typingChannel
+        .on('broadcast', { event: 'typing' }, (payload) => {
+          const { userId, isTyping } = payload.payload;
+          if (userId === state.user.id) return; // ignore own typing
+          if (!state.isAdmin) {
+            // Fan sees creator typing
+            if (state.creatorTyping !== isTyping) {
+              state.creatorTyping = isTyping;
+              notify('typing');
+            }
+          } else {
+            // Admin sees fan typing
+            state.fanTyping[userId] = isTyping;
+            notify('typing');
+          }
         })
         .subscribe();
     }
@@ -628,7 +739,8 @@ async function loadAdminData() {
           content: m.content,
           time: formatTime(m.created_at),
           type: m.type,
-          mediaUrl: m.media_url
+          mediaUrl: m.media_url,
+          read: !!m.is_read
         });
       }
     });
@@ -647,7 +759,7 @@ export function canAccessTier(requiredTier) {
   return state.currentTier === 'gold';
 }
 
-export async function addMessage(content, sender = 'fan', type = 'text', mediaUrl = null) {
+export async function addMessage(content, type = 'text', mediaUrl = null) {
   if (!state.user.id) {
     showToast('Please login to send messages', 'error');
     return;
@@ -655,7 +767,7 @@ export async function addMessage(content, sender = 'fan', type = 'text', mediaUr
 
   const msg = {
     sender_id: state.user.id,
-    recipient_id: state.creatorId || null, // Valyrye
+    recipient_id: state.creatorId || null,
     content,
     type,
     media_url: mediaUrl
@@ -667,17 +779,28 @@ export async function addMessage(content, sender = 'fan', type = 'text', mediaUr
     return;
   }
 
-  const newMsg = {
+  // Note: the realtime INSERT handler will append this to state.messages
+  // so we just return the mapped message for optimistic UI
+  return {
     id: data.id,
-    sender,
+    sender: 'fan',
     content: data.content,
     time: formatTime(data.created_at),
     type: data.type,
-    mediaUrl: data.media_url
+    mediaUrl: data.media_url,
+    read: false
   };
-  state.messages.push(newMsg);
-  notify('messages');
-  return newMsg;
+}
+
+// Broadcast typing indicator
+export function sendTypingIndicator(isTyping) {
+  if (state.typingChannel) {
+    state.typingChannel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { userId: state.user.id, isTyping }
+    });
+  }
 }
 
 export async function addAdminReply(userId, content, type = 'text', mediaUrl = null) {
@@ -700,7 +823,8 @@ export async function addAdminReply(userId, content, type = 'text', mediaUrl = n
       content: data.content,
       time: formatTime(data.created_at),
       type: data.type,
-      mediaUrl: data.media_url
+      mediaUrl: data.media_url,
+      read: false
     });
     notify('adminMessages');
   }
@@ -939,31 +1063,14 @@ export async function tipPost(contentId, amount, message = null, successPath = n
     return { success: false, error: 'limit_exceeded' };
   }
 
-  const hasCard = state.user?.cardOnFile;
-  if (hasCard) {
-    // Try charging the saved card first
-    const res = await chargeSavedCard(tipAmount, contentId, message);
-    if (res.success) {
-      const item = state.content.find(c => c.id === contentId);
-      if (item) {
-        item.tips = (item.tips || 0) + tipAmount;
-        notify('content');
-      }
-      showToast(`💰 Sent $${tipAmount.toFixed(2)} tip! Thank you!`, 'success');
-      return { success: true };
-    }
-    // If saved card charge fails, fall through to checkout redirect
-    console.warn('[tipPost] Saved card charge failed, redirecting to Stripe checkout:', res.error);
-  }
-
-  // Redirect to Stripe Checkout
+  // Always redirect to Stripe Checkout for secure payment
   showToast('Redirecting to secure payment...', 'info');
   let dest = `/checkout?tip=${tipAmount}`;
   if (contentId) dest += `&contentId=${encodeURIComponent(contentId)}`;
   if (message) dest += `&message=${encodeURIComponent(message)}`;
   if (successPath) dest += `&successPath=${encodeURIComponent(successPath)}`;
   if (cancelPath) dest += `&cancelPath=${encodeURIComponent(cancelPath)}`;
-  
+
   const { navigate } = await import('./router.js');
   navigate(dest);
   return { success: true, redirecting: true };

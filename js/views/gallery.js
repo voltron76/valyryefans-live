@@ -3,7 +3,7 @@
 // Filterable content gallery with paywall overlays, tips & video
 // ============================================================
 
-import { getState, canAccessTier, showToast, addTip } from '../store.js';
+import { getState, canAccessTier, showToast, tipPost } from '../store.js';
 import { navigate } from '../router.js';
 
 const icons = {
