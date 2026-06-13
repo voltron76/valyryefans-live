@@ -89,6 +89,14 @@ async function handleRouteChange() {
       }
     }
 
+    // Track page view in web analytics
+    import('./store.js').then(({ trackEvent }) => {
+      if (typeof trackEvent === 'function') {
+        trackEvent('page_view');
+      }
+    });
+
+
     // Trigger transition
     requestAnimationFrame(() => {
       mainContent.classList.remove('page-transition-enter');

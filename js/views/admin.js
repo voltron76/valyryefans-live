@@ -32,6 +32,7 @@ const icons = {
   request: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
   file: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
   spinner: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>`,
+  analytics: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
 };
 
 // ------------------------------------
@@ -1330,6 +1331,363 @@ function renderDashboardTab() {
 }
 
 // ------------------------------------
+// Analytics Tab Helpers
+// ------------------------------------
+function renderAnalyticsTabPlaceholder() {
+  return `
+    <div style="padding: var(--space-8); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: var(--space-4);">
+      <div style="color: var(--accent);">${icons.spinner}</div>
+      <p style="color: var(--text-muted); font-size: var(--text-sm);">Loading analytics dashboard...</p>
+    </div>
+  `;
+}
+
+function formatRelativeTime(dateString) {
+  if (!dateString) return 'Just now';
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
+
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+async function loadAndRenderAnalyticsTab(contentEl) {
+  try {
+    const { supabase } = await import('../supabase.js');
+    
+    // Fetch latest events from the database
+    const { data: events, error } = await supabase
+      .from('analytics_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(2000);
+
+    if (error) throw error;
+
+    if (!events || events.length === 0) {
+      contentEl.innerHTML = `
+        <div style="padding: var(--space-8); text-align: center;">
+          <h3 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-4);">Analytics Dashboard</h3>
+          <p style="color: var(--text-muted); font-size: var(--text-sm);">No analytics data recorded yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Process data
+    const totalPageViews = events.filter(e => e.event_type === 'page_view').length;
+    const uniqueSessions = new Set(events.map(e => e.session_id)).size;
+    
+    // Sum tips
+    let totalTipsAmount = 0;
+    events.forEach(e => {
+      if (e.event_type === 'checkout_initiate' && e.details?.type === 'tip') {
+        totalTipsAmount += parseFloat(e.details.amount) || 0;
+      }
+    });
+
+    // Sum actions
+    const totalLikes = events.filter(e => e.event_type === 'like' && e.details?.action === 'like').length;
+    const totalComments = events.filter(e => e.event_type === 'comment').length;
+    const totalVotes = events.filter(e => e.event_type === 'poll_vote').length;
+    const totalBookmarks = events.filter(e => e.event_type === 'bookmark' && e.details?.action === 'add').length;
+    const totalEngagement = totalLikes + totalComments + totalVotes + totalBookmarks;
+
+    // Traffic by Day (last 7 days)
+    const dailyViews = {};
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      days.push(dateStr);
+      dailyViews[dateStr] = 0;
+    }
+
+    events.forEach(e => {
+      if (e.event_type === 'page_view') {
+        const dateStr = new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (dailyViews[dateStr] !== undefined) {
+          dailyViews[dateStr]++;
+        }
+      }
+    });
+
+    const maxDailyViews = Math.max(...Object.values(dailyViews), 1);
+
+    // Location distribution
+    const countries = {};
+    const cities = {};
+    events.forEach(e => {
+      const loc = e.details?.location;
+      if (loc) {
+        const cName = loc.country || 'Unknown';
+        const cCode = loc.country_code || 'UN';
+        const cityKey = `${loc.city || 'Unknown'}, ${loc.region || 'Unknown'}`;
+
+        if (!countries[cName]) countries[cName] = { count: 0, code: cCode };
+        countries[cName].count++;
+
+        if (loc.city && loc.city !== 'Unknown') {
+          cities[cityKey] = (cities[cityKey] || 0) + 1;
+        }
+      }
+    });
+
+    // Sort locations
+    const sortedCountries = Object.entries(countries)
+      .map(([name, data]) => ({ name, count: data.count, code: data.code }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const sortedCities = Object.entries(cities)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Latest Activity Feed
+    const latestActivities = events.slice(0, 15).map(e => {
+      const timeStr = formatRelativeTime(e.created_at);
+      const loc = e.details?.location;
+      const geoStr = loc && loc.country !== 'Unknown' ? `${loc.city || 'Unknown'}, ${loc.country_code}` : 'Unknown Location';
+      const userStr = e.user_id ? 'Authenticated User' : 'Guest';
+
+      let desc = '';
+      let icon = '📊';
+
+      switch (e.event_type) {
+        case 'page_view':
+          const path = e.page_path.replace('#', '') || '/';
+          desc = `Viewed page <code>${path}</code>`;
+          icon = '👀';
+          break;
+        case 'like':
+          const action = e.details?.action === 'like' ? 'liked' : 'unliked';
+          desc = `${action === 'liked' ? 'Liked' : 'Unliked'} post "${e.details?.title || 'post'}"`;
+          icon = action === 'liked' ? '❤️' : '💔';
+          break;
+        case 'comment':
+          desc = `Commented on "${e.details?.title || 'post'}" (${e.details?.textLength || 0} chars)`;
+          icon = '💬';
+          break;
+        case 'tip':
+        case 'checkout_initiate':
+          if (e.details?.type === 'tip') {
+            desc = `Initiated a <strong>$${e.details?.amount}</strong> Tip`;
+            icon = '💝';
+          } else {
+            desc = `Initiated a subscription checkout`;
+            icon = '💳';
+          }
+          break;
+        case 'poll_vote':
+          desc = `Voted in poll "${e.details?.question || 'poll'}"`;
+          icon = '🗳️';
+          break;
+        case 'bookmark':
+          desc = `Bookmarked post "${e.details?.title || 'post'}"`;
+          icon = '🔖';
+          break;
+        default:
+          desc = `Performed action: ${e.event_type}`;
+          icon = '⚡';
+      }
+
+      return {
+        icon,
+        userStr,
+        geoStr,
+        desc,
+        timeStr
+      };
+    });
+
+    const flagEmojis = {
+      'US': '🇺🇸', 'CA': '🇨🇦', 'GB': '🇬🇧', 'AU': '🇦🇺', 'DE': '🇩🇪', 'FR': '🇫🇷', 'JP': '🇯🇵', 'BR': '🇧🇷', 'IN': '🇮🇳', 'RU': '🇷🇺',
+      'UA': '🇺🇦', 'PL': '🇵🇱', 'NL': '🇳🇱', 'ES': '🇪🇸', 'IT': '🇮🇹', 'MX': '🇲🇽', 'CN': '🇨🇳', 'KR': '🇰🇷', 'UN': '🌐'
+    };
+    const getFlag = (code) => flagEmojis[code.toUpperCase()] || '🌐';
+
+    // Render dashboard
+    contentEl.innerHTML = `
+      <div class="admin-tab-header animate-fade-in-up">
+        <h2 class="font-display" style="font-size: var(--text-2xl); margin-bottom: var(--space-2);">Analytics Dashboard</h2>
+        <p style="color: var(--text-muted); font-size: var(--text-sm);">Monitor website traffic, geolocations, and activity trends in real-time.</p>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="admin-stats-grid animate-fade-in-up stagger-1" style="margin-bottom: var(--space-8);">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.15));color:#3b82f6;">👀</div>
+          <div class="admin-stat-card__value">${totalPageViews.toLocaleString()}</div>
+          <div class="admin-stat-card__label">Page Views</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.15));color:#10b981;">👥</div>
+          <div class="admin-stat-card__value">${uniqueSessions.toLocaleString()}</div>
+          <div class="admin-stat-card__label">Unique Visitors</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.15));color:#f59e0b;">💝</div>
+          <div class="admin-stat-card__value">$${totalTipsAmount.toFixed(2)}</div>
+          <div class="admin-stat-card__label">Tips Initiated</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(109,40,217,0.15));color:#8b5cf6;">⚡</div>
+          <div class="admin-stat-card__value">${totalEngagement.toLocaleString()}</div>
+          <div class="admin-stat-card__label">Engagement Actions</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-8); margin-bottom: var(--space-8);" class="admin-analytics-grid">
+        <!-- Daily Traffic Chart -->
+        <div class="card-glass animate-fade-in-up stagger-2" style="border-radius: var(--radius-xl); padding: var(--space-6); border: 1px solid var(--glass-border);">
+          <h3 class="font-display" style="font-size: var(--text-lg); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-2);">📈 Traffic Over the Last 7 Days</h3>
+          
+          <!-- CSS Flex Bar Chart -->
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 200px; padding: 0 var(--space-4); margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-color); position: relative;">
+            ${days.map(day => {
+              const count = dailyViews[day] || 0;
+              const pct = (count / maxDailyViews) * 100;
+              return `
+                <div style="display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; cursor: pointer; position: relative;">
+                  <!-- Tooltip -->
+                  <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 4px 8px; border-radius: var(--radius-md); font-size: 11px; font-weight: 600; margin-bottom: 4px; opacity: 0; pointer-events: none; transition: opacity 0.2s; position: absolute; bottom: calc(${pct}% + 15px); z-index: 10;" class="chart-tooltip">${count} views</div>
+                  
+                  <div style="height: ${Math.max(pct, 5)}%; width: 36px; background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%); border-radius: var(--radius-md) var(--radius-md) 0 0; transition: height 0.3s ease; box-shadow: 0 4px 12px rgba(236,72,153,0.25);" class="chart-bar"></div>
+                  <span style="font-size: 10px; color: var(--text-muted); margin-top: var(--space-2); font-weight: 500;">${day}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Geographic Locations -->
+        <div class="card-glass animate-fade-in-up stagger-2" style="border-radius: var(--radius-xl); padding: var(--space-6); border: 1px solid var(--glass-border);">
+          <h3 class="font-display" style="font-size: var(--text-lg); margin-bottom: var(--space-6);">🌍 Top Countries</h3>
+          <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+            ${sortedCountries.length > 0 ? sortedCountries.map(c => {
+              const pct = totalPageViews > 0 ? Math.round((c.count / events.length) * 100) : 0;
+              return `
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--space-1); font-weight: 500;">
+                    <span>${getFlag(c.code)} ${c.name}</span>
+                    <span style="color: var(--text-muted);">${c.count} (${pct}%)</span>
+                  </div>
+                  <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: ${pct}%; height: 100%; background: var(--accent); border-radius: var(--radius-full);"></div>
+                  </div>
+                </div>
+              `;
+            }).join('') : `<p style="color: var(--text-muted); font-size: var(--text-sm);">No data available.</p>`}
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: var(--space-8);" class="admin-analytics-grid">
+        <!-- Action Event Counts -->
+        <div class="card-glass animate-fade-in-up stagger-3" style="border-radius: var(--radius-xl); padding: var(--space-6); border: 1px solid var(--glass-border); height: fit-content;">
+          <h3 class="font-display" style="font-size: var(--text-lg); margin-bottom: var(--space-6);">⚡ Activity Breakdown</h3>
+          <table style="width: 100%; font-size: var(--text-sm); border-collapse: collapse;">
+            <tbody>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: var(--space-3) 0; color: var(--text-secondary);">👀 Page Views</td>
+                <td style="text-align: right; font-weight: 600; padding: var(--space-3) 0;">${totalPageViews}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: var(--space-3) 0; color: var(--text-secondary);">❤️ Likes Created</td>
+                <td style="text-align: right; font-weight: 600; padding: var(--space-3) 0;">${totalLikes}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: var(--space-3) 0; color: var(--text-secondary);">💬 Comments Written</td>
+                <td style="text-align: right; font-weight: 600; padding: var(--space-3) 0;">${totalComments}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: var(--space-3) 0; color: var(--text-secondary);">🗳️ Poll Votes Cast</td>
+                <td style="text-align: right; font-weight: 600; padding: var(--space-3) 0;">${totalVotes}</td>
+              </tr>
+              <tr>
+                <td style="padding: var(--space-3) 0; color: var(--text-secondary);">🔖 Bookmarks Saved</td>
+                <td style="text-align: right; font-weight: 600; padding: var(--space-3) 0;">${totalBookmarks}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Live Activity Log -->
+        <div class="card-glass animate-fade-in-up stagger-3" style="border-radius: var(--radius-xl); padding: var(--space-6); border: 1px solid var(--glass-border);">
+          <h3 class="font-display" style="font-size: var(--text-lg); margin-bottom: var(--space-6);">⚡ Live Activity Feed</h3>
+          <div style="display: flex; flex-direction: column; gap: var(--space-3); max-height: 400px; overflow-y: auto; padding-right: var(--space-2);" class="custom-scrollbar">
+            ${latestActivities.map(act => `
+              <div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-lg); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
+                <div style="font-size: 16px; margin-top: 2px;">${act.icon}</div>
+                <div style="flex: 1;">
+                  <div style="font-size: var(--text-sm); font-weight: 500;">
+                    ${act.desc}
+                  </div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; gap: var(--space-3);">
+                    <span>👤 ${act.userStr}</span>
+                    <span>📍 ${act.geoStr}</span>
+                  </div>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap;">${act.timeStr}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Inject tooltips CSS styles dynamically if they aren't loaded yet
+    if (!document.getElementById('analytics-chart-styles')) {
+      const style = document.createElement('style');
+      style.id = 'analytics-chart-styles';
+      style.textContent = `
+        .chart-bar:hover {
+          background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%) !important;
+        }
+        div:hover > .chart-tooltip {
+          opacity: 1 !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.1);
+          border-radius: var(--radius-full);
+        }
+        @media (max-width: 900px) {
+          .admin-analytics-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+  } catch (err) {
+    console.error('Failed to load analytics data:', err);
+    contentEl.innerHTML = `
+      <div style="padding: var(--space-8); text-align: center; color: var(--error);">
+        <h3 class="font-display">Error loading dashboard</h3>
+        <p style="color: var(--text-muted); margin-top: var(--space-4);">${err.message || 'Unknown database error'}</p>
+      </div>
+    `;
+  }
+}
+
+// ------------------------------------
 // Promotions Tab
 // ------------------------------------
 function renderPromotionsTab() {
@@ -1579,6 +1937,7 @@ function renderDashboardLayout(activeTab = 'messages', selectedUserId = null) {
     { id: 'upload', label: 'Upload', icon: icons.upload, badge: 0 },
     { id: 'promotions', label: 'Promotions', icon: icons.star, badge: 0 },
     { id: 'polls', label: 'Polls', icon: icons.activity, badge: 0 },
+    { id: 'analytics', label: 'Analytics', icon: icons.analytics, badge: 0 },
     { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard, badge: 0 },
   ];
 
@@ -1589,6 +1948,7 @@ function renderDashboardLayout(activeTab = 'messages', selectedUserId = null) {
     case 'upload': contentHtml = renderUploadTab(); break;
     case 'promotions': contentHtml = renderPromotionsTab(); break;
     case 'polls': contentHtml = renderPollsTab(); break;
+    case 'analytics': contentHtml = renderAnalyticsTabPlaceholder(); break;
     case 'dashboard': contentHtml = renderDashboardTab(); break;
   }
 
@@ -1694,6 +2054,10 @@ export function renderAdmin() {
           case 'upload': contentEl.innerHTML = renderUploadTab(); wireUploadTab(); break;
           case 'promotions': contentEl.innerHTML = renderPromotionsTab(); wirePromotionsTab(); break;
           case 'polls': contentEl.innerHTML = renderPollsTab(); wirePollsTab(); break;
+          case 'analytics':
+            contentEl.innerHTML = renderAnalyticsTabPlaceholder();
+            loadAndRenderAnalyticsTab(contentEl);
+            break;
           case 'dashboard': contentEl.innerHTML = renderDashboardTab(); break;
         }
       }

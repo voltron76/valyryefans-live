@@ -934,6 +934,7 @@ export async function chargeSavedCard(amount, contentId = null, message = null) 
 
 export function toggleBookmark(id) {
   const idx = state.bookmarks.indexOf(id);
+  const action = idx !== -1 ? 'remove' : 'add';
   if (idx !== -1) {
     state.bookmarks.splice(idx, 1);
     showToast('Removed from bookmarks');
@@ -942,6 +943,8 @@ export function toggleBookmark(id) {
     showToast('Added to bookmarks');
   }
   notify('bookmarks');
+  const item = state.content.find(c => c.id === id);
+  trackEvent('bookmark', { contentId: id, action, title: item?.title || 'Unknown' });
 }
 
 export function isBookmarked(id) {
@@ -1000,9 +1003,11 @@ export async function toggleLike(contentId) {
         user_id: state.user.id
       }]);
       if (likeErr) throw likeErr;
+      trackEvent('like', { contentId, title: item.title, action: 'like' });
     } else {
       const { error: unlikeErr } = await supabase.from('content_likes').delete().eq('content_id', contentId).eq('user_id', state.user.id);
       if (unlikeErr) throw unlikeErr;
+      trackEvent('like', { contentId, title: item.title, action: 'unlike' });
     }
     // DB trigger automatically updates content.likes count
   } catch (err) {
@@ -1071,6 +1076,7 @@ export async function addComment(contentId, text) {
   if (!item.comments) item.comments = [];
   item.comments.push(newComment);
   notify('content');
+  trackEvent('comment', { contentId, title: item.title, textLength: text.length });
   return newComment;
 }
 
@@ -1246,6 +1252,7 @@ export async function votePoll(pollId, optionId) {
   showToast('Vote submitted! 📊', 'success');
   await initStore();
   notify('polls');
+  trackEvent('poll_vote', { pollId, optionId, question: poll.question });
 }
 
 export async function createPoll({ question, options, durationHours }) {
@@ -1518,3 +1525,107 @@ export async function markFanMessagesAsRead() {
     console.error('Failed to mark fan messages as read:', e);
   }
 }
+
+// ============================================================
+// Web Analytics Tracking System
+// ============================================================
+let sessionLocation = null;
+const SESSION_KEY = 'vf-session-id';
+const LOCATION_KEY = 'vf-location-data';
+
+// Generate or fetch session ID
+let sessionId = sessionStorage.getItem(SESSION_KEY);
+if (!sessionId) {
+  sessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36);
+  sessionStorage.setItem(SESSION_KEY, sessionId);
+}
+
+// Fetch geodata once per session with sessionStorage cache
+async function getSessionLocation() {
+  if (sessionLocation) return sessionLocation;
+
+  try {
+    const cached = sessionStorage.getItem(LOCATION_KEY);
+    if (cached) {
+      sessionLocation = JSON.parse(cached);
+      return sessionLocation;
+    }
+  } catch (e) {}
+
+  // Try ipapi.co (HTTPS-friendly, no key required for basic tier)
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (res.ok) {
+      const data = await res.json();
+      sessionLocation = {
+        country: data.country_name || 'Unknown',
+        country_code: data.country_code || 'UN',
+        region: data.region || 'Unknown',
+        city: data.city || 'Unknown',
+        ip: data.ip || 'Unknown'
+      };
+      sessionStorage.setItem(LOCATION_KEY, JSON.stringify(sessionLocation));
+      return sessionLocation;
+    }
+  } catch (err) {
+    console.warn('Primary geolocation API failed, trying fallback...');
+  }
+
+  // Fallback: geolocation-db.com (HTTPS secure lookup)
+  try {
+    const res = await fetch('https://geolocation-db.com/json/');
+    if (res.ok) {
+      const data = await res.json();
+      sessionLocation = {
+        country: data.country_name || 'Unknown',
+        country_code: data.country_code || 'UN',
+        region: data.state || 'Unknown',
+        city: data.city || 'Unknown',
+        ip: data.IPv4 || 'Unknown'
+      };
+      sessionStorage.setItem(LOCATION_KEY, JSON.stringify(sessionLocation));
+      return sessionLocation;
+    }
+  } catch (err) {
+    console.warn('Fallback geolocation API failed:', err);
+  }
+
+  // Final fallback
+  sessionLocation = {
+    country: 'Unknown',
+    country_code: 'UN',
+    region: 'Unknown',
+    city: 'Unknown',
+    ip: 'Unknown'
+  };
+  return sessionLocation;
+}
+
+export async function trackEvent(eventType, details = {}) {
+  try {
+    const location = await getSessionLocation();
+    const hash = window.location.hash || '#/';
+    
+    const eventObj = {
+      session_id: sessionId,
+      user_id: state.user?.id || null,
+      event_type: eventType,
+      page_path: hash,
+      details: {
+        ...details,
+        location,
+        userAgent: navigator.userAgent,
+        screenSize: `${window.innerWidth}x${window.innerHeight}`,
+        referrer: document.referrer || 'Direct'
+      }
+    };
+
+    // Run insert asynchronously (do not block user interactions)
+    supabase.from('analytics_events').insert([eventObj]).then(({ error }) => {
+      if (error) console.warn('Supabase analytics insert error:', error);
+    });
+  } catch (e) {
+    console.warn('Analytics tracking failed:', e);
+  }
+}
+

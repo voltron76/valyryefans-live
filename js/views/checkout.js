@@ -164,6 +164,16 @@ export function renderCheckout(params = {}) {
           }
 
           if (data && data.url) {
+            // Track checkout initiation in web analytics
+            import('../store.js').then(({ trackEvent }) => {
+              if (typeof trackEvent === 'function') {
+                trackEvent('checkout_initiate', {
+                  type: isTip ? 'tip' : 'subscription',
+                  amount: parseFloat(amount),
+                  contentId: params.contentId || null
+                });
+              }
+            });
             // Redirect to Stripe Checkout
             window.location.href = data.url;
           } else {
