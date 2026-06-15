@@ -104,7 +104,7 @@ DECLARE
   msg_text TEXT;
 BEGIN
   -- Find the creator (admin) profile id
-  SELECT id INTO creator_id FROM public.profiles WHERE tier = 'admin' OR role = 'creator' LIMIT 1;
+  SELECT id INTO creator_id FROM public.profiles WHERE tier = 'admin' LIMIT 1;
   
   -- Format message content
   IF NEW.message IS NOT NULL AND NEW.message <> '' THEN

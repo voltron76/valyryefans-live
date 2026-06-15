@@ -7,3 +7,5 @@ swapped/
 bulk_uploader.js
 sorted_carousels/
 temp_query.sql
+supabase/.temp/
+110_SINGLE_IMAGE_Batch45_960x1280/
