@@ -110,7 +110,7 @@ serve(async (req) => {
       .eq('name', templateName)
       .single()
 
-    const baseSubject = dbTemplate?.subject || 'Notification from ValyryeFans';
+    const baseSubject = dbTemplate?.subject || 'Notification from ValyReyes Fans';
     const baseHtml = dbTemplate?.html_content || '<div>{{body}}</div>';
 
     // Determine Recipients
@@ -208,8 +208,8 @@ serve(async (req) => {
     // Default Sender (Resend onboarding domain or custom domain)
     // If user hasn't verified domain yet, Resend forces using 'onboarding@resend.dev'
     const fromAddress = isSandbox 
-      ? 'ValyryeFans <sandbox@valyreyes.com>'
-      : 'ValyryeFans <noreply@valyreyes.com>';
+      ? 'Valerie Reyes Fans <sandbox@valyryes.com>'
+      : 'Valerie Reyes Fans <services@valyryes.com>';
 
     // Prepare emails compile and send
     const results = [];
@@ -226,7 +226,7 @@ serve(async (req) => {
       let compiledHtml = baseHtml;
 
       if (event === 'custom_bulk') {
-        compiledSubject = customSubject || 'Message from ValyryeFans';
+        compiledSubject = customSubject || 'Message from ValyReyes Fans';
         // Insert custom body into the HTML wrapper
         compiledHtml = baseHtml.replace('{{welcome}}', recipient.name)
                               .replace('{{name}}', recipient.name)
