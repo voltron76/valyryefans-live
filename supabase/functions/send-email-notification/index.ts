@@ -247,10 +247,23 @@ serve(async (req) => {
 
       if (event === 'custom_bulk') {
         compiledSubject = customSubject || 'Message from ValyReyes Fans';
-        // Insert custom body into the HTML wrapper
-        compiledHtml = baseHtml.replace('{{welcome}}', recipient.name)
-                              .replace('{{name}}', recipient.name)
-                              .replace('Thanks for joining my official fan club. I am so excited to have you here! You now have access to my public feed, and you can upgrade to Gold tier anytime to unlock my entire vault of 200+ exclusive photos and videos, request custom content, and chat with me directly.', customBody || '');
+        
+        // Detect if the customBody is a full HTML document (bypass wrapping in welcome template)
+        const trimmedBody = (customBody || '').trim();
+        const isFullHtml = trimmedBody.toLowerCase().startsWith('<!doctype') || 
+                           trimmedBody.toLowerCase().startsWith('<html');
+        
+        if (isFullHtml) {
+          compiledHtml = customBody || '';
+          compiledHtml = compiledHtml.replaceAll('{{name}}', recipient.name)
+                                     .replaceAll('{{welcome}}', recipient.name)
+                                     .replaceAll('{{url}}', siteUrl);
+        } else {
+          // Insert custom body into the HTML wrapper
+          compiledHtml = baseHtml.replace('{{welcome}}', recipient.name)
+                                .replace('{{name}}', recipient.name)
+                                .replace('Thanks for joining my official fan club. I am so excited to have you here! You now have access to my public feed, and you can upgrade to Gold tier anytime to unlock my entire vault of 200+ exclusive photos and videos, request custom content, and chat with me directly.', customBody || '');
+        }
       } else {
         // Run standard replacements
         for (const [key, value] of Object.entries(mergedVariables)) {
