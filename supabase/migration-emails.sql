@@ -24,10 +24,20 @@ CREATE TABLE IF NOT EXISTS public.sent_emails (
 );
 
 -- 3. Add Email and Preference columns to Profiles
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_new_post BOOLEAN DEFAULT true;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_new_message BOOLEAN DEFAULT true;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_subscription_alerts BOOLEAN DEFAULT true;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles_secure') THEN
+    ALTER TABLE public.profiles_secure ADD COLUMN IF NOT EXISTS email TEXT;
+    ALTER TABLE public.profiles_secure ADD COLUMN IF NOT EXISTS email_new_post BOOLEAN DEFAULT true;
+    ALTER TABLE public.profiles_secure ADD COLUMN IF NOT EXISTS email_new_message BOOLEAN DEFAULT true;
+    ALTER TABLE public.profiles_secure ADD COLUMN IF NOT EXISTS email_subscription_alerts BOOLEAN DEFAULT true;
+  ELSE
+    ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+    ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_new_post BOOLEAN DEFAULT true;
+    ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_new_message BOOLEAN DEFAULT true;
+    ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_subscription_alerts BOOLEAN DEFAULT true;
+  END IF;
+END $$;
 
 -- 4. Enable Row Level Security
 ALTER TABLE public.email_templates ENABLE ROW LEVEL SECURITY;

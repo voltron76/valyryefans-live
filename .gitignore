@@ -1,6 +1,8 @@
 node_modules/
 swapped/
 .env
+.env.*
+*.env
 .DS_Store
 *.log
 .system_generated/
@@ -9,3 +11,6 @@ sorted_carousels/
 temp_query.sql
 supabase/.temp/
 110_SINGLE_IMAGE_Batch45_960x1280/
+.agents/
+verify_security.*
+PROJECT.md

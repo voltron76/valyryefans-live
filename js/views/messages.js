@@ -17,6 +17,11 @@ const icons = {
 
 const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>';
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function renderMessageBubble(msg) {
   const isSent = msg.sender === 'fan';
   const isRequest = msg.type === 'request';
@@ -54,7 +59,7 @@ function renderMessageBubble(msg) {
     <div class="message-bubble message-bubble--${isSent ? 'sent' : 'received'}">
       ${nameHtml}
       ${mediaHtml}
-      <div>${msg.content}</div>
+      <div>${escapeHtml(msg.content)}</div>
       <div class="message-time">${msg.time}${isSent ? `<span style="margin-left:4px;font-size:10px;${msg.read ? 'color:var(--accent-light);' : 'opacity:0.6;'}">${msg.read ? '✓✓' : '✓'}</span>` : ''}</div>
     </div>`;
 }
@@ -446,7 +451,7 @@ export function renderMessages() {
             // Send request bubble (only for instant payments - for Stripe redirects, the DB trigger handles it)
             const messageContent = `
               <strong>${config.icon} ${config.label} Sent</strong><br>
-              <span style="color: var(--text-secondary); font-size: 13px; display: block; margin-top: 4px;">"${desc}"</span>
+              <span style="color: var(--text-secondary); font-size: 13px; display: block; margin-top: 4px;">"${escapeHtml(desc)}"</span>
               <div style="margin-top: 8px; font-weight: 600; color: #ffd700; display: flex; align-items: center; gap: 4px;">
                 <span>💰 Offer:</span>
                 <span style="font-size: 15px;">$${finalAmount.toFixed(2)}</span>

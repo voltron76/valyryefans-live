@@ -109,7 +109,12 @@ serve(async (req) => {
         }
 
       } else if (type === 'tip') {
-        const amount = parseFloat(metadata.amount || '0')
+        let amount = parseFloat(metadata.amount || '0');
+        if (isNaN(amount) || !Number.isFinite(amount) || amount < 0) {
+          amount = 0;
+        }
+        amount = Math.round(amount * 100) / 100;
+        
         const contentId = metadata.contentId || null
         const tipMessage = metadata.message || 'Paid via Stripe Checkout'
 
@@ -127,19 +132,13 @@ serve(async (req) => {
           throw tipError
         }
 
-        // 2. Increment creator profile balance (optional)
-        const { data: creatorProfile } = await adminClient
-          .from('profiles')
-          .select('balance')
-          .eq('tier', 'admin')
-          .single()
+        // 2. Increment creator profile balance atomically using secure RPC
+        const { error: balanceError } = await adminClient.rpc('increment_admin_balance', {
+          amount_to_add: amount
+        })
 
-        if (creatorProfile) {
-          const newBalance = parseFloat(creatorProfile.balance || '0') + amount
-          await adminClient
-            .from('profiles')
-            .update({ balance: newBalance })
-            .eq('tier', 'admin')
+        if (balanceError) {
+          console.error('[Webhook] Failed to update creator balance atomically:', balanceError)
         }
 
         console.log(`[Webhook] Tip of $${amount} recorded for user ${userId}.`)

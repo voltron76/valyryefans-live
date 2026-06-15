@@ -253,6 +253,37 @@ export function openAuthModal(mode = 'login') {
 }
 
 
+async function generateDeviceFingerprint() {
+  const components = [
+    navigator.userAgent || '',
+    navigator.language || '',
+    navigator.languages ? navigator.languages.join(',') : '',
+    screen.width + 'x' + screen.height,
+    screen.colorDepth || '',
+    Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    navigator.hardwareConcurrency || '',
+    navigator.deviceMemory || ''
+  ];
+  const rawString = components.join('###');
+  try {
+    if (window.crypto && crypto.subtle) {
+      const msgUint8 = new TextEncoder().encode(rawString);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (e) {
+    // Fallback
+  }
+  let hash = 0;
+  for (let i = 0; i < rawString.length; i++) {
+    const char = rawString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return (hash >>> 0).toString(16);
+}
+
 async function handleRealAuth(mode) {
   const email = document.getElementById('auth-email')?.value;
   const password = document.getElementById('auth-password')?.value;
@@ -269,10 +300,11 @@ async function handleRealAuth(mode) {
     const { initStore, showToast } = await import('./store.js');
 
     if (mode === 'signup') {
+      const device_fingerprint = await generateDeviceFingerprint();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name } }
+        options: { data: { name, device_fingerprint } }
       });
       if (error) throw error;
       

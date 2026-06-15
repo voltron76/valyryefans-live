@@ -7,12 +7,46 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const getCorsHeaders = (origin: string | null) => {
+  let allowedOrigin = 'https://valyryesfans.com'
+  if (origin) {
+    if (
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin === 'https://valyreyes.com' ||
+      origin === 'https://valyryesfans.com' ||
+      origin === 'https://valyryefans.com' ||
+      origin.endsWith('.valyreyes.com') ||
+      origin.endsWith('.valyryesfans.com') ||
+      origin.endsWith('.valyryefans.com')
+    ) {
+      allowedOrigin = origin
+    }
+  }
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
+}
+
+const isAllowedOrigin = (origin: string): boolean => {
+  if (!origin) return false
+  return (
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1') ||
+    origin === 'https://valyreyes.com' ||
+    origin === 'https://valyryesfans.com' ||
+    origin === 'https://valyryefans.com' ||
+    origin.endsWith('.valyreyes.com') ||
+    origin.endsWith('.valyryesfans.com') ||
+    origin.endsWith('.valyryefans.com')
+  )
 }
 
 serve(async (req) => {
+  const originHeader = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(originHeader)
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -38,8 +72,11 @@ serve(async (req) => {
     }
 
     const { type, amount, contentId, message, successPath, cancelPath, origin: customOrigin } = await req.json()
-    const requestOrigin = req.headers.get('origin') || 'http://localhost:8000'
-    const origin = customOrigin || requestOrigin
+    
+    // Secure origin verification to prevent open redirect
+    const requestOrigin = originHeader || 'http://localhost:8000'
+    const rawOrigin = customOrigin || requestOrigin
+    const origin = isAllowedOrigin(rawOrigin) ? rawOrigin : 'https://valyryesfans.com'
 
     // Helper to securely build redirect URLs back to correct hash routes
     const getRedirectUrl = (path: string | null | undefined, defaultPath: string) => {
@@ -51,42 +88,15 @@ serve(async (req) => {
     let session;
 
     if (type === 'subscription') {
-      // Create Subscription Checkout Session
-      // We will look up or create a Stripe customer
-      let stripeCustomerId = '';
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('stripe_customer_id')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.stripe_customer_id) {
-        stripeCustomerId = profile.stripe_customer_id;
-      } else {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          metadata: {
-            userId: user.id
-          }
-        });
-        stripeCustomerId = customer.id;
-        // Save customer ID in profiles
-        await supabaseClient
-          .from('profiles')
-          .update({ stripe_customer_id: stripeCustomerId })
-          .eq('id', user.id);
-      }
-
+      // Create a Stripe checkout session for Gold tier subscription
       session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
         payment_method_types: ['card'],
         line_items: [{
           price_data: {
             currency: 'usd',
-            recurring: { interval: 'month' },
             product_data: {
-              name: 'Gold VIP Subscription',
-              description: 'Unlimited access to all premium photos and videos, direct messaging, and priority response.'
+              name: 'Gold VIP Access',
+              description: 'Unlock all exclusive content & direct messaging with Valyryes',
             },
             unit_amount: 1499, // $14.99 in cents
           },
@@ -104,7 +114,14 @@ serve(async (req) => {
 
     } else if (type === 'tip') {
       // Create a direct Payment Checkout Session for tipping
-      if (!amount || parseFloat(amount) <= 0) {
+      const parsedAmount = parseFloat(amount)
+      if (!amount || isNaN(parsedAmount) || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        throw new Error('Invalid tip amount')
+      }
+
+      // Limit precision and round to 2 decimal places to match Stripe/DB
+      const finalAmount = Math.round(parsedAmount * 100) / 100
+      if (finalAmount <= 0) {
         throw new Error('Invalid tip amount')
       }
 
@@ -117,7 +134,7 @@ serve(async (req) => {
               name: 'Support Tip to Valyryes',
               description: contentId ? `Tip for post #${contentId.substring(0, 8)}` : 'One-time support tip'
             },
-            unit_amount: Math.round(amount * 100), // in cents
+            unit_amount: Math.round(finalAmount * 100), // in cents
           },
           quantity: 1,
         }],
@@ -128,7 +145,7 @@ serve(async (req) => {
         metadata: {
           userId: user.id,
           type: 'tip',
-          amount: amount.toString(),
+          amount: finalAmount.toString(),
           contentId: contentId || '',
           message: message || ''
         }

@@ -10,6 +10,11 @@ const verifiedBadgeSvg = '<span class="verified-badge"><svg viewBox="0 0 24 24">
 
 let activeProgressInterval = null;
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 // ------------------------------------
 // SVG Icons
 // ------------------------------------
@@ -267,8 +272,8 @@ function renderPostCard(item, creatorProfile) {
           const showBadge = c.isCreator || c.tier === 'gold';
           return `
           <div class="post-comment">
-            <strong class="${c.isCreator ? 'creator-name' : ''}">${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong>
-            <span>${c.text}</span>
+            <strong class="${c.isCreator ? 'creator-name' : ''}">${escapeHtml(c.userName)}${showBadge ? verifiedBadgeSvg : ''}</strong>
+            <span>${escapeHtml(c.text)}</span>
           </div>
         `;
         }).join('')}
@@ -527,7 +532,7 @@ export function renderHome() {
             const commentDiv = document.createElement('div');
             commentDiv.className = 'post-comment animate-fade-in-up';
             const isGold = state.currentTier === 'gold';
-            commentDiv.innerHTML = `<strong>${state.user?.name || 'You'}${isGold ? verifiedBadgeSvg : ''}</strong> <span>${text}</span>`;
+            commentDiv.innerHTML = `<strong>${escapeHtml(state.user?.name || 'You')}${isGold ? verifiedBadgeSvg : ''}</strong> <span>${escapeHtml(text)}</span>`;
             const inputWrap = commentsContainer.querySelector('.post-comment-input');
             commentsContainer.insertBefore(commentDiv, inputWrap);
           }
@@ -565,7 +570,7 @@ export function renderHome() {
               const commentDiv = document.createElement('div');
               commentDiv.className = 'post-comment animate-fade-in-up';
               const showBadge = c.isCreator || c.tier === 'gold';
-              commentDiv.innerHTML = `<strong>${c.userName}${showBadge ? verifiedBadgeSvg : ''}</strong> <span>${c.text}</span>`;
+              commentDiv.innerHTML = `<strong>${escapeHtml(c.userName)}${showBadge ? verifiedBadgeSvg : ''}</strong> <span>${escapeHtml(c.text)}</span>`;
               commentsContainer.insertBefore(commentDiv, inputWrap);
             });
 

@@ -2,6 +2,11 @@
 // ValyryesFans — Message Bubble Component
 // ============================================================
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 export function renderMessageBubble(msg) {
   const isSent = msg.sender === 'fan';
   const bubbleClass = isSent ? 'message-bubble--sent' : 'message-bubble--received';
@@ -32,7 +37,7 @@ export function renderMessageBubble(msg) {
   return `
     <div class="message-bubble ${bubbleClass}">
       ${mediaHtml}
-      <div>${msg.content}</div>
+      <div>${escapeHtml(msg.content)}</div>
       <div class="message-time">${msg.time}</div>
     </div>
   `;

@@ -12,14 +12,28 @@ CREATE TABLE IF NOT EXISTS public.polls (
 -- ============================================================
 -- 2. CREATE POLL VOTES TABLE
 -- ============================================================
-CREATE TABLE IF NOT EXISTS public.poll_votes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  poll_id UUID REFERENCES public.polls(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  option_id TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(poll_id, user_id)
-);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles_secure') THEN
+    CREATE TABLE IF NOT EXISTS public.poll_votes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      poll_id UUID REFERENCES public.polls(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES public.profiles_secure(id) ON DELETE CASCADE,
+      option_id TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      UNIQUE(poll_id, user_id)
+    );
+  ELSE
+    CREATE TABLE IF NOT EXISTS public.poll_votes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      poll_id UUID REFERENCES public.polls(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+      option_id TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      UNIQUE(poll_id, user_id)
+    );
+  END IF;
+END $$;
 
 -- ============================================================
 -- 3. ENABLE ROW LEVEL SECURITY
@@ -46,9 +60,10 @@ CREATE POLICY "Admins can manage polls" ON public.polls
 -- ============================================================
 -- 5. POLL_VOTES POLICIES
 -- ============================================================
+-- Restrict poll votes SELECT policy to the user who cast the vote
 DROP POLICY IF EXISTS "Anyone can view poll votes" ON public.poll_votes;
 CREATE POLICY "Anyone can view poll votes" ON public.poll_votes
-  FOR SELECT USING (true);
+  FOR SELECT USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "Authenticated users can vote" ON public.poll_votes;
 CREATE POLICY "Authenticated users can vote" ON public.poll_votes

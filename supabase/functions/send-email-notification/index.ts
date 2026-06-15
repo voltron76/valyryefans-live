@@ -1,9 +1,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const getCorsHeaders = (origin: string | null) => {
+  let allowedOrigin = 'https://valyryesfans.com'
+  if (origin) {
+    if (
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin === 'https://valyreyes.com' ||
+      origin === 'https://valyryesfans.com' ||
+      origin === 'https://valyryefans.com' ||
+      origin.endsWith('.valyreyes.com') ||
+      origin.endsWith('.valyryesfans.com') ||
+      origin.endsWith('.valyryefans.com')
+    ) {
+      allowedOrigin = origin
+    }
+  }
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 interface EmailPayload {
@@ -17,6 +34,9 @@ interface EmailPayload {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

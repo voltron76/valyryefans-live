@@ -7,12 +7,32 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const getCorsHeaders = (origin: string | null) => {
+  let allowedOrigin = 'https://valyryesfans.com'
+  if (origin) {
+    if (
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin === 'https://valyreyes.com' ||
+      origin === 'https://valyryesfans.com' ||
+      origin === 'https://valyryefans.com' ||
+      origin.endsWith('.valyreyes.com') ||
+      origin.endsWith('.valyryesfans.com') ||
+      origin.endsWith('.valyryefans.com')
+    ) {
+      allowedOrigin = origin
+    }
+  }
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -39,14 +59,27 @@ serve(async (req) => {
 
     const { type, amount, contentId } = await req.json()
 
+    // Validate amount securely
+    const parsedAmount = parseFloat(amount)
+    if (!amount || isNaN(parsedAmount) || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      throw new Error('Invalid amount')
+    }
+
+    // Limit precision and round to 2 decimal places to match Stripe/DB
+    const finalAmount = Math.round(parsedAmount * 100) / 100
+    if (finalAmount <= 0) {
+      throw new Error('Invalid amount')
+    }
+
     // Create Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: Math.round(finalAmount * 100), // Convert to cents
       currency: 'usd',
       metadata: {
         userId: user.id,
         type: type, // 'subscription' or 'tip'
-        contentId: contentId || ''
+        contentId: contentId || '',
+        amount: finalAmount.toString()
       }
     })
 

@@ -7,12 +7,32 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const getCorsHeaders = (origin: string | null) => {
+  let allowedOrigin = 'https://valyryesfans.com'
+  if (origin) {
+    if (
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin === 'https://valyreyes.com' ||
+      origin === 'https://valyryesfans.com' ||
+      origin === 'https://valyryefans.com' ||
+      origin.endsWith('.valyreyes.com') ||
+      origin.endsWith('.valyryesfans.com') ||
+      origin.endsWith('.valyryefans.com')
+    ) {
+      allowedOrigin = origin
+    }
+  }
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -39,7 +59,15 @@ serve(async (req) => {
 
     const { amount, contentId, message } = await req.json()
 
-    if (!amount || parseFloat(amount) <= 0) {
+    // Validate amount securely
+    const parsedAmount = parseFloat(amount)
+    if (!amount || isNaN(parsedAmount) || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      throw new Error('Invalid tip amount')
+    }
+
+    // Limit precision and round to 2 decimal places to match database/Stripe expectations
+    const finalAmount = Math.round(parsedAmount * 100) / 100
+    if (finalAmount <= 0) {
       throw new Error('Invalid tip amount')
     }
 
@@ -76,7 +104,7 @@ serve(async (req) => {
 
     // 3. Create and confirm PaymentIntent off-session (direct charge)
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // convert to cents
+      amount: Math.round(finalAmount * 100), // convert to cents
       currency: 'usd',
       customer: customerId,
       payment_method: paymentMethodId,
@@ -85,7 +113,7 @@ serve(async (req) => {
       metadata: {
         userId: user.id,
         type: 'tip',
-        amount: amount.toString(),
+        amount: finalAmount.toString(),
         contentId: contentId || '',
         oneClick: 'true'
       }
@@ -101,7 +129,7 @@ serve(async (req) => {
       .insert([{
         user_id: user.id,
         content_id: contentId || null,
-        amount: parseFloat(amount),
+        amount: finalAmount,
         message: message || 'Paid via One-Click Saved Card'
       }])
 
@@ -109,19 +137,13 @@ serve(async (req) => {
       console.error('[Charge Saved Card] Failed to log tip in DB:', tipError)
     }
 
-    // 5. Increment creator profile balance
-    const { data: creatorProfile } = await adminClient
-      .from('profiles')
-      .select('balance')
-      .eq('tier', 'admin')
-      .single()
+    // 5. Increment creator profile balance atomically using secure RPC
+    const { error: balanceError } = await adminClient.rpc('increment_admin_balance', {
+      amount_to_add: finalAmount
+    })
 
-    if (creatorProfile) {
-      const newBalance = parseFloat(creatorProfile.balance || '0') + parseFloat(amount)
-      await adminClient
-        .from('profiles')
-        .update({ balance: newBalance })
-        .eq('tier', 'admin')
+    if (balanceError) {
+      console.error('[Charge Saved Card] Failed to update creator balance atomically:', balanceError)
     }
 
     return new Response(
