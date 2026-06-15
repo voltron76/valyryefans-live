@@ -91,6 +91,23 @@ serve(async (req) => {
 
         console.log(`[Webhook] User ${userId} upgraded to Gold tier successfully.`)
 
+        // Trigger New Subscription Email (async, non-blocking)
+        try {
+          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email-notification`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              event: 'new_subscription',
+              recipientId: userId
+            })
+          }).catch(e => console.error('[Webhook] Failed to trigger new_subscription email:', e))
+        } catch (e) {
+          console.error('[Webhook] Error calling notification function:', e)
+        }
+
       } else if (type === 'tip') {
         const amount = parseFloat(metadata.amount || '0')
         const contentId = metadata.contentId || null
@@ -170,6 +187,23 @@ serve(async (req) => {
             .eq('stripe_customer_id', customerId)
 
           console.log(`[Webhook] User ${userId} subscription expired/deleted. Downgraded to free tier.`)
+
+          // Trigger Expiring Subscription Email (async, non-blocking)
+          try {
+            fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email-notification`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                event: 'expiring_subscription',
+                recipientId: userId
+              })
+            }).catch(e => console.error('[Webhook] Failed to trigger expiring_subscription email:', e))
+          } catch (e) {
+            console.error('[Webhook] Error calling notification function:', e)
+          }
         }
       }
     } else if (event.type === 'charge.refunded') {

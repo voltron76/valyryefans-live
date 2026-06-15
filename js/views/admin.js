@@ -33,6 +33,7 @@ const icons = {
   file: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
   spinner: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>`,
   analytics: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  mail: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
 };
 
 // ------------------------------------
@@ -1342,6 +1343,421 @@ function renderAnalyticsTabPlaceholder() {
   `;
 }
 
+// ------------------------------------
+// Email Center Tab Helpers
+// ------------------------------------
+function renderEmailsTabPlaceholder() {
+  return `
+    <div style="padding: var(--space-8); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: var(--space-4);">
+      <div style="color: var(--accent);">${icons.spinner}</div>
+      <p style="color: var(--text-muted); font-size: var(--text-sm);">Loading Email Center...</p>
+    </div>
+  `;
+}
+
+async function loadAndRenderEmailsTab(contentEl) {
+  try {
+    const { supabase } = await import('../supabase.js');
+
+    // 1. Fetch templates, logs, and subscribers counts
+    const [templatesRes, logsRes, goldCountRes, freeCountRes] = await Promise.all([
+      supabase.from('email_templates').select('*').order('name', { ascending: true }),
+      supabase.from('sent_emails').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'gold'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'free')
+    ]);
+
+    if (templatesRes.error) throw templatesRes.error;
+    if (logsRes.error) throw logsRes.error;
+
+    const templates = templatesRes.data || [];
+    let logs = logsRes.data || [];
+    const goldCount = goldCountRes.count || 0;
+    const freeCount = freeCountRes.count || 0;
+    const totalCount = goldCount + freeCount;
+
+    // Calculate metrics
+    const sentLogs = logs.filter(l => l.status === 'sent');
+    const failedLogs = logs.filter(l => l.status === 'failed');
+    const totalSent = logs.length;
+    const deliverability = totalSent > 0 
+      ? ((sentLogs.length / totalSent) * 100).toFixed(1) + '%' 
+      : '100.0%';
+
+    // Helper to get preview HTML
+    function getPreviewHtml(subject, html) {
+      const mockVars = {
+        name: 'John Doe',
+        url: window.location.origin,
+        post_title: 'Behind the Scenes: Bikini Set #04',
+        post_description: 'Exclusive photos from my recent beach photoshoot in Malibu, California.',
+        message_snippet: 'Hey! Just wanted to check in and see how you are doing today...',
+        welcome: 'John Doe'
+      };
+      
+      let compiledHtml = html;
+      let compiledSubject = subject;
+      for (const [key, value] of Object.entries(mockVars)) {
+        compiledHtml = compiledHtml.replaceAll(`{{${key}}}`, value);
+        compiledSubject = compiledSubject.replaceAll(`{{${key}}}`, value);
+      }
+      return { subject: compiledSubject, html: compiledHtml };
+    }
+
+    let activeTemplate = templates[0] || { id: '', name: 'welcome', subject: 'Welcome!', html_content: '' };
+
+    // Update outer wrapper content
+    contentEl.innerHTML = `
+      <div class="admin-tab-container animate-fade-in" style="padding: var(--space-6);">
+        <div class="tab-header" style="margin-bottom: var(--space-6); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: var(--space-4);">
+          <div>
+            <h2 class="font-display" style="font-size: var(--text-3xl); color: #fff; margin-bottom: 4px;">Email Center</h2>
+            <p class="tab-subtitle" style="color: var(--text-muted); font-size: var(--text-sm);">Manage templates, trigger notifications, and send custom broadcasts via Resend.</p>
+          </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="admin-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6);">
+          <div class="admin-card" style="padding: var(--space-4); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);">
+            <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Total Emails Sent</div>
+            <div style="font-size: var(--text-3xl); font-weight: 700; color: #fff; margin-top: 4px;">${totalSent}</div>
+          </div>
+          <div class="admin-card" style="padding: var(--space-4); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);">
+            <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Templates Configured</div>
+            <div style="font-size: var(--text-3xl); font-weight: 700; color: #fff; margin-top: 4px;">${templates.length}</div>
+          </div>
+          <div class="admin-card" style="padding: var(--space-4); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);">
+            <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Active Contacts</div>
+            <div style="font-size: var(--text-3xl); font-weight: 700; color: #fff; margin-top: 4px;">${totalCount} <span style="font-size:var(--text-sm); font-weight:normal; color:var(--text-muted);">(${goldCount} Gold)</span></div>
+          </div>
+          <div class="admin-card" style="padding: var(--space-4); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);">
+            <div style="font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Deliverability Rate</div>
+            <div style="font-size: var(--text-3xl); font-weight: 700; color: #10b981; margin-top: 4px;">${deliverability}</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-6);">
+          <!-- Campaign Section -->
+          <div class="admin-card" style="padding: var(--space-6); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);">
+            <h3 class="font-display" style="font-size: var(--text-xl); color: #fff; margin-bottom: var(--space-4); display:flex; align-items:center; gap:8px;">
+              <span>📣</span> Compose Custom Broadcast
+            </h3>
+            
+            <div class="form-group" style="margin-bottom: var(--space-4);">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">Recipients Group</label>
+              <select class="form-input" id="email-campaign-group" style="width:100%; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff;">
+                <option value="subscribers">Gold VIP Subscribers (${goldCount} users)</option>
+                <option value="fans">Fans / Free Tier (${freeCount} users)</option>
+                <option value="all">All Contacts (${totalCount} users)</option>
+                <option value="specific">Specific Email Address</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="campaign-email-wrapper" style="margin-bottom: var(--space-4); display:none;">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">Recipient Email Address</label>
+              <input class="form-input" type="email" id="email-campaign-target" placeholder="fan@example.com" style="width:100%; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: var(--space-4);">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">Subject</label>
+              <input class="form-input" type="text" id="email-campaign-subject" placeholder="Enter email subject" style="width:100%; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: var(--space-4);">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">Message Body (HTML Allowed)</label>
+              <textarea class="form-input" id="email-campaign-body" rows="8" placeholder="Type your custom email message..." style="width:100%; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff; font-family:inherit; resize:vertical;"></textarea>
+            </div>
+
+            <button class="btn btn-primary" id="email-campaign-send-btn" style="width:100%; padding:12px; font-weight:700; border-radius:8px; background:var(--accent); color:#fff; border:none; cursor:pointer;">
+              Send Broadcast Campaign
+            </button>
+          </div>
+
+          <!-- Template Editor Section -->
+          <div class="admin-card" style="padding: var(--space-6); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); display: flex; flex-direction: column;">
+            <h3 class="font-display" style="font-size: var(--text-xl); color: #fff; margin-bottom: var(--space-4); display:flex; align-items:center; gap:8px;">
+              <span>⚙️</span> Edit Automated Templates
+            </h3>
+
+            <div class="form-group" style="margin-bottom: var(--space-4);">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">Select Template to Edit</label>
+              <select class="form-input" id="email-template-select" style="width:100%; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff;">
+                ${templates.map(t => `<option value="${t.id}" ${t.id === activeTemplate.id ? 'selected' : ''}>${t.name.toUpperCase()} - ${t.subject}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: var(--space-4);">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">Email Subject Line</label>
+              <input class="form-input" type="text" id="email-template-subject" value="${escapeHtml(activeTemplate.subject)}" style="width:100%; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: var(--space-4); flex: 1; display:flex; flex-direction:column;">
+              <label class="form-label" style="color: var(--text-muted); display:block; margin-bottom:4px;">HTML Template Body</label>
+              <textarea class="form-input" id="email-template-body" style="width:100%; flex:1; min-height:220px; padding:10px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff; font-family:Courier, monospace; font-size:var(--text-xs); resize:vertical;">${escapeHtml(activeTemplate.html_content)}</textarea>
+            </div>
+
+            <div style="display:flex; gap: var(--space-2); margin-top: var(--space-2);">
+              <button class="btn btn-secondary" id="email-template-preview-btn" style="flex:1; padding:10px; border-radius:8px;">
+                Preview HTML
+              </button>
+              <button class="btn btn-primary" id="email-template-save-btn" style="flex:1; padding:10px; border-radius:8px; background:var(--accent);">
+                Save Changes
+              </button>
+            </div>
+
+            <!-- Preview modal frame -->
+            <div id="email-live-preview-box" style="margin-top:var(--space-4); padding:var(--space-4); background:#18181b; border:1px solid #27272a; border-radius:8px; display:none; max-height: 250px; overflow-y: auto;">
+              <h4 style="color:#fff; margin-top:0; font-size:var(--text-sm); border-bottom:1px solid #27272a; padding-bottom:4px; margin-bottom:8px;">Live Preview Mockup</h4>
+              <div id="email-preview-subject-line" style="font-weight:bold; color:var(--accent); font-size:var(--text-xs); margin-bottom:8px;"></div>
+              <div id="email-preview-frame" style="background:#fff; padding:10px; border-radius:4px; transform: scale(0.9); transform-origin: top left; width: 111%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sent Logs Table Section -->
+        <div class="admin-card" style="padding: var(--space-6); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4); flex-wrap:wrap; gap: var(--space-4);">
+            <h3 class="font-display" style="font-size: var(--text-xl); color: #fff; margin:0; display:flex; align-items:center; gap:8px;">
+              <span>📋</span> Transactional Email Logs
+            </h3>
+            <div style="display:flex; gap: var(--space-2);">
+              <input type="text" id="email-logs-search" placeholder="Search recipient..." style="padding:8px 12px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff; font-size:var(--text-xs);">
+              <select id="email-logs-status-filter" style="padding:8px 12px; border-radius:8px; background:#1c1c24; border:1px solid #27272a; color:#fff; font-size:var(--text-xs);">
+                <option value="all">All Statuses</option>
+                <option value="sent">Sent</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; text-align:left;">
+              <thead>
+                <tr style="border-bottom:2px solid #27272a; color:var(--text-muted); font-size:var(--text-xs); text-transform:uppercase; font-weight:600;">
+                  <th style="padding:var(--space-3) var(--space-4);">Recipient</th>
+                  <th style="padding:var(--space-3) var(--space-4);">Subject</th>
+                  <th style="padding:var(--space-3) var(--space-4);">Status</th>
+                  <th style="padding:var(--space-3) var(--space-4); text-align:right;">Date & Time</th>
+                </tr>
+              </thead>
+              <tbody id="email-logs-tbody">
+                <!-- Row template rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Table rows rendering helper
+    function renderLogsRows(filteredLogs) {
+      const tbody = document.getElementById('email-logs-tbody');
+      if (!tbody) return;
+      if (filteredLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:var(--space-8);">No matching logs found</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filteredLogs.map(log => `
+        <tr style="border-bottom:1px solid #27272a;">
+          <td style="padding:var(--space-3) var(--space-4);color:#fff;font-size:var(--text-sm);font-weight:500;">${escapeHtml(log.recipient)}</td>
+          <td style="padding:var(--space-3) var(--space-4);color:var(--text-muted);font-size:var(--text-sm);">${escapeHtml(log.subject)}</td>
+          <td style="padding:var(--space-3) var(--space-4);">
+            <span class="badge" style="padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;text-transform:uppercase;display:inline-block;background:${log.status === 'sent' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};color:${log.status === 'sent' ? '#10b981' : '#ef4444'};">
+              ${log.status}
+            </span>
+            ${log.error_message ? `<div style="font-size:11px;color:#ef4444;margin-top:2px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(log.error_message)}">${escapeHtml(log.error_message)}</div>` : ''}
+          </td>
+          <td style="padding:var(--space-3) var(--space-4);color:var(--text-muted);font-size:var(--text-sm);text-align:right;">${new Date(log.created_at).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Initial table load
+    renderLogsRows(logs);
+
+    // Search and Filter Handlers
+    const searchInput = document.getElementById('email-logs-search');
+    const filterSelect = document.getElementById('email-logs-status-filter');
+
+    const updateFilter = () => {
+      const q = searchInput?.value?.toLowerCase() || '';
+      const st = filterSelect?.value || 'all';
+
+      const filtered = logs.filter(log => {
+        const matchesSearch = log.recipient.toLowerCase().includes(q) || log.subject.toLowerCase().includes(q);
+        const matchesStatus = st === 'all' || log.status === st;
+        return matchesSearch && matchesStatus;
+      });
+      renderLogsRows(filtered);
+    };
+
+    searchInput?.addEventListener('input', updateFilter);
+    filterSelect?.addEventListener('change', updateFilter);
+
+    // Recipient Group visibility toggle
+    const groupSelect = document.getElementById('email-campaign-group');
+    const specificWrapper = document.getElementById('campaign-email-wrapper');
+    groupSelect?.addEventListener('change', (e) => {
+      specificWrapper.style.display = e.target.value === 'specific' ? 'block' : 'none';
+    });
+
+    // Send Campaign Handler
+    const sendBtn = document.getElementById('email-campaign-send-btn');
+    sendBtn?.addEventListener('click', async () => {
+      const group = groupSelect?.value;
+      const targetEmail = document.getElementById('email-campaign-target')?.value?.trim();
+      const subject = document.getElementById('email-campaign-subject')?.value?.trim();
+      const body = document.getElementById('email-campaign-body')?.value?.trim();
+
+      if (group === 'specific' && !targetEmail) {
+        showToast('Please enter a specific email recipient', 'error');
+        return;
+      }
+      if (!subject || !body) {
+        showToast('Subject and body cannot be empty', 'error');
+        return;
+      }
+
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = `${icons.spinner} Sending Broadcast...`;
+
+      try {
+        const payload = {
+          event: 'custom_bulk',
+          customSubject: subject,
+          customBody: body,
+          variables: { site_url: window.location.origin }
+        };
+
+        if (group === 'specific') {
+          payload.recipientEmail = targetEmail;
+        } else {
+          payload.recipientsGroup = group;
+        }
+
+        const { data, error } = await supabase.functions.invoke('send-email-notification', { body: payload });
+        
+        if (error || !data?.success) {
+          throw new Error(error?.message || 'Failed to dispatch campaign');
+        }
+
+        showToast(`Successfully dispatched email to ${data.deliveredCount || 0} recipient(s)!`, 'success');
+        
+        // Refresh logs from database
+        const { data: newLogs } = await supabase.from('sent_emails').select('*').order('created_at', { ascending: false }).limit(200);
+        if (newLogs) {
+          logs = newLogs;
+          updateFilter();
+        }
+
+        // Reset composer
+        if (document.getElementById('email-campaign-subject')) document.getElementById('email-campaign-subject').value = '';
+        if (document.getElementById('email-campaign-body')) document.getElementById('email-campaign-body').value = '';
+        if (document.getElementById('email-campaign-target')) document.getElementById('email-campaign-target').value = '';
+
+      } catch (err) {
+        showToast(err.message || 'Dispatch failed', 'error');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = 'Send Broadcast Campaign';
+      }
+    });
+
+    // Template Dropdown Selection Handler
+    const templateSelect = document.getElementById('email-template-select');
+    const templateSubjectInput = document.getElementById('email-template-subject');
+    const templateBodyArea = document.getElementById('email-template-body');
+
+    templateSelect?.addEventListener('change', (e) => {
+      const selectedId = e.target.value;
+      const t = templates.find(temp => temp.id === selectedId);
+      if (t) {
+        activeTemplate = t;
+        if (templateSubjectInput) templateSubjectInput.value = t.subject;
+        if (templateBodyArea) templateBodyArea.value = t.html_content;
+        
+        // Auto-close preview box when switching templates
+        const previewBox = document.getElementById('email-live-preview-box');
+        if (previewBox) previewBox.style.display = 'none';
+      }
+    });
+
+    // Preview Button Handler
+    const previewBtn = document.getElementById('email-template-preview-btn');
+    previewBtn?.addEventListener('click', () => {
+      const subject = templateSubjectInput?.value || '';
+      const html = templateBodyArea?.value || '';
+
+      const previewBox = document.getElementById('email-live-preview-box');
+      const previewSubject = document.getElementById('email-preview-subject-line');
+      const previewFrame = document.getElementById('email-preview-frame');
+
+      if (previewBox && previewSubject && previewFrame) {
+        const preview = getPreviewHtml(subject, html);
+        previewSubject.textContent = `Subject: ${preview.subject}`;
+        previewFrame.innerHTML = preview.html;
+        previewBox.style.display = 'block';
+      }
+    });
+
+    // Save Template Handler
+    const saveBtn = document.getElementById('email-template-save-btn');
+    saveBtn?.addEventListener('click', async () => {
+      const subject = templateSubjectInput?.value?.trim();
+      const html = templateBodyArea?.value?.trim();
+
+      if (!subject || !html) {
+        showToast('Template subject and HTML content cannot be empty', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `${icons.spinner} Saving...`;
+
+      try {
+        const { error } = await supabase
+          .from('email_templates')
+          .update({
+            subject,
+            html_content: html,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', activeTemplate.id);
+
+        if (error) throw error;
+
+        showToast('Email template saved successfully!', 'success');
+        
+        // Update local template record
+        activeTemplate.subject = subject;
+        activeTemplate.html_content = html;
+        
+        // Refresh templates dropdown labels
+        const selectedIndex = templateSelect.selectedIndex;
+        if (selectedIndex >= 0) {
+          templates[selectedIndex].subject = subject;
+          templates[selectedIndex].html_content = html;
+          templateSelect.options[selectedIndex].text = `${activeTemplate.name.toUpperCase()} - ${subject}`;
+        }
+      } catch (err) {
+        showToast(err.message || 'Save failed', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Save Changes';
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    contentEl.innerHTML = `
+      <div style="padding: var(--space-8); text-align: center;">
+        <h3 style="color:#ef4444;">Failed to load Email Center</h3>
+        <p style="color:var(--text-muted); font-size:var(--text-sm); margin-top:8px;">${err.message || err}</p>
+      </div>
+    `;
+  }
+}
+
 function formatRelativeTime(dateString) {
   if (!dateString) return 'Just now';
   const now = new Date();
@@ -1937,6 +2353,7 @@ function renderDashboardLayout(activeTab = 'messages', selectedUserId = null) {
     { id: 'upload', label: 'Upload', icon: icons.upload, badge: 0 },
     { id: 'promotions', label: 'Promotions', icon: icons.star, badge: 0 },
     { id: 'polls', label: 'Polls', icon: icons.activity, badge: 0 },
+    { id: 'emails', label: 'Email Center', icon: icons.mail, badge: 0 },
     { id: 'analytics', label: 'Analytics', icon: icons.analytics, badge: 0 },
     { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard, badge: 0 },
   ];
@@ -1948,6 +2365,7 @@ function renderDashboardLayout(activeTab = 'messages', selectedUserId = null) {
     case 'upload': contentHtml = renderUploadTab(); break;
     case 'promotions': contentHtml = renderPromotionsTab(); break;
     case 'polls': contentHtml = renderPollsTab(); break;
+    case 'emails': contentHtml = renderEmailsTabPlaceholder(); break;
     case 'analytics': contentHtml = renderAnalyticsTabPlaceholder(); break;
     case 'dashboard': contentHtml = renderDashboardTab(); break;
   }
@@ -2054,6 +2472,10 @@ export function renderAdmin() {
           case 'upload': contentEl.innerHTML = renderUploadTab(); wireUploadTab(); break;
           case 'promotions': contentEl.innerHTML = renderPromotionsTab(); wirePromotionsTab(); break;
           case 'polls': contentEl.innerHTML = renderPollsTab(); wirePollsTab(); break;
+          case 'emails':
+            contentEl.innerHTML = renderEmailsTabPlaceholder();
+            loadAndRenderEmailsTab(contentEl);
+            break;
           case 'analytics':
             contentEl.innerHTML = renderAnalyticsTabPlaceholder();
             loadAndRenderAnalyticsTab(contentEl);
@@ -2631,6 +3053,20 @@ export function renderAdmin() {
             };
 
             await uploadContent(item);
+
+            // Trigger New Post Email Notifications (async, non-blocking)
+            if (!isStory) {
+              supabase.functions.invoke('send-email-notification', {
+                body: {
+                  event: 'new_post',
+                  variables: {
+                    post_title: title,
+                    post_description: description || '',
+                    site_url: window.location.origin
+                  }
+                }
+              }).catch(err => console.error('[Admin] New post notification email error:', err));
+            }
 
             // Reset form
             if (document.getElementById('upload-title')) document.getElementById('upload-title').value = '';

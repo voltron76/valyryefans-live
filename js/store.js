@@ -181,9 +181,22 @@ export async function initStore() {
       if (!profile) {
         // Create profile if missing — use signup display name from user_metadata
         const displayName = session.user.user_metadata?.name || session.user.email.split('@')[0];
-        const newProfile = { id: session.user.id, name: displayName, tier: 'free', balance: 0 };
+        const newProfile = { id: session.user.id, name: displayName, tier: 'free', balance: 0, email: session.user.email };
         const { data: p } = await supabase.from('profiles').insert([newProfile]).select().single();
         profile = p;
+
+        // Trigger Welcome Email (async, non-blocking)
+        supabase.functions.invoke('send-email-notification', {
+          body: {
+            event: 'welcome',
+            recipientId: session.user.id,
+            variables: { site_url: window.location.origin }
+          }
+        }).catch(err => console.error('[Store] Welcome email error:', err));
+      } else if (!profile.email) {
+        // Backfill email address if missing
+        const { data: p } = await supabase.from('profiles').update({ email: session.user.email }).eq('id', session.user.id).select().single();
+        if (p) profile = p;
       }
 
       if (profile) {
@@ -850,6 +863,18 @@ export async function addAdminReply(userId, content, type = 'text', mediaUrl = n
 
   const { data, error } = await supabase.from('messages').insert([msg]).select().single();
   if (!error) {
+    // Trigger message email notification (async, non-blocking)
+    supabase.functions.invoke('send-email-notification', {
+      body: {
+        event: 'new_message',
+        recipientId: userId,
+        variables: {
+          message_snippet: content.length > 60 ? content.substring(0, 57) + '...' : content,
+          site_url: window.location.origin
+        }
+      }
+    }).catch(err => console.error('[Store] Message notification email error:', err));
+
     if (!state.adminMessages[userId]) state.adminMessages[userId] = [];
     state.adminMessages[userId].push({
       id: data.id,
