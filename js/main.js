@@ -21,6 +21,7 @@ import { renderTerms, renderPrivacy, renderHelpCenter, renderSupport, renderLead
 import { renderAdmin } from './views/admin.js';
 import { renderAdminLogin } from './views/admin-login.js';
 import { renderPurchases } from './views/purchases.js';
+import { renderVerified } from './views/verified.js';
 
 // ---- Global Auth State Tracking ----
 let initialized = false;
@@ -78,6 +79,7 @@ async function initApp() {
   registerRoute('/become-creator', renderBecomeCreator);
   registerRoute('/admin', renderAdmin);
   registerRoute('/admin-login', renderAdminLogin);
+  registerRoute('/verified', renderVerified);
 
   // Start router
   initRouter();
@@ -301,10 +303,14 @@ async function handleRealAuth(mode) {
 
     if (mode === 'signup') {
       const device_fingerprint = await generateDeviceFingerprint();
+      const siteOrigin = window.location.origin;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name, device_fingerprint } }
+        options: {
+          data: { name, device_fingerprint },
+          emailRedirectTo: `${siteOrigin}/#/verified`
+        }
       });
       if (error) throw error;
       
