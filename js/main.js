@@ -81,6 +81,44 @@ async function initApp() {
   registerRoute('/admin-login', renderAdminLogin);
   registerRoute('/verified', renderVerified);
 
+  // Detect Supabase auth callback in URL hash (from email verification redirect)
+  // Supabase replaces the hash with tokens like #access_token=xxx&type=signup
+  const currentHash = window.location.hash;
+  if (currentHash && currentHash.includes('access_token') && currentHash.includes('type=')) {
+    // Let Supabase client process the tokens first
+    const { supabase } = await import('./supabase.js');
+    try {
+      // Parse the hash fragment tokens
+      const hashParams = new URLSearchParams(currentHash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const authType = hashParams.get('type');
+
+      if (accessToken && refreshToken) {
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+      }
+
+      // Refresh store with new session
+      const { initStore: refreshStore } = await import('./store.js');
+      await refreshStore();
+
+      // Redirect to verified page (for signup) or home (for recovery/other)
+      if (authType === 'signup' || authType === 'email') {
+        window.location.hash = '#/verified';
+      } else if (authType === 'recovery') {
+        window.location.hash = '#/settings';
+      } else {
+        window.location.hash = '#/';
+      }
+    } catch (e) {
+      console.error('Auth callback processing error:', e);
+      window.location.hash = '#/';
+    }
+  }
+
   // Start router
   initRouter();
 
