@@ -208,8 +208,8 @@ serve(async (req) => {
     // Default Sender (Resend onboarding domain or custom domain)
     // If user hasn't verified domain yet, Resend forces using 'onboarding@resend.dev'
     const fromAddress = isSandbox 
-      ? 'Valerie Reyes Fans <sandbox@valyryes.com>'
-      : 'Valerie Reyes Fans <services@valyryes.com>';
+      ? 'Valerie Reyes Fans <sandbox@valyreyes.com>'
+      : 'Valerie Reyes Fans <services@valyreyes.com>';
 
     // Prepare emails compile and send
     const results = [];
