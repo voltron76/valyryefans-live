@@ -1065,7 +1065,7 @@ function renderEditModal(item) {
               return `
                 <div class="edit-media-item" data-index="${index}" data-raw-path="${rawPath}" style="position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);">
                   <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" />
-                  <button class="edit-media-delete-btn" data-index="${index}" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; line-height: 1;">✕</button>
+                  <button class="edit-media-delete-btn" data-index="${index}" aria-label="Remove media" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; line-height: 1;">✕</button>
                 </div>
               `;
             }).join('')}

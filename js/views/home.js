@@ -57,7 +57,7 @@ function renderPromoBanner(promo) {
         </div>
       </div>
       <a href="#/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;flex-shrink:0;">Subscribe →</a>
-      <button id="close-promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:var(--space-2);flex-shrink:0;">✕</button>
+      <button id="close-promo" aria-label="Close promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:var(--space-2);flex-shrink:0;">✕</button>
     </div>`;
 }
 
@@ -317,7 +317,7 @@ function renderTipModal() {
       <div class="tip-modal card-glass">
         <div class="tip-modal__header">
           <h3>Send a Tip 💰</h3>
-          <button class="tip-modal__close" id="tip-modal-close">✕</button>
+          <button class="tip-modal__close" id="tip-modal-close" aria-label="Close tip modal">✕</button>
         </div>
         <div class="tip-modal__amounts">
           <button class="tip-amount-btn" data-amount="5">$5</button>
@@ -706,7 +706,7 @@ export function renderHome() {
                     <span class="story-viewer__name">${creatorProfile.name}</span>
                     <span class="story-viewer__time" id="story-viewer-time"></span>
                   </div>
-                  <button class="story-viewer__close" id="story-viewer-close">✕</button>
+                  <button class="story-viewer__close" id="story-viewer-close" aria-label="Close story viewer">✕</button>
                 </div>
                 <div class="story-viewer__content">
                   <div class="story-viewer__click-left" id="story-click-left"></div>

@@ -419,7 +419,7 @@ export function openLightbox(content) {
 
   lightbox.classList.add('active');
   lightbox.innerHTML = `
-    <button class="lightbox__close" id="lightbox-close">✕</button>
+    <button class="lightbox__close" id="lightbox-close" aria-label="Close image viewer">✕</button>
     <div class="lightbox__content">
       ${content.type === 'video'
         ? `<video src="${content.src}" controls autoplay></video>`

@@ -116,7 +116,7 @@ export function renderGallery() {
       <div class="tip-modal">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6);">
           <h3 class="font-display" style="font-size:var(--text-xl);">💝 Send a Tip</h3>
-          <button class="btn btn-ghost btn-sm" id="tip-modal-close" style="padding:var(--space-1);">✕</button>
+          <button class="btn btn-ghost btn-sm" id="tip-modal-close" aria-label="Close tip modal" style="padding:var(--space-1);">✕</button>
         </div>
         <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-6);">Show your appreciation to Valyryes!</p>
         <div class="tip-amounts">

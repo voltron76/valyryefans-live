@@ -153,7 +153,7 @@ export function renderMessages() {
         <div id="tip-ui" style="display:none;padding:var(--space-3) var(--space-6);background:var(--glass-card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--glass-card-border);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
             <div style="font-weight:600;font-size:var(--text-sm);color:var(--text-primary);">💝 Send a Tip</div>
-            <button class="btn btn-ghost btn-sm" id="tip-close" style="padding:var(--space-1) var(--space-2);font-size:var(--text-xs);">✕</button>
+            <button class="btn btn-ghost btn-sm" id="tip-close" aria-label="Close tip modal" style="padding:var(--space-1) var(--space-2);font-size:var(--text-xs);">✕</button>
           </div>
           <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-3);flex-wrap:wrap;">
             <button class="btn btn-secondary btn-sm tip-preset" data-amount="5">$5</button>
