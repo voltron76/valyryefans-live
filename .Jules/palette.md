@@ -1,0 +1,3 @@
+## 2026-06-20 - [ARIA Labels for Icon-Only Buttons in Home Feed]
+**Learning:** Found a widespread pattern in `js/views/home.js` where icon-only buttons (like, bookmark, close modals, story navigation) relied solely on visual context or raw text nodes (like `✕` or `⋯`) without screen reader descriptions.
+**Action:** Applied static `aria-label`s to these generic icons. Future dynamic components should ensure these labels update dynamically to reflect state changes (e.g., from "Like post" to "Unlike post") rather than remaining static.
