@@ -153,7 +153,7 @@ export function renderMessages() {
         <div id="tip-ui" style="display:none;padding:var(--space-3) var(--space-6);background:var(--glass-card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--glass-card-border);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
             <div style="font-weight:600;font-size:var(--text-sm);color:var(--text-primary);">💝 Send a Tip</div>
-            <button class="btn btn-ghost btn-sm" id="tip-close" style="padding:var(--space-1) var(--space-2);font-size:var(--text-xs);">✕</button>
+            <button class="btn btn-ghost btn-sm" id="tip-close" aria-label="Close tip options" style="padding:var(--space-1) var(--space-2);font-size:var(--text-xs);">✕</button>
           </div>
           <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-3);flex-wrap:wrap;">
             <button class="btn btn-secondary btn-sm tip-preset" data-amount="5">$5</button>
@@ -359,7 +359,7 @@ export function renderMessages() {
         const modalHtml = `
           <div class="paywall-overlay active" id="request-modal" style="position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
             <div class="card-glass" style="max-width: 450px; width: 90%; text-align: left; position: relative; padding: var(--space-6); border: 1px solid var(--glass-card-border); border-radius: var(--radius-xl); background: var(--glass-card-bg); box-shadow: var(--glass-card-shadow);">
-              <button class="paywall-overlay__close" id="close-request-modal" style="position:absolute; top:var(--space-4); right:var(--space-4); background:none; border:none; color:var(--text-muted); cursor:pointer;">
+              <button class="paywall-overlay__close" id="close-request-modal" aria-label="Close custom request modal" style="position:absolute; top:var(--space-4); right:var(--space-4); background:none; border:none; color:var(--text-muted); cursor:pointer;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <div style="font-size: 32px; margin-bottom: var(--space-3);">${config.icon}</div>
