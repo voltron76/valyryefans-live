@@ -229,7 +229,7 @@ export function afterNavRender() {
         const modalHtml = `
           <div class="paywall-overlay active" id="lang-modal" style="position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
             <div class="card-glass" style="max-width: 400px; width: 90%; text-align: center; position: relative;">
-              <button class="paywall-overlay__close" id="close-lang-modal" style="position:absolute; top:var(--space-4); right:var(--space-4); background:none; border:none; color:var(--text-muted); cursor:pointer;">
+              <button class="paywall-overlay__close" id="close-lang-modal" aria-label="Close language modal" style="position:absolute; top:var(--space-4); right:var(--space-4); background:none; border:none; color:var(--text-muted); cursor:pointer;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <div style="font-size: 32px; margin-bottom: var(--space-4);">🌐</div>
