@@ -57,7 +57,7 @@ function renderPromoBanner(promo) {
         </div>
       </div>
       <a href="#/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;flex-shrink:0;">Subscribe →</a>
-      <button id="close-promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:var(--space-2);flex-shrink:0;">✕</button>
+      <button id="close-promo" aria-label="Close promotion" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:var(--space-2);flex-shrink:0;">✕</button>
     </div>`;
 }
 
@@ -161,7 +161,7 @@ function renderPollCard(poll, creatorProfile) {
           <span class="post-card__name">${creatorProfile.name} ${icons.verified}</span>
           <span class="post-card__time">${poll.createdAt || 'Just now'}</span>
         </div>
-        <button class="post-card__menu">⋯</button>
+        <button class="post-card__menu" aria-label="Post options">⋯</button>
       </div>
       <div class="poll-card">
         <h3 class="poll-card__question">${poll.question}</h3>
@@ -240,7 +240,7 @@ function renderPostCard(item, creatorProfile) {
           <span class="post-card__name">${creatorProfile.name} ${icons.verified}</span>
           <span class="post-card__time">${item.createdAt || 'Just now'}</span>
         </div>
-        <button class="post-card__menu">⋯</button>
+        <button class="post-card__menu" aria-label="Post options">⋯</button>
       </div>
 
       <!-- Caption -->
@@ -252,16 +252,16 @@ function renderPostCard(item, creatorProfile) {
       ${!locked ? `
       <!-- Action Bar -->
       <div class="post-card__actions">
-        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
-          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span>
+        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}" aria-label="Like post. ${item.likes || 0} likes">
+          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count" aria-hidden="true">${item.likes || 0}</span>
         </button>
-        <button class="post-action" data-action="comment" data-id="${item.id}">
-          ${icons.comment} <span>${commentsArr.length || 0}</span>
+        <button class="post-action" data-action="comment" data-id="${item.id}" aria-label="Comment on post. ${commentsArr.length || 0} comments">
+          ${icons.comment} <span aria-hidden="true">${commentsArr.length || 0}</span>
         </button>
         <button class="post-action" data-action="tip" data-id="${item.id}">
           💰 Tip
         </button>
-        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;">
+        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;" aria-label="Bookmark post">
           ${bookmarked ? icons.bookmarkFilled : icons.bookmark}
         </button>
       </div>
@@ -317,7 +317,7 @@ function renderTipModal() {
       <div class="tip-modal card-glass">
         <div class="tip-modal__header">
           <h3>Send a Tip 💰</h3>
-          <button class="tip-modal__close" id="tip-modal-close">✕</button>
+          <button class="tip-modal__close" id="tip-modal-close" aria-label="Close tip modal">✕</button>
         </div>
         <div class="tip-modal__amounts">
           <button class="tip-amount-btn" data-amount="5">$5</button>
@@ -706,13 +706,13 @@ export function renderHome() {
                     <span class="story-viewer__name">${creatorProfile.name}</span>
                     <span class="story-viewer__time" id="story-viewer-time"></span>
                   </div>
-                  <button class="story-viewer__close" id="story-viewer-close">✕</button>
+                  <button class="story-viewer__close" id="story-viewer-close" aria-label="Close story viewer">✕</button>
                 </div>
                 <div class="story-viewer__content">
                   <div class="story-viewer__click-left" id="story-click-left"></div>
                   <div class="story-viewer__click-right" id="story-click-right"></div>
-                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--left" id="story-nav-left" style="pointer-events: auto; z-index: 15;">&lt;</button>
-                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--right" id="story-nav-right" style="pointer-events: auto; z-index: 15;">&gt;</button>
+                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--left" id="story-nav-left" aria-label="Previous story" style="pointer-events: auto; z-index: 15;">&lt;</button>
+                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--right" id="story-nav-right" aria-label="Next story" style="pointer-events: auto; z-index: 15;">&gt;</button>
                   <div class="story-viewer__media-container" id="story-media-container"></div>
                 </div>
                 <div class="story-viewer__footer">
@@ -960,10 +960,9 @@ export function renderHome() {
             const likesCount = originalItem ? (originalItem.likes || 0) : story.likes;
             const liked = originalItem ? originalItem.likedByUser : story.likedByUser;
             
-            const countEl = feedCard.querySelector('.like-count');
-            if (countEl) countEl.textContent = likesCount;
             feedCard.classList.toggle('post-action--active', liked);
-            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${likesCount}</span>`;
+            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count" aria-hidden="true">${likesCount}</span>`;
+            feedCard.setAttribute('aria-label', `Like post. ${likesCount} likes`);
           }
         });
 
@@ -1189,7 +1188,8 @@ export function renderHome() {
           if (likeBtn) {
             const liked = !!item.likedByUser;
             likeBtn.classList.toggle('post-action--active', liked);
-            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${item.likes || 0}</span>`;
+            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count" aria-hidden="true">${item.likes || 0}</span>`;
+            likeBtn.setAttribute('aria-label', `Like post. ${item.likes || 0} likes`);
           }
         });
 
