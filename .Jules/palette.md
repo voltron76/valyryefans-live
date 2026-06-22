@@ -1,0 +1,3 @@
+## 2025-05-24 - Missing ARIA Labels on Feed Icon Buttons
+**Learning:** The application heavily relies on icon-only buttons (like, comment, bookmark, menu, modal close) in the main feed without `aria-label`s, causing these primary interaction points to be invisible or read as just numbers to screen reader users. However, adding `aria-label` to buttons that also contain dynamic text (like like/comment counts) completely hides that dynamic text from screen readers.
+**Action:** Add descriptive `aria-label` attributes to purely icon-only buttons. For buttons with mixed content (icons + numbers), remove the static `aria-label` and ensure the icon itself is hidden from screen readers using `aria-hidden="true"` or that the label incorporates the dynamic count if necessary.
