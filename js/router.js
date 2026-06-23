@@ -204,6 +204,12 @@ export function initRouter() {
     navigate(href);
   });
 
+  // Automatically migrate legacy hash-based URLs (e.g. #/gallery) to clean path-based URLs
+  if (window.location.hash && window.location.hash.startsWith('#/')) {
+    const cleanPath = window.location.hash.slice(1);
+    window.history.replaceState(null, '', cleanPath);
+  }
+
   // Handle initial load routing
   handleRouteChange();
 }
