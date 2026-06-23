@@ -401,6 +401,11 @@ export function renderHome() {
   let tipTargetId = null;
 
   return {
+    seo: {
+      title: 'Home',
+      description: 'Official Valyryes Fans platform. Exclusive behind-the-scenes content, photos, videos, and private messaging.',
+      keywords: ['valyryes', 'valyryesfans', 'creator platform', 'exclusive content', 'photos', 'videos', 'valerie reyes']
+    },
     html,
 
     afterRender() {

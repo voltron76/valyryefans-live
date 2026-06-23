@@ -223,6 +223,11 @@ export function renderSubscribe() {
   `;
 
   return {
+    seo: {
+      title: 'Subscribe to Gold VIP',
+      description: 'Subscribe to Valyryes Fans premium plans. Get direct 1-on-1 chatting, photo sets, videos, and private messaging.',
+      keywords: ['subscribe', 'gold vip', 'valerie reyes tier', 'vip content unlock', 'only fans access']
+    },
     html,
     afterRender() {
       // Promo code apply

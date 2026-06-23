@@ -141,6 +141,11 @@ export function renderGallery() {
   `;
 
   return {
+    seo: {
+      title: 'Premium Content Gallery',
+      description: 'Explore Valyryes\' collection of premium photos and videos. Subscribe to Gold VIP to unlock all high-definition posts.',
+      keywords: ['valyryes gallery', 'premium photos', 'exclusive videos', 'explore feed', 'gold content']
+    },
     html,
     afterRender() {
       const filtersEl = document.getElementById('gallery-filters');

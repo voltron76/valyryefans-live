@@ -51,6 +51,20 @@ export function updateSEO(metadata = {}) {
   // 2. Update Standard Metas
   setMetaTag('name', 'description', seo.description);
 
+  // Update Keywords Meta
+  let keywords = '';
+  if (metadata.keywords) {
+    keywords = Array.isArray(metadata.keywords) ? metadata.keywords.join(', ') : metadata.keywords;
+  } else {
+    // Generate context-aware default keywords from title and base creator terms
+    const pageWords = metadata.title 
+      ? metadata.title.toLowerCase().split(/[^a-zA-Z0-9]+/).filter(w => w.length > 3 && !['with', 'your', 'fans', 'from', 'this'].includes(w))
+      : [];
+    const baseKeywords = ['valyryes', 'valyryesfans', 'exclusive content', 'photos', 'videos', 'valerie reyes', 'creator fans', 'subscription'];
+    keywords = [...new Set([...pageWords, ...baseKeywords])].join(', ');
+  }
+  setMetaTag('name', 'keywords', keywords);
+
   // 3. Update Open Graph (OG) Metas
   setMetaTag('property', 'og:title', seo.title);
   setMetaTag('property', 'og:description', seo.description);

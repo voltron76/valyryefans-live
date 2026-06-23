@@ -227,6 +227,38 @@ export function renderContentDetail(params) {
     </div>`;
 
   return {
+    seo: {
+      title: item.title,
+      description: item.description,
+      image: item.thumbnail,
+      type: 'article',
+      keywords: [item.title, item.type, item.category, 'exclusive', 'valyryes', 'valyryesfans'].filter(Boolean),
+      schema: {
+        '@context': 'https://schema.org',
+        '@type': 'SocialMediaPosting',
+        'headline': item.title,
+        'description': item.description || 'Exclusive content on ValyryesFans',
+        'image': item.thumbnail,
+        'datePublished': item.rawCreatedAt,
+        'author': {
+          '@type': 'Person',
+          'name': 'Valyryes',
+          'url': window.location.origin
+        },
+        'publisher': {
+          '@type': 'Organization',
+          'name': 'ValyryesFans',
+          'url': window.location.origin
+        },
+        'interactionStatistic': [
+          {
+            '@type': 'InteractionCounter',
+            'interactionType': 'https://schema.org/LikeAction',
+            'userInteractionCount': item.likes
+          }
+        ]
+      }
+    },
     html,
     afterRender() {
       // Clear notification for this post
