@@ -148,11 +148,11 @@ export function renderVerified() {
           <!-- CTA Buttons -->
           <div class="animate-fade-in-up stagger-6" style="display: flex; flex-direction: column; gap: var(--space-3);">
             ${isLoggedIn ? `
-              <a href="#/gallery" id="verified-gallery-btn" class="btn btn-primary btn-lg" style="width: 100%; justify-content: center;">
+              <a href="/gallery" id="verified-gallery-btn" class="btn btn-primary btn-lg" style="width: 100%; justify-content: center;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 Explore Gallery
               </a>
-              <a href="#/profile" id="verified-profile-btn" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+              <a href="/profile" id="verified-profile-btn" class="btn btn-secondary" style="width: 100%; justify-content: center;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Set Up Profile
               </a>
@@ -161,7 +161,7 @@ export function renderVerified() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                 Sign In Now
               </button>
-              <a href="#/" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+              <a href="/" class="btn btn-secondary" style="width: 100%; justify-content: center;">
                 Browse as Guest
               </a>
             `}

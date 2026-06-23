@@ -177,7 +177,7 @@ export function renderNotifications() {
         localStorage.setItem('vf-read-notif-ids', JSON.stringify(readIds));
 
         // Update desktop navbar badge
-        const desktopBadge = document.querySelector('a[href="#/notifications"] > span[style*="position: absolute"]');
+        const desktopBadge = document.querySelector('a[href="/notifications"] > span[style*="position: absolute"]');
         if (desktopBadge) {
           if (unread > 0) {
             desktopBadge.textContent = unread;

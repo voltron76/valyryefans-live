@@ -2488,14 +2488,12 @@ export function renderAdmin() {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
       });
 
-      // Logout
       document.getElementById('admin-logout')?.addEventListener('click', () => {
         sessionStorage.removeItem('vf-admin-auth');
         localStorage.removeItem('vf-state');
         import('../supabase.js').then(({ supabase }) => {
           supabase.auth.signOut().finally(() => {
-            window.location.hash = '#/';
-            window.location.reload();
+            window.location.href = window.location.origin;
           });
         });
       });

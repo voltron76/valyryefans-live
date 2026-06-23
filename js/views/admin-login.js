@@ -46,7 +46,7 @@ export function renderAdminLogin() {
         </form>
         
         <div style="text-align: center; margin-top: var(--space-4);">
-          <a href="#/" class="btn btn-ghost btn-sm" style="color: var(--text-muted);">
+          <a href="/" class="btn btn-ghost btn-sm" style="color: var(--text-muted);">
             Return to App
           </a>
         </div>

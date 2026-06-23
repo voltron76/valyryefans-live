@@ -52,7 +52,7 @@ async function initApp() {
   mobileNav.innerHTML = renderMobileNav();
 
   // Update mobile nav on route changes
-  window.addEventListener('hashchange', () => {
+  window.addEventListener('routechange', () => {
     const mc = document.getElementById('mobile-nav-container');
     if (mc) mc.innerHTML = renderMobileNav();
   });
@@ -107,15 +107,15 @@ async function initApp() {
 
       // Redirect to verified page (for signup) or home (for recovery/other)
       if (authType === 'signup' || authType === 'email') {
-        window.location.hash = '#/verified';
+        navigate('/verified');
       } else if (authType === 'recovery') {
-        window.location.hash = '#/settings';
+        navigate('/settings');
       } else {
-        window.location.hash = '#/';
+        navigate('/');
       }
     } catch (e) {
       console.error('Auth callback processing error:', e);
-      window.location.hash = '#/';
+      navigate('/');
     }
   }
 

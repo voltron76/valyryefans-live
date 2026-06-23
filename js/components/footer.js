@@ -18,14 +18,14 @@ export function renderFooter() {
   const currentYear = new Date().getFullYear();
 
   // Don't show footer on admin pages
-  const hash = window.location.hash || '';
-  if (hash.includes('admin')) return '';
+  const pathname = window.location.pathname;
+  if (pathname.includes('admin')) return '';
 
   return `
     <footer class="site-footer" id="site-footer">
       <div class="site-footer__glow"></div>
       <div class="site-footer__inner">
-
+ 
         <!-- Left: Creator Info -->
         <div class="site-footer__creator">
           <div class="site-footer__avatar-wrap">
@@ -36,7 +36,7 @@ export function renderFooter() {
             <div class="site-footer__handle">${creatorProfile.handle}</div>
           </div>
         </div>
-
+ 
         <!-- Center: Social Icons -->
         <div class="site-footer__socials">
           <a href="https://instagram.com/valyryes" target="_blank" rel="noopener" class="site-footer__social-link" aria-label="Instagram">
@@ -49,14 +49,14 @@ export function renderFooter() {
             ${socialIcons.twitter}
           </a>
         </div>
-
+ 
         <!-- Right: Nav Links -->
         <nav class="site-footer__links">
-          <a href="#/">Home</a>
-          <a href="#/gallery">Gallery</a>
-          <a href="#/subscribe">Subscribe</a>
-          <a href="#/terms">Terms</a>
-          <a href="#/privacy">Privacy</a>
+          <a href="/">Home</a>
+          <a href="/gallery">Gallery</a>
+          <a href="/subscribe">Subscribe</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
         </nav>
       </div>
 

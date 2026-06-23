@@ -113,7 +113,7 @@ export function renderSettings() {
       <!-- Header -->
       <div style="max-width: 720px; margin: 0 auto; padding: var(--space-8) var(--space-6);">
         <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8);">
-          <a href="#/profile" class="btn btn-ghost btn-icon" style="width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
+          <a href="/profile" class="btn btn-ghost btn-icon" style="width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
             ${icons.arrowLeft}
           </a>
           <div>
@@ -228,7 +228,7 @@ export function renderSettings() {
             </div>
           ` : `
             <div style="margin-bottom: var(--space-5);">
-              <a href="#/subscribe" class="btn btn-primary btn-sm w-full" style="justify-content: center; gap: var(--space-2);">
+              <a href="/subscribe" class="btn btn-primary btn-sm w-full" style="justify-content: center; gap: var(--space-2);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 17l3-12 5 7 2-10 2 10 5-7 3 12z"/><path d="M2 17h20"/></svg>
                 Upgrade to Gold — $14.99/mo
               </a>

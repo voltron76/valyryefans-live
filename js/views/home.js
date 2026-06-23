@@ -56,7 +56,7 @@ function renderPromoBanner(promo) {
           ${countdownHtml ? `<span style="position:relative;z-index:1;">${countdownHtml}</span>` : ''}
         </div>
       </div>
-      <a href="#/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;flex-shrink:0;">Subscribe →</a>
+      <a href="/subscribe" style="padding:4px 14px;background:#fff;color:${color};font-weight:700;border-radius:var(--radius-full);font-size:12px;text-decoration:none;position:relative;z-index:1;flex-shrink:0;">Subscribe →</a>
       <button id="close-promo" style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;margin-left:var(--space-2);flex-shrink:0;">✕</button>
     </div>`;
 }
@@ -105,7 +105,7 @@ function renderCreatorHeader(creatorProfile, isGold) {
           <div class="stat-item"><strong>${creatorProfile.stats.fans}</strong><span>Fans</span></div>
         </div>
         ${!isGold
-          ? `<a href="#/subscribe" class="btn btn-primary btn-lg w-full" style="justify-content:center;margin-top:var(--space-4);">Subscribe — $14.99/mo</a>`
+          ? `<a href="/subscribe" class="btn btn-primary btn-lg w-full" style="justify-content:center;margin-top:var(--space-4);">Subscribe — $14.99/mo</a>`
           : `<div class="btn btn-secondary w-full" style="justify-content:center;margin-top:var(--space-4);pointer-events:none;">✅ Gold Member</div>`
         }
       </div>
@@ -202,7 +202,7 @@ function renderPostCard(item, creatorProfile) {
         <div class="post-card__lock-overlay">
           ${icons.lock}
           <span>Subscribe to unlock</span>
-          <a href="#/subscribe" class="btn btn-primary btn-sm">Unlock — $14.99/mo</a>
+          <a href="/subscribe" class="btn btn-primary btn-sm">Unlock — $14.99/mo</a>
         </div>
       </div>`;
   } else if (item.type === 'video') {

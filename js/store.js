@@ -1629,13 +1629,13 @@ async function getSessionLocation() {
 export async function trackEvent(eventType, details = {}) {
   try {
     const location = await getSessionLocation();
-    const hash = window.location.hash || '#/';
+    const pagePath = window.location.pathname + window.location.search;
     
     const eventObj = {
       session_id: sessionId,
       user_id: state.user?.id || null,
       event_type: eventType,
-      page_path: hash,
+      page_path: pagePath,
       details: {
         ...details,
         location,

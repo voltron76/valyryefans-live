@@ -103,7 +103,7 @@ export function renderMessages() {
             <div class="paywall-overlay__icon animate-pulse-glow">💬</div>
             <h2 class="paywall-overlay__title font-display">Upgrade to Message</h2>
             <p class="paywall-overlay__text">Direct messaging is available to Gold subscribers. Upgrade your plan to start chatting with Valyryes.</p>
-            <a href="#/subscribe" class="btn btn-primary btn-lg">
+            <a href="/subscribe" class="btn btn-primary btn-lg">
               ${icons.star} Upgrade Plan
             </a>
           </div>

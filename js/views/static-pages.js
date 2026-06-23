@@ -97,7 +97,7 @@ export function renderTerms() {
       <div style="${glass} padding: var(--space-8);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">9. Contact Us</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          If you have any questions about these Terms, please contact us at <a href="mailto:legal@valyryes.com" style="color: var(--accent-light);">legal@valyryes.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
+          If you have any questions about these Terms, please contact us at <a href="mailto:legal@valyryes.com" style="color: var(--accent-light);">legal@valyryes.com</a> or visit our <a href="/support" style="color: var(--accent-light);">Support Center</a>.
         </p>
       </div>
     </section>
@@ -177,7 +177,7 @@ export function renderPrivacy() {
       <div style="${glass} padding: var(--space-8);">
         <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">9. Contact Us</h2>
         <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
-          For questions regarding this Privacy Policy or our data practices, please contact us at <a href="mailto:privacy@valyryes.com" style="color: var(--accent-light);">privacy@valyryes.com</a> or visit our <a href="#/support" style="color: var(--accent-light);">Support Center</a>.
+          For questions regarding this Privacy Policy or our data practices, please contact us at <a href="mailto:privacy@valyryes.com" style="color: var(--accent-light);">privacy@valyryes.com</a> or visit our <a href="/support" style="color: var(--accent-light);">Support Center</a>.
         </p>
       </div>
     </section>
@@ -275,7 +275,7 @@ export function renderHelpCenter() {
             <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-2);">
               ${cat.topics.map(topic => `
                 <li>
-                  <a href="#/support" style="display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); padding: var(--space-2) 0; transition: color var(--transition-fast);"
+                  <a href="/support" style="display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); padding: var(--space-2) 0; transition: color var(--transition-fast);"
                      onmouseover="this.style.color='var(--accent-light)'"
                      onmouseout="this.style.color='var(--text-secondary)'">
                     ${icons.arrow} ${topic}
@@ -294,7 +294,7 @@ export function renderHelpCenter() {
         <p style="color: var(--text-secondary); margin-bottom: var(--space-6); max-width: 400px; margin-left: auto; margin-right: auto;">
           Our support team is available 24/7 to help you with any questions or concerns.
         </p>
-        <a href="#/support" class="btn btn-primary btn-lg">
+        <a href="/support" class="btn btn-primary btn-lg">
           ${icons.mail} Contact Support
         </a>
       </div>

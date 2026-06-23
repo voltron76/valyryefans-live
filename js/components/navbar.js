@@ -38,30 +38,30 @@ function renderDropdownMenu() {
     <div class="nav-dropdown-overlay" id="nav-dropdown-overlay"></div>
     <div class="nav-dropdown" id="nav-dropdown" role="menu" aria-label="User menu">
       <div class="nav-dropdown__section">
-        <a href="#/profile" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.profile}<span>Profile</span></a>
-        <a href="#/subscribe" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.subscriptions}<span>Subscriptions</span></a>
-        <a href="#/purchases" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.media}<span>Media Collection</span></a>
-        <a href="#/bookmarks" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.bookmarks}<span>Bookmarks</span></a>
-        <a href="#/messages" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.messages}<span>Messages</span></a>
-        <a href="#/notifications" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.notifications}<span>Notifications</span></a>
-        <a href="#/settings?tab=billing" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.payments}<span>Payments</span></a>
+        <a href="/profile" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.profile}<span>Profile</span></a>
+        <a href="/subscribe" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.subscriptions}<span>Subscriptions</span></a>
+        <a href="/purchases" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.media}<span>Media Collection</span></a>
+        <a href="/bookmarks" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.bookmarks}<span>Bookmarks</span></a>
+        <a href="/messages" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.messages}<span>Messages</span></a>
+        <a href="/notifications" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.notifications}<span>Notifications</span></a>
+        <a href="/settings?tab=billing" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.payments}<span>Payments</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <a href="#/become-creator" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.creator}<span>Become A Creator</span></a>
-        <a href="#/support" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.support}<span>Contact Support</span></a>
-        <a href="#/help" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.help}<span>Help Center</span></a>
-        <a href="#/leaderboard" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.leaderboard}<span>Leaderboard</span></a>
-        <a href="#/referrals" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.referrals}<span>Referrals</span></a>
+        <a href="/become-creator" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.creator}<span>Become A Creator</span></a>
+        <a href="/support" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.support}<span>Contact Support</span></a>
+        <a href="/help" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.help}<span>Help Center</span></a>
+        <a href="/leaderboard" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.leaderboard}<span>Leaderboard</span></a>
+        <a href="/referrals" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.referrals}<span>Referrals</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <a href="#/terms" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.terms}<span>Terms of Service</span></a>
-        <a href="#/privacy" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.privacy}<span>Privacy Policy</span></a>
+        <a href="/terms" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.terms}<span>Terms of Service</span></a>
+        <a href="/privacy" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.privacy}<span>Privacy Policy</span></a>
       </div>
       <div class="nav-dropdown__divider"></div>
       <div class="nav-dropdown__section">
-        <a href="#/settings" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.settings}<span>Settings</span></a>
+        <a href="/settings" class="nav-dropdown__item" role="menuitem" data-close-dropdown>${menuIcons.settings}<span>Settings</span></a>
         <div class="nav-dropdown__item" role="menuitem" id="dropdown-language" data-close-dropdown>${menuIcons.language}<span>Language</span></div>
         <div class="nav-dropdown__item" role="menuitem" id="dropdown-theme-toggle">
           ${menuIcons.darkMode}
@@ -88,27 +88,27 @@ export function renderNavbar() {
   const user = s.user;
 
   return `
-    <a class="nav-logo" href="#/">
+    <a class="nav-logo" href="/">
       <span class="logo-icon">V</span>
       <span>Valyryes<span style="color: var(--accent)">Fans</span></span>
     </a>
 
     <div class="nav-links" id="nav-links">
-      <a href="#/" class="nav-link active">
+      <a href="/" class="nav-link active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Home
       </a>
-      <a href="#/gallery" class="nav-link">
+      <a href="/gallery" class="nav-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Gallery
       </a>
-      <a href="#/messages" class="nav-link" style="position:relative;">
+      <a href="/messages" class="nav-link" style="position:relative;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
         Messages
         ${(() => { const uc = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0; return uc > 0 ? `<span style="position:absolute;top:4px;right:-8px;min-width:16px;height:16px;border-radius:8px;background:var(--gradient-accent);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg-primary);">${uc}</span>` : ''; })()}
       </a>
       ${(s.currentTier !== 'gold' && !s.isAdmin) ? `
-      <a href="#/subscribe" class="nav-link">
+      <a href="/subscribe" class="nav-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 16h14v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2z"/></svg>
         Subscribe
       </a>
@@ -120,7 +120,7 @@ export function renderNavbar() {
         ${getTheme() === 'dark' ? SUN_ICON : MOON_ICON}
       </button>
       ${isAuth ? `
-      <a href="#/notifications" class="theme-toggle" style="position:relative;" aria-label="Notifications" title="Notifications">
+      <a href="/notifications" class="theme-toggle" style="position:relative;" aria-label="Notifications" title="Notifications">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         ${(s.notifications?.filter(n => !n.read).length || 0) > 0 ? `
           <span style="
@@ -276,8 +276,7 @@ export function afterNavRender() {
         } catch(e) {}
 
         localStorage.removeItem('vf-state');
-        window.location.hash = '#/';
-        window.location.reload();
+        window.location.href = window.location.origin;
       });
     }
   }
@@ -292,27 +291,28 @@ export function renderMobileNav() {
   const s = getState();
   const unread = s.notifications?.filter(n => !n.read).length || 0;
   const msgCount = s.messages?.length || 0;
+  const pathname = window.location.pathname;
   
   return `
     <div class="mobile-bottom-nav" id="mobile-bottom-nav">
       <div class="mobile-bottom-nav__items">
-        <a href="#/" class="mobile-nav-item${window.location.hash === '#/' || window.location.hash === '' ? ' active' : ''}">
+        <a href="/" class="mobile-nav-item${pathname === '/' || pathname === '/index.html' ? ' active' : ''}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
           <span>Home</span>
         </a>
-        <a href="#/gallery" class="mobile-nav-item${window.location.hash === '#/gallery' ? ' active' : ''}">
+        <a href="/gallery" class="mobile-nav-item${pathname === '/gallery' ? ' active' : ''}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <span>Explore</span>
         </a>
         ${(s.currentTier !== 'gold' && !s.isAdmin) ? `
-          <a href="#/subscribe" class="mobile-nav-item">
+          <a href="/subscribe" class="mobile-nav-item">
             <div style="width:36px;height:36px;background:var(--gradient-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-12px;box-shadow:0 4px 12px rgba(233,30,140,0.4);">
               <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" width="20" height="20"><path d="M12 5v14M5 12h14"/></svg>
             </div>
             <span style="margin-top:2px;">Subscribe</span>
           </a>
         ` : `
-          <a href="#/messages" class="mobile-nav-item${window.location.hash === '#/messages' ? ' active' : ''}" style="position:relative;">
+          <a href="/messages" class="mobile-nav-item${pathname === '/messages' ? ' active' : ''}" style="position:relative;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
             ${(() => { const uc = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0; return uc > 0 ? `<span class="mobile-nav-badge" style="
               position:absolute; top:2px; right:50%; transform:translateX(12px);
@@ -325,7 +325,7 @@ export function renderMobileNav() {
             <span>Chat</span>
           </a>
         `}
-        <a href="#/notifications" class="mobile-nav-item${window.location.hash === '#/notifications' ? ' active' : ''}" style="position:relative;">
+        <a href="/notifications" class="mobile-nav-item${pathname === '/notifications' ? ' active' : ''}" style="position:relative;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           ${unread > 0 ? `<span class="mobile-nav-badge" style="
             position:absolute; top:2px; right:50%; transform:translateX(12px);
@@ -337,7 +337,7 @@ export function renderMobileNav() {
           ">${unread}</span>` : ''}
           <span>Alerts</span>
         </a>
-        <a href="#/profile" class="mobile-nav-item${window.location.hash === '#/profile' ? ' active' : ''}">
+        <a href="/profile" class="mobile-nav-item${pathname === '/profile' ? ' active' : ''}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Profile</span>
         </a>

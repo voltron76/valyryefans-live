@@ -23,14 +23,14 @@ export function renderGalleryCard(item, index = 0) {
             <span class="sub-badge sub-badge--${item.minTier}" style="margin-bottom: 8px; display: inline-flex;">${item.minTier.toUpperCase()}</span>
           </div>
           <p style="color: var(--text-muted); font-size: var(--text-xs); margin-bottom: var(--space-4);">Subscribe to unlock this content</p>
-          <a href="#/subscribe" class="btn btn-primary btn-sm">Unlock Now</a>
+          <a href="/subscribe" class="btn btn-primary btn-sm">Unlock Now</a>
         </div>
       </div>
     `;
   }
 
   return `
-    <a href="#/content/${item.id}" class="gallery-card animate-fade-in-up ${staggerClass}" data-id="${item.id}" data-type="${item.type}" data-tier="${item.minTier}" data-public="${item.isPublic}">
+    <a href="/content/${item.id}" class="gallery-card animate-fade-in-up ${staggerClass}" data-id="${item.id}" data-type="${item.type}" data-tier="${item.minTier}" data-public="${item.isPublic}">
       <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
       <div class="gallery-card__type-badge">${typeIcon} ${item.type === 'video' ? 'Video' : 'Photo'}</div>
       <div class="gallery-card__overlay">

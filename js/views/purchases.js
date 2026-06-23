@@ -15,7 +15,7 @@ function buildPurchaseCard(item, idx) {
 
   return `
     <div class="gallery-card animate-fade-in-up ${stagger}" data-id="${item.id}" data-tier="${item.minTier}" style="position: relative;">
-      <a href="#/content/${item.id}" style="display: block; width: 100%; height: 100%;">
+      <a href="/content/${item.id}" style="display: block; width: 100%; height: 100%;">
         <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
         <div class="gallery-card__overlay">
           <div class="gallery-card__title">${item.title}</div>
@@ -81,7 +81,7 @@ export function renderPurchases() {
             <div class="empty-state__icon">🖼️</div>
             <h3 class="empty-state__title font-display">No media unlocked yet</h3>
             <p class="empty-state__text">Subscribe to Gold to unlock Valyryes' exclusive premium collection.</p>
-            <a href="#/subscribe" class="btn btn-primary btn-lg" id="purchases-sub-btn">View Subscriptions</a>
+            <a href="/subscribe" class="btn btn-primary btn-lg" id="purchases-sub-btn">View Subscriptions</a>
           </div>
         </div>
       `,

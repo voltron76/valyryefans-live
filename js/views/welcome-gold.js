@@ -245,11 +245,11 @@ export function renderWelcomeGold() {
 
         <!-- CTA Buttons -->
         <div class="animate-fade-in-up stagger-8" style="display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap; margin-bottom: var(--space-24);">
-          <a href="#/gallery" class="btn btn-primary btn-lg" id="welcome-gallery-btn">
+          <a href="/gallery" class="btn btn-primary btn-lg" id="welcome-gallery-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             Browse Exclusive Gallery
           </a>
-          <a href="#/messages" class="btn btn-secondary btn-lg" id="welcome-messages-btn">
+          <a href="/messages" class="btn btn-secondary btn-lg" id="welcome-messages-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             Send a Message
           </a>

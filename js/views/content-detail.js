@@ -38,7 +38,7 @@ function renderRelatedCard(item) {
   }
 
   return `
-    <a href="#/content/${item.id}" class="gallery-card" data-id="${item.id}">
+    <a href="/content/${item.id}" class="gallery-card" data-id="${item.id}">
       <img class="gallery-card__image" src="${item.thumbnail}" alt="${item.title}" loading="lazy">
       <span class="gallery-card__type-badge">${typeBadge}</span>
       <div class="gallery-card__overlay">
@@ -60,7 +60,7 @@ export function renderContentDetail(params) {
         <div class="empty-state__icon">🔍</div>
         <h2 class="empty-state__title">Content not found</h2>
         <p class="empty-state__text">The content you're looking for doesn't exist or has been removed.</p>
-        <a href="#/gallery" class="btn btn-secondary mt-8">Back to Gallery</a>
+        <a href="/gallery" class="btn btn-secondary mt-8">Back to Gallery</a>
       </div>`;
   }
 
@@ -83,7 +83,7 @@ export function renderContentDetail(params) {
     const html = `
       <div class="content-detail animate-fade-in-up">
         <!-- Back nav -->
-        <a href="#/gallery" class="btn btn-ghost" style="margin-bottom: var(--space-6); gap: var(--space-2);">
+        <a href="/gallery" class="btn btn-ghost" style="margin-bottom: var(--space-6); gap: var(--space-2);">
           ${icons.back} Back to Gallery
         </a>
 
@@ -95,7 +95,7 @@ export function renderContentDetail(params) {
               <div class="paywall-overlay__icon animate-pulse-glow">${icons.lock}</div>
               <h2 class="paywall-overlay__title font-display">${tierName} Exclusive Content</h2>
               <p class="paywall-overlay__text">Subscribe to the ${tierName} tier or higher to unlock "${item.title}" and all other exclusive content.</p>
-              <a href="#/subscribe" class="btn btn-primary btn-lg">
+              <a href="/subscribe" class="btn btn-primary btn-lg">
                 ${icons.star} Subscribe to Unlock
               </a>
             </div>
@@ -136,7 +136,7 @@ export function renderContentDetail(params) {
   const html = `
     <div class="content-detail animate-fade-in-up">
       <!-- Back nav -->
-      <a href="#/gallery" class="btn btn-ghost" style="margin-bottom: var(--space-6); gap: var(--space-2);">
+      <a href="/gallery" class="btn btn-ghost" style="margin-bottom: var(--space-6); gap: var(--space-2);">
         ${icons.back} Back to Gallery
       </a>
 
@@ -212,7 +212,7 @@ export function renderContentDetail(params) {
           <div style="font-weight: 600;">${state.creatorProfile.name}</div>
           <div style="font-size: var(--text-sm); color: var(--accent-light);">${state.creatorProfile.handle}</div>
         </div>
-        <a href="#/" class="btn btn-secondary btn-sm">View Creator</a>
+        <a href="/" class="btn btn-secondary btn-sm">View Creator</a>
       </div>
 
       <!-- Related Content -->

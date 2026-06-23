@@ -224,7 +224,7 @@ export function renderProfile() {
         </div>
 
         ${tier === 'free' ? `
-          <a href="#/subscribe" class="btn btn-primary btn-lg w-full" style="justify-content: center;">
+          <a href="/subscribe" class="btn btn-primary btn-lg w-full" style="justify-content: center;">
             ${icons.crown} Upgrade to Gold — $14.99/mo
           </a>
         ` : `

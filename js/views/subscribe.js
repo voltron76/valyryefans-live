@@ -216,7 +216,7 @@ export function renderSubscribe() {
       <!-- Bottom CTA -->
       <div class="section reveal" style="text-align: center; padding-bottom: var(--space-24);">
         <p style="color: var(--text-muted); font-size: var(--text-sm);">
-          Have more questions? <a href="#/messages" style="color: var(--accent-light);">Send a message</a> and I'll be happy to help!
+          Have more questions? <a href="/messages" style="color: var(--accent-light);">Send a message</a> and I'll be happy to help!
         </p>
       </div>
     </div>
