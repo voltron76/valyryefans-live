@@ -252,16 +252,16 @@ function renderPostCard(item, creatorProfile) {
       ${!locked ? `
       <!-- Action Bar -->
       <div class="post-card__actions">
-        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
-          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span>
+        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}" aria-label="${item.likedByUser ? 'Unlike' : 'Like'} post. ${item.likes || 0} likes">
+          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count" aria-hidden="true">${item.likes || 0}</span>
         </button>
-        <button class="post-action" data-action="comment" data-id="${item.id}">
-          ${icons.comment} <span>${commentsArr.length || 0}</span>
+        <button class="post-action" data-action="comment" data-id="${item.id}" aria-label="Comment on post. ${commentsArr.length || 0} comments">
+          ${icons.comment} <span aria-hidden="true">${commentsArr.length || 0}</span>
         </button>
         <button class="post-action" data-action="tip" data-id="${item.id}">
           💰 Tip
         </button>
-        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;">
+        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;" aria-label="${bookmarked ? 'Remove bookmark' : 'Bookmark'} post">
           ${bookmarked ? icons.bookmarkFilled : icons.bookmark}
         </button>
       </div>
@@ -968,7 +968,8 @@ export function renderHome() {
             const countEl = feedCard.querySelector('.like-count');
             if (countEl) countEl.textContent = likesCount;
             feedCard.classList.toggle('post-action--active', liked);
-            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${likesCount}</span>`;
+            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count" aria-hidden="true">${likesCount}</span>`;
+            feedCard.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} post. ${likesCount} likes`);
           }
         });
 
@@ -1194,7 +1195,8 @@ export function renderHome() {
           if (likeBtn) {
             const liked = !!item.likedByUser;
             likeBtn.classList.toggle('post-action--active', liked);
-            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${item.likes || 0}</span>`;
+            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count" aria-hidden="true">${item.likes || 0}</span>`;
+            likeBtn.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} post. ${item.likes || 0} likes`);
           }
         });
 
