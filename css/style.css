@@ -3941,3 +3941,4 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
     margin-bottom: 64px; /* space for mobile bottom nav */
   }
 }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
