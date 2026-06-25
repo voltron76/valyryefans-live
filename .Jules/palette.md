@@ -1,0 +1,3 @@
+## 2024-06-25 - [Accessible Mixed-Content Buttons]
+**Learning:** Found an accessibility issue pattern across the app's components regarding action buttons (like, comment, bookmark). They combine SVG icons and dynamic text counts (e.g., likes count). Screen readers can struggle with these mixed-content buttons, often double-reading the content or missing the context entirely.
+**Action:** Always apply an `aria-label` to the button that incorporates both the action and the dynamic count, while setting `aria-hidden="true"` on the visual elements (icons and text) inside the button. Ensure JS logic updates both the visual text and the `aria-label` simultaneously.
