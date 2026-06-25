@@ -252,17 +252,17 @@ function renderPostCard(item, creatorProfile) {
       ${!locked ? `
       <!-- Action Bar -->
       <div class="post-card__actions">
-        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
-          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span>
+        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}" aria-label="${item.likedByUser ? 'Unlike' : 'Like'} (${item.likes || 0} likes)">
+          <span aria-hidden="true">${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span></span>
         </button>
-        <button class="post-action" data-action="comment" data-id="${item.id}">
-          ${icons.comment} <span>${commentsArr.length || 0}</span>
+        <button class="post-action" data-action="comment" data-id="${item.id}" aria-label="Comment (${commentsArr.length || 0} comments)">
+          <span aria-hidden="true">${icons.comment} <span>${commentsArr.length || 0}</span></span>
         </button>
-        <button class="post-action" data-action="tip" data-id="${item.id}">
-          💰 Tip
+        <button class="post-action" data-action="tip" data-id="${item.id}" aria-label="Send tip">
+          <span aria-hidden="true">💰 Tip</span>
         </button>
-        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;">
-          ${bookmarked ? icons.bookmarkFilled : icons.bookmark}
+        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;" aria-label="${bookmarked ? 'Remove bookmark' : 'Bookmark'}">
+          <span aria-hidden="true">${bookmarked ? icons.bookmarkFilled : icons.bookmark}</span>
         </button>
       </div>
 
@@ -656,7 +656,8 @@ export function renderHome() {
             toggleBookmark(id);
           }
           const isActive = btn.classList.toggle('post-action--active');
-          btn.innerHTML = isActive ? icons.bookmarkFilled : icons.bookmark;
+          btn.setAttribute('aria-label', isActive ? 'Remove bookmark' : 'Bookmark');
+          btn.innerHTML = `<span aria-hidden="true">${isActive ? icons.bookmarkFilled : icons.bookmark}</span>`;
         });
       });
 
@@ -727,7 +728,7 @@ export function renderHome() {
                     </div>
                   </div>
                   <div class="story-viewer__footer-right" style="display:flex; gap:var(--space-2); align-items:center;">
-                    <button class="story-viewer__tip-btn" id="story-viewer-tip" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:var(--space-2) var(--space-4); border-radius:var(--radius-full); cursor:pointer; display:flex; align-items:center; gap:var(--space-1); transition:all 0.2s; font-size:12px; z-index:15;">💰 Tip</button>
+                    <button class="story-viewer__tip-btn" id="story-viewer-tip" aria-label="Send tip" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:var(--space-2) var(--space-4); border-radius:var(--radius-full); cursor:pointer; display:flex; align-items:center; gap:var(--space-1); transition:all 0.2s; font-size:12px; z-index:15;"><span aria-hidden="true">💰 Tip</span></button>
                     <button class="story-viewer__like-btn" id="story-viewer-like" style="z-index:15;"></button>
                   </div>
                 </div>
@@ -795,7 +796,8 @@ export function renderHome() {
           const liked = originalItem ? originalItem.likedByUser : story.likedByUser;
           
           likeBtn.className = `story-viewer__like-btn ${liked ? 'story-viewer__like-btn--active' : ''}`;
-          likeBtn.innerHTML = liked ? icons.heartFilled : icons.heart;
+          likeBtn.setAttribute('aria-label', liked ? 'Unlike' : 'Like');
+          likeBtn.innerHTML = `<span aria-hidden="true">${liked ? icons.heartFilled : icons.heart}</span>`;
         };
 
         const showCircle = (circleIndex, startSlideIndex = 0) => {
@@ -968,7 +970,8 @@ export function renderHome() {
             const countEl = feedCard.querySelector('.like-count');
             if (countEl) countEl.textContent = likesCount;
             feedCard.classList.toggle('post-action--active', liked);
-            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${likesCount}</span>`;
+            feedCard.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} (${likesCount} likes)`);
+            feedCard.innerHTML = `<span aria-hidden="true">${liked ? icons.heartFilled : icons.heart} <span class="like-count">${likesCount}</span></span>`;
           }
         });
 
@@ -1194,7 +1197,8 @@ export function renderHome() {
           if (likeBtn) {
             const liked = !!item.likedByUser;
             likeBtn.classList.toggle('post-action--active', liked);
-            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${item.likes || 0}</span>`;
+            likeBtn.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} (${item.likes || 0} likes)`);
+            likeBtn.innerHTML = `<span aria-hidden="true">${liked ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span></span>`;
           }
         });
 
@@ -1220,7 +1224,8 @@ export function renderHome() {
                 if (likeBtn) {
                   const liked = originalItem.likedByUser;
                   likeBtn.className = `story-viewer__like-btn ${liked ? 'story-viewer__like-btn--active' : ''}`;
-                  likeBtn.innerHTML = liked ? icons.heartFilled : icons.heart;
+                  likeBtn.setAttribute('aria-label', liked ? 'Unlike' : 'Like');
+                  likeBtn.innerHTML = `<span aria-hidden="true">${liked ? icons.heartFilled : icons.heart}</span>`;
                 }
               }
             }
