@@ -1,0 +1,3 @@
+## 2026-06-27 - Accessible Mixed-Content Buttons
+**Learning:** Buttons containing both icons and dynamic text (like 'Like' buttons with a count) often confuse screen readers if the inner structure changes dynamically. Simply applying an `aria-label` isn't enough; the visible contents inside the button must be wrapped in `aria-hidden="true"` to prevent screen readers from double-reading or misinterpreting the dynamically changing text.
+**Action:** When updating buttons with dynamic text and icons, set a descriptive `aria-label` on the button itself and ensure all inner HTML is wrapped in an element with `aria-hidden="true"`.
