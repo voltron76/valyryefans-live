@@ -102,11 +102,17 @@ export function renderNavbar() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Gallery
       </a>
-      <a href="/messages" class="nav-link" style="position:relative;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-        Messages
-        ${(() => { const uc = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0; return uc > 0 ? `<span style="position:absolute;top:4px;right:-8px;min-width:16px;height:16px;border-radius:8px;background:var(--gradient-accent);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg-primary);">${uc}</span>` : ''; })()}
+      ${(() => {
+        const uc = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0;
+        const ariaLabel = uc > 0 ? `Messages, ${uc} unread` : `Messages`;
+        return `
+      <a href="/messages" class="nav-link" style="position:relative;" aria-label="${ariaLabel}">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        <span aria-hidden="true">Messages</span>
+        ${uc > 0 ? `<span aria-hidden="true" style="position:absolute;top:4px;right:-8px;min-width:16px;height:16px;border-radius:8px;background:var(--gradient-accent);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg-primary);">${uc}</span>` : ''}
       </a>
+        `;
+      })()}
       ${(s.currentTier !== 'gold' && !s.isAdmin) ? `
       <a href="/subscribe" class="nav-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 16h14v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2z"/></svg>
@@ -119,11 +125,14 @@ export function renderNavbar() {
       <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme">
         ${getTheme() === 'dark' ? SUN_ICON : MOON_ICON}
       </button>
-      ${isAuth ? `
-      <a href="/notifications" class="theme-toggle" style="position:relative;" aria-label="Notifications" title="Notifications">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        ${(s.notifications?.filter(n => !n.read).length || 0) > 0 ? `
-          <span style="
+      ${isAuth ? (() => {
+        const unread = s.notifications?.filter(n => !n.read).length || 0;
+        const ariaLabel = unread > 0 ? `Notifications, ${unread} unread` : `Notifications`;
+        return `
+      <a href="/notifications" class="theme-toggle" style="position:relative;" aria-label="${ariaLabel}" title="Notifications">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        ${unread > 0 ? `
+          <span aria-hidden="true" style="
             position: absolute; top: 2px; right: 2px;
             width: 16px; height: 16px;
             border-radius: 50%;
@@ -135,10 +144,11 @@ export function renderNavbar() {
             align-items: center;
             justify-content: center;
             border: 2px solid var(--bg-primary);
-          ">${s.notifications.filter(n => !n.read).length}</span>
+          ">${unread}</span>
         ` : ''}
       </a>
-      ` : ''}
+        `;
+      })() : ''}
       ${isAuth ? `
         <div style="position:relative;">
         <button class="nav-avatar ${s.currentTier === 'gold' ? 'avatar-ring--gold' : ''}" id="nav-avatar-btn" title="${user?.name || 'Profile'}" aria-label="Open profile menu" aria-haspopup="true" aria-expanded="false">
@@ -311,23 +321,30 @@ export function renderMobileNav() {
             </div>
             <span style="margin-top:2px;">Subscribe</span>
           </a>
-        ` : `
-          <a href="/messages" class="mobile-nav-item${pathname === '/messages' ? ' active' : ''}" style="position:relative;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-            ${(() => { const uc = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0; return uc > 0 ? `<span class="mobile-nav-badge" style="
+        ` : (() => {
+          const uc = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0;
+          const ariaLabel = uc > 0 ? `Chat, ${uc} unread` : `Chat`;
+          return `
+          <a href="/messages" class="mobile-nav-item${pathname === '/messages' ? ' active' : ''}" style="position:relative;" aria-label="${ariaLabel}">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            ${uc > 0 ? `<span aria-hidden="true" class="mobile-nav-badge" style="
               position:absolute; top:2px; right:50%; transform:translateX(12px);
               min-width:16px; height:16px; border-radius:8px;
               background:var(--gradient-accent); color:#fff;
               font-size:9px; font-weight:700;
               display:flex; align-items:center; justify-content:center;
               padding:0 3px; border:2px solid var(--bg-primary);
-            ">${uc}</span>` : ''; })()}
-            <span>Chat</span>
+            ">${uc}</span>` : ''}
+            <span aria-hidden="true">Chat</span>
           </a>
-        `}
-        <a href="/notifications" class="mobile-nav-item${pathname === '/notifications' ? ' active' : ''}" style="position:relative;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          ${unread > 0 ? `<span class="mobile-nav-badge" style="
+          `;
+        })()}
+        ${(() => {
+          const ariaLabel = unread > 0 ? `Alerts, ${unread} unread` : `Alerts`;
+          return `
+        <a href="/notifications" class="mobile-nav-item${pathname === '/notifications' ? ' active' : ''}" style="position:relative;" aria-label="${ariaLabel}">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          ${unread > 0 ? `<span aria-hidden="true" class="mobile-nav-badge" style="
             position:absolute; top:2px; right:50%; transform:translateX(12px);
             min-width:16px; height:16px; border-radius:8px;
             background:var(--gradient-accent); color:#fff;
@@ -335,8 +352,10 @@ export function renderMobileNav() {
             display:flex; align-items:center; justify-content:center;
             padding:0 3px; border:2px solid var(--bg-primary);
           ">${unread}</span>` : ''}
-          <span>Alerts</span>
+          <span aria-hidden="true">Alerts</span>
         </a>
+          `;
+        })()}
         <a href="/profile" class="mobile-nav-item${pathname === '/profile' ? ' active' : ''}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Profile</span>

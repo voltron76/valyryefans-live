@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility for Dynamic Badge Icons
+**Learning:** When adding `aria-label` to buttons or links with mixed content (e.g., icons + dynamic text like counts), the dynamic text must be incorporated into the parent's `aria-label` and the visual text hidden with `aria-hidden="true"` to prevent screen readers from missing or double-reading the content.
+**Action:** Always extract badge counts and inner text into a summarized `aria-label` string on the interactive parent element, and apply `aria-hidden="true"` to all inner HTML elements to ensure a clean, singular screen reader readout.
