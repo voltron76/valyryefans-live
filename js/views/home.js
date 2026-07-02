@@ -252,17 +252,17 @@ function renderPostCard(item, creatorProfile) {
       ${!locked ? `
       <!-- Action Bar -->
       <div class="post-card__actions">
-        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
-          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span>
+        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}" aria-label="${item.likedByUser ? 'Unlike' : 'Like'} post, ${item.likes || 0} likes">
+          <span aria-hidden="true">${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span></span>
         </button>
-        <button class="post-action" data-action="comment" data-id="${item.id}">
-          ${icons.comment} <span>${commentsArr.length || 0}</span>
+        <button class="post-action" data-action="comment" data-id="${item.id}" aria-label="Comment on post, ${commentsArr.length || 0} comments">
+          <span aria-hidden="true">${icons.comment} <span>${commentsArr.length || 0}</span></span>
         </button>
-        <button class="post-action" data-action="tip" data-id="${item.id}">
-          💰 Tip
+        <button class="post-action" data-action="tip" data-id="${item.id}" aria-label="Tip creator">
+          <span aria-hidden="true">💰 Tip</span>
         </button>
-        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;">
-          ${bookmarked ? icons.bookmarkFilled : icons.bookmark}
+        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;" aria-label="${bookmarked ? 'Remove bookmark' : 'Bookmark post'}">
+          <span aria-hidden="true">${bookmarked ? icons.bookmarkFilled : icons.bookmark}</span>
         </button>
       </div>
 
@@ -656,7 +656,8 @@ export function renderHome() {
             toggleBookmark(id);
           }
           const isActive = btn.classList.toggle('post-action--active');
-          btn.innerHTML = isActive ? icons.bookmarkFilled : icons.bookmark;
+          btn.setAttribute('aria-label', isActive ? 'Remove bookmark' : 'Bookmark post');
+          btn.innerHTML = `<span aria-hidden="true">${isActive ? icons.bookmarkFilled : icons.bookmark}</span>`;
         });
       });
 
@@ -965,10 +966,9 @@ export function renderHome() {
             const likesCount = originalItem ? (originalItem.likes || 0) : story.likes;
             const liked = originalItem ? originalItem.likedByUser : story.likedByUser;
             
-            const countEl = feedCard.querySelector('.like-count');
-            if (countEl) countEl.textContent = likesCount;
             feedCard.classList.toggle('post-action--active', liked);
-            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${likesCount}</span>`;
+            feedCard.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} post, ${likesCount} likes`);
+            feedCard.innerHTML = `<span aria-hidden="true">${liked ? icons.heartFilled : icons.heart} <span class="like-count">${likesCount}</span></span>`;
           }
         });
 
@@ -1193,8 +1193,10 @@ export function renderHome() {
           const likeBtn = document.querySelector(`.post-action[data-id="${item.id}"][data-action="like"]`);
           if (likeBtn) {
             const liked = !!item.likedByUser;
+            const likesCount = item.likes || 0;
             likeBtn.classList.toggle('post-action--active', liked);
-            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${item.likes || 0}</span>`;
+            likeBtn.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} post, ${likesCount} likes`);
+            likeBtn.innerHTML = `<span aria-hidden="true">${liked ? icons.heartFilled : icons.heart} <span class="like-count">${likesCount}</span></span>`;
           }
         });
 
