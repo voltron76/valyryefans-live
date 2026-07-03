@@ -716,8 +716,8 @@ export function renderHome() {
                 <div class="story-viewer__content">
                   <div class="story-viewer__click-left" id="story-click-left"></div>
                   <div class="story-viewer__click-right" id="story-click-right"></div>
-                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--left" id="story-nav-left" style="pointer-events: auto; z-index: 15;">&lt;</button>
-                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--right" id="story-nav-right" style="pointer-events: auto; z-index: 15;">&gt;</button>
+                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--left" id="story-nav-left" aria-label="Previous story" style="pointer-events: auto; z-index: 15;">&lt;</button>
+                  <button class="story-viewer__nav-arrow story-viewer__nav-arrow--right" id="story-nav-right" aria-label="Next story" style="pointer-events: auto; z-index: 15;">&gt;</button>
                   <div class="story-viewer__media-container" id="story-media-container"></div>
                 </div>
                 <div class="story-viewer__footer">

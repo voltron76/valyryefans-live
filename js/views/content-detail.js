@@ -155,8 +155,8 @@ export function renderContentDetail(params) {
                    </div>`).join('')}
                </div>
                ${item.media.length > 1 ? `
-               <button class="carousel-btn carousel-prev" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center;">❮</button>
-               <button class="carousel-btn carousel-next" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center;">❯</button>
+               <button class="carousel-btn carousel-prev" aria-label="Previous slide" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center;">❮</button>
+               <button class="carousel-btn carousel-next" aria-label="Next slide" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;z-index:6;display:flex;align-items:center;justify-content:center;">❯</button>
                <div class="carousel-dots" style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:6;">
                  ${item.media.map((_, i) => `<div class="carousel-dot${i===0?' active':''}" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,${i===0?'1':'0.5'});transition:background 0.2s;"></div>`).join('')}
                </div>
