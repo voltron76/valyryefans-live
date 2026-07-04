@@ -1,0 +1,3 @@
+## 2024-07-04 - Mixed Content ARIA Labels on Buttons
+**Learning:** When adding `aria-label` to buttons with mixed content (e.g., icons + dynamic text like counts), screen readers may double-read or misread the content if both the label and the text are accessible. The dynamic text must be incorporated into the `aria-label` and the visual text hidden with `aria-hidden="true"`.
+**Action:** Ensure that any dynamically updated text inside an aria-labeled button is hidden from screen readers using `aria-hidden="true"`, and remember to update both the `aria-label` on the parent and keep the `aria-hidden` attribute on the inner elements whenever the button state changes.
