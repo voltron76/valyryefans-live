@@ -14,3 +14,14 @@ supabase/.temp/
 .agents/
 verify_security.*
 PROJECT.md
+
+# Scratch scripts and load tests
+check_*
+search_*
+find_*
+test_*
+cf_*
+k6-load-test.js
+migrate_assets.js
+print_sitemap.js
+rescue.js
