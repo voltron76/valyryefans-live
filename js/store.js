@@ -916,6 +916,7 @@ export async function uploadContent(item) {
   if (!state.isAdmin) return;
 
   const newContent = {
+    creator_id: state.user.id,
     title: item.title,
     description: item.description,
     type: item.type,

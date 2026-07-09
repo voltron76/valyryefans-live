@@ -3063,6 +3063,7 @@ export function renderAdmin() {
               description: isStory ? 'Story Upload' : (description || ''),
               thumbnailPath: mediaPaths[0],
               mediaPaths: mediaPaths,
+              videoPath: type === 'video' ? mediaPaths[0] : null,
               type: selectedFiles.length > 1 ? 'carousel' : type,
               isPublic: isStory ? true : (tier === 'free'),
               minTier: isStory ? 'free' : tier,
