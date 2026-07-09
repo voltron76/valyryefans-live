@@ -2663,14 +2663,14 @@ export function renderAdmin() {
             const filePath = `chat/${fileName}`;
 
             const { supabase } = await import('../supabase.js');
-            const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
+            const { error: uploadError } = await supabase.storage.from('public_media').upload(filePath, file);
 
             if (uploadError) {
               console.error(uploadError);
               throw new Error('Failed to upload file');
             }
 
-            const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+            const { data } = supabase.storage.from('public_media').getPublicUrl(filePath);
             const mediaUrl = data.publicUrl;
 
             const msgText = isVideo ? '🎬 Sent a video' : '📸 Sent a photo';
@@ -3025,18 +3025,37 @@ export function renderAdmin() {
 
           try {
             const mediaPaths = [];
+            let fIdx = 0;
             for (const file of selectedFiles) {
               const fileExt = file.name.split('.').pop();
               const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
               const filePath = `uploads/${fileName}`;
 
-              const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
-              
-              if (uploadError) {
-                console.error(uploadError);
-                throw new Error('Failed to upload file to storage');
+              const isFree = isStory || (tier === 'free');
+
+              if (isFree) {
+                // Upload to public_media bucket
+                const { error: uploadError } = await supabase.storage.from('public_media').upload(filePath, file);
+                if (uploadError) {
+                  console.error(uploadError);
+                  throw new Error('Failed to upload file to public storage');
+                }
+              } else {
+                // Gold tier: Upload first file to public_media as teaser thumbnail
+                if (fIdx === 0) {
+                  const { error: teaserError } = await supabase.storage.from('public_media').upload(filePath, file);
+                  if (teaserError) console.error('Failed to upload teaser:', teaserError);
+                }
+                // Upload to media (private bucket)
+                const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
+                if (uploadError) {
+                  console.error(uploadError);
+                  throw new Error('Failed to upload file to private storage');
+                }
               }
+              
               mediaPaths.push(filePath);
+              fIdx++;
             }
 
             const item = {

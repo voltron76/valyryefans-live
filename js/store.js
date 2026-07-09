@@ -1217,7 +1217,7 @@ export async function uploadProfilePicture(file) {
     const filePath = `avatars/${state.user.id}.${fileExt}`;
     
     // Upload with content type
-    const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file, { 
+    const { error: uploadError } = await supabase.storage.from('public_media').upload(filePath, file, { 
       upsert: true,
       contentType: file.type || `image/${fileExt}`
     });
@@ -1228,7 +1228,7 @@ export async function uploadProfilePicture(file) {
     
     // Try public URL first
     let avatarUrl;
-    const { data: publicData } = supabase.storage.from('media').getPublicUrl(filePath);
+    const { data: publicData } = supabase.storage.from('public_media').getPublicUrl(filePath);
     if (publicData?.publicUrl) {
       // Add cache-buster to avoid stale cached images
       avatarUrl = publicData.publicUrl + '?t=' + Date.now();

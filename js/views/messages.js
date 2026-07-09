@@ -331,14 +331,14 @@ export function renderMessages() {
           const filePath = `chat/${fileName}`;
           
           const { supabase } = await import('../supabase.js');
-          const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
+          const { error: uploadError } = await supabase.storage.from('public_media').upload(filePath, file);
           
           if (uploadError) {
             console.error(uploadError);
             throw new Error('Failed to upload file to storage');
           }
           
-          const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+          const { data } = supabase.storage.from('public_media').getPublicUrl(filePath);
           const mediaUrl = data.publicUrl;
           
           const msgText = isVideo ? '🎬 Sent a video' : '📸 Sent a photo';
