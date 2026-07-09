@@ -165,7 +165,7 @@ export function showToast(message, type = 'success') {
 // ------------------------------------
 // Database Initialization
 // ------------------------------------
-export async function initStore() {
+export async function initStore(bypassCache = false) {
   try {
     // 1. Check Auth Session
     const { data: { session } } = await supabase.auth.getSession();
@@ -258,77 +258,112 @@ export async function initStore() {
       }
     }
 
-    // 1.6 Fetch comments (Supabase table with localStorage fallback)
-    let commentsMap = {};
+    // 1.6 Fetch cached public data from Edge API
+    let publicData = { content: [], commentsMap: {}, polls: [] };
     try {
-      const { data: commentsData, error: commentsErr } = await supabase.from('comments').select('*, profiles(tier)').order('created_at', { ascending: true });
-      if (!commentsErr && commentsData) {
-        commentsData.forEach(c => {
-          if (!commentsMap[c.content_id]) commentsMap[c.content_id] = [];
-          commentsMap[c.content_id].push({
-            id: c.id,
-            userId: c.user_id,
-            userName: c.user_name || 'Anonymous',
-            tier: (Array.isArray(c.profiles) ? c.profiles[0]?.tier : c.profiles?.tier) || 'free',
-            text: c.text,
-            time: formatTime(c.created_at),
-            isCreator: c.user_name === 'Valyryes'
-          });
-        });
+      const res = await fetch('/api/public-data' + (bypassCache || state.isAdmin ? `?t=${Date.now()}` : ''));
+      if (res.ok) {
+        publicData = await res.json();
       } else {
-        throw new Error(commentsErr?.message || 'Comments table query failed');
+        throw new Error('Failed to fetch from /api/public-data');
       }
     } catch (err) {
+      console.warn('Failed to load public data from edge, falling back to local fallback comments', err);
+      // Fallback comments from localStorage if edge failed
       const localComments = localStorage.getItem('vf-comments');
       if (localComments) {
-        try {
-          commentsMap = JSON.parse(localComments);
-        } catch (e) {}
+        try { publicData.commentsMap = JSON.parse(localComments); } catch (e) {}
       }
     }
 
-    // 2. Fetch Content Metadata
-    const { data: contentData } = await supabase.from('content').select('*').order('created_at', { ascending: false });
-    
+    const { content: contentData, commentsMap, polls: pollsData } = publicData;
+
+    // Fetch logged-in user's poll votes to show their active selections
+    const userVotesMap = {};
+    if (session) {
+      try {
+        const { data: userVotes } = await supabase.from('poll_votes').select('poll_id, option_id').eq('user_id', session.user.id);
+        if (userVotes) {
+          userVotes.forEach(v => {
+            userVotesMap[v.poll_id] = v.option_id;
+          });
+        }
+      } catch (e) {
+        console.error('Error fetching user votes:', e);
+      }
+    }
+
     if (contentData && contentData.length > 0) {
-      // 3. Generate Signed URLs for the private media bucket
-      const allPaths = [];
+      // 3. Separate Public vs Private Media URLs to optimize caching and egress
+      const privatePathsToSign = [];
+      const hasGoldAccess = state.isAdmin || state.currentTier === 'gold';
+
       contentData.forEach(c => {
-        const hasAccess = state.isAdmin || c.min_tier === 'free' || state.currentTier === 'gold';
-        
-        if (c.thumbnail) allPaths.push(c.thumbnail);
-        
-        // Only request signed URLs for main media if the user actually has access
-        if (hasAccess) {
-          if (c.video_url) allPaths.push(c.video_url);
-          if (c.media && Array.isArray(c.media)) allPaths.push(...c.media);
+        // Main media for Gold content is private and requires signed URLs
+        if (c.min_tier === 'gold' && hasGoldAccess) {
+          if (c.video_url) privatePathsToSign.push(c.video_url);
+          if (c.media && Array.isArray(c.media)) privatePathsToSign.push(...c.media);
         }
       });
 
-      const uniquePaths = [...new Set(allPaths)].filter(p => p && !p.startsWith('http')); // Only sign relative supabase paths
+      const uniquePrivatePaths = [...new Set(privatePathsToSign)].filter(p => p && !p.startsWith('http'));
       
-      let urlMap = {};
-      if (uniquePaths.length > 0) {
-        const { data: signedUrls } = await supabase.storage.from('media').createSignedUrls(uniquePaths, 3600); // 1 hour expiry
-        if (signedUrls) {
-          signedUrls.forEach((su, i) => {
-            if (!su.error) urlMap[uniquePaths[i]] = su.signedUrl;
-          });
+      let signedUrlMap = {};
+      if (uniquePrivatePaths.length > 0) {
+        try {
+          const { data: signedUrls, error } = await supabase.storage.from('media').createSignedUrls(uniquePrivatePaths, 3600); // 1 hour expiry
+          if (!error && signedUrls) {
+            signedUrls.forEach((su, i) => {
+              if (!su.error) signedUrlMap[uniquePrivatePaths[i]] = su.signedUrl;
+            });
+          }
+        } catch (e) {
+          console.error('Error generating signed URLs:', e);
         }
       }
+
+      // Helper to resolve media URLs (Public bucket vs Private signed URLs)
+      const resolveMediaUrl = (path, isGoldPrivate) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+
+        if (isGoldPrivate) {
+          // Requires signed URL from 'media' bucket
+          return signedUrlMap[path] || null;
+        } else {
+          // Served directly from 'public_media' bucket, fully cached by CDN
+          return supabase.storage.from('public_media').getPublicUrl(path).data.publicUrl;
+        }
+      };
 
       // 4. Map content to state
       state.content = contentData.map(c => {
         const hasAccess = state.isAdmin || c.min_tier === 'free' || state.currentTier === 'gold';
-        const mappedMedia = hasAccess ? (c.media || []).map(m => urlMap[m] || m) : [];
-        const commentsList = commentsMap[c.id] || [];
+        
+        // Thumbnails are always public teasers
+        const thumbnailUrl = resolveMediaUrl(c.thumbnail, false);
+        
+        let mappedMedia = [];
+        let videoUrl = null;
+
+        if (hasAccess) {
+          const isGoldPrivate = c.min_tier === 'gold';
+          mappedMedia = (c.media || []).map(m => resolveMediaUrl(m, isGoldPrivate));
+          videoUrl = c.video_url ? resolveMediaUrl(c.video_url, isGoldPrivate) : null;
+        }
+
+        const commentsList = (commentsMap[c.id] || []).map(comm => ({
+          ...comm,
+          time: formatTime(comm.createdAt)
+        }));
+
         return {
           id: c.id,
           title: c.title,
           description: c.description || '',
           type: c.type,
-          thumbnail: urlMap[c.thumbnail] || c.thumbnail,
-          videoUrl: (hasAccess && c.video_url) ? (urlMap[c.video_url] || c.video_url) : null,
+          thumbnail: thumbnailUrl,
+          videoUrl: videoUrl,
           media: mappedMedia,
           rawThumbnail: c.thumbnail,
           rawMedia: c.media || [],
@@ -339,8 +374,8 @@ export async function initStore() {
           comments: commentsList,
           views: c.views || 0,
           category: c.category || 'Other',
-          createdAt: formatDate(c.created_at),
-          rawCreatedAt: c.created_at
+          createdAt: formatDate(c.created_at || c.createdAt),
+          rawCreatedAt: c.created_at || c.createdAt
         };
       });
 
@@ -356,57 +391,39 @@ export async function initStore() {
         generateNotifications(state, session);
       }
 
-      // Load all promos
-      const { data: promos } = await supabase.from('content')
-        .select('*')
-        .eq('category', 'promo')
-        .order('created_at', { ascending: false });
-      if (promos) {
-        state.allPromos = promos.map(p => {
-          const parts = (p.description || '').split('|');
-          return {
-            id: p.id,
-            code: p.title || 'PROMO',
-            discount: parseInt(parts[0]) || 20,
-            description: parts[1] || 'Limited time offer!',
-            expiresAt: parts[2] || null,
-            color: parts[3] || '#E91E8C',
-            status: parts[4] || 'inactive'
-          };
-        });
-        const active = state.allPromos.find(p => p.status === 'active' && (!p.expiresAt || new Date(p.expiresAt) > new Date()));
-        state.activePromo = active || null;
-      } else {
-        state.allPromos = [];
-        state.activePromo = null;
-      }
+      // Load all promos (already in contentData but marked as category 'promo')
+      const promos = contentData.filter(p => p.category === 'promo');
+      state.allPromos = promos.map(p => {
+        const parts = (p.description || '').split('|');
+        return {
+          id: p.id,
+          code: p.title || 'PROMO',
+          discount: parseInt(parts[0]) || 20,
+          description: parts[1] || 'Limited time offer!',
+          expiresAt: parts[2] || null,
+          color: parts[3] || '#E91E8C',
+          status: parts[4] || 'inactive'
+        };
+      });
+      const active = state.allPromos.find(p => p.status === 'active' && (!p.expiresAt || new Date(p.expiresAt) > new Date()));
+      state.activePromo = active || null;
     }
 
     // Fetch Polls
     try {
-      const { data: dbPolls, error: pollsErr } = await supabase.from('polls').select('*').order('created_at', { ascending: false });
-      const { data: dbVotes, error: votesErr } = await supabase.from('poll_votes').select('*');
-      
-      if (!pollsErr) {
-        const mappedPolls = (dbPolls || []).map(p => {
-          const votesForPoll = (dbVotes || []).filter(v => v.poll_id === p.id);
-          const optionsWithVotes = (p.options || []).map(opt => {
-            const count = votesForPoll.filter(v => v.option_id === opt.id).length;
-            return { ...opt, votes: count };
-          });
-          const totalVotes = votesForPoll.length;
-          const userVote = session ? votesForPoll.find(v => v.user_id === session.user.id)?.option_id || null : null;
-          
-          const isExpired = p.expires_at ? new Date(p.expires_at) < new Date() : false;
+      if (pollsData) {
+        const mappedPolls = pollsData.map(p => {
+          const isExpired = p.expiresAt ? new Date(p.expiresAt) < new Date() : false;
+          const userVote = userVotesMap[p.id] || null;
           
           return {
             id: p.id,
             question: p.question,
-            options: optionsWithVotes,
-            totalVotes,
+            options: p.options,
+            totalVotes: p.totalVotes,
             userVote,
-            createdAt: formatRelativeTime(p.created_at),
-            expiresAt: p.expires_at,
+            createdAt: formatRelativeTime(p.createdAt),
+            expiresAt: p.expiresAt,
             isExpired
           };
         });
@@ -916,8 +933,8 @@ export async function uploadContent(item) {
     showToast('Upload failed to database', 'error');
   } else {
     showToast('Content published successfully!', 'success');
-    // Refresh content
-    await initStore();
+     // Refresh content with cache bypass
+    await initStore(true);
     notify('content');
   }
 }
@@ -1275,7 +1292,7 @@ export async function votePoll(pollId, optionId) {
   }
 
   showToast('Vote submitted! 📊', 'success');
-  await initStore();
+  await initStore(true);
   notify('polls');
   trackEvent('poll_vote', { pollId, optionId, question: poll.question });
 }
@@ -1301,7 +1318,7 @@ export async function createPoll({ question, options, durationHours }) {
   }
 
   showToast('Poll created successfully! 📊', 'success');
-  await initStore();
+  await initStore(true);
   notify('polls');
   return data;
 }
@@ -1319,7 +1336,7 @@ export async function endPoll(id) {
   }
 
   showToast('Poll ended successfully! 📊', 'success');
-  await initStore();
+  await initStore(true);
   notify('polls');
 }
 
@@ -1333,7 +1350,7 @@ export async function deletePoll(id) {
   }
 
   showToast('Poll deleted', 'success');
-  await initStore();
+  await initStore(true);
   notify('polls');
 }
 
