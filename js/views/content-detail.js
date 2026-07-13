@@ -367,7 +367,7 @@ export function renderContentDetail(params) {
           if (!selectedAmt || selectedAmt <= 0) { import('../store.js').then(({showToast}) => showToast('Select an amount', 'error')); return; }
           picker.remove();
           const { tipPost } = await import('../store.js');
-          await tipPost(item.id, selectedAmt, null, `#/content/${item.id}`);
+          await tipPost(item.id, selectedAmt, null, `/content/${item.id}`);
         });
         picker.addEventListener('click', (e) => { if (e.target === picker) picker.remove(); });
       });

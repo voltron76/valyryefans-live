@@ -276,7 +276,7 @@ export function renderGallery() {
         if (tipMessage) tipMessage.value = '';
 
         import('../store.js').then(async ({ tipPost }) => {
-          await tipPost(targetId, amount, msg, '#/gallery');
+          await tipPost(targetId, amount, msg, '/gallery');
         });
       });
     }

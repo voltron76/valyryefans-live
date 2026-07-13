@@ -104,8 +104,8 @@ serve(async (req) => {
         }],
         mode: 'subscription',
         allow_promotion_codes: true,
-        success_url: getRedirectUrl(successPath, '#/welcome-gold'),
-        cancel_url: getRedirectUrl(cancelPath, '#/subscribe'),
+        success_url: getRedirectUrl(successPath, '/welcome-gold'),
+        cancel_url: getRedirectUrl(cancelPath, '/subscribe'),
         metadata: {
           userId: user.id,
           type: 'subscription'
@@ -140,8 +140,8 @@ serve(async (req) => {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: getRedirectUrl(successPath, '#/gallery'),
-        cancel_url: getRedirectUrl(cancelPath, '#/gallery'),
+        success_url: getRedirectUrl(successPath, '/gallery'),
+        cancel_url: getRedirectUrl(cancelPath, '/gallery'),
         metadata: {
           userId: user.id,
           type: 'tip',

@@ -641,7 +641,7 @@ export function renderHome() {
         document.querySelectorAll('.tip-amount-btn').forEach(b => b.classList.remove('active'));
 
         if (typeof tipPost === 'function') {
-          const result = await tipPost(targetId, amount, message, '#/');
+          const result = await tipPost(targetId, amount, message, '/');
           if (result && !result.success && !result.redirecting) {
             showToast(result.error || 'Tip failed — please try again', 'error');
           }

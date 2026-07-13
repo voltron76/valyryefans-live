@@ -562,7 +562,7 @@ export function renderMessages() {
           b.classList.add('btn-secondary');
         });
 
-        const res = await tipPost(null, amount, tipMsg, '#/messages');
+        const res = await tipPost(null, amount, tipMsg, '/messages');
 
         if (res && res.success && !res.redirecting) {
           // Tip processed successfully — realtime will handle any creator response
