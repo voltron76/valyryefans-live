@@ -252,16 +252,16 @@ function renderPostCard(item, creatorProfile) {
       ${!locked ? `
       <!-- Action Bar -->
       <div class="post-card__actions">
-        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}">
-          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count">${item.likes || 0}</span>
+        <button class="post-action ${item.likedByUser ? 'post-action--active' : ''}" data-action="like" data-id="${item.id}" aria-label="${item.likedByUser ? 'Unlike' : 'Like'} (${item.likes || 0} likes)">
+          ${item.likedByUser ? icons.heartFilled : icons.heart} <span class="like-count" aria-hidden="true">${item.likes || 0}</span>
         </button>
-        <button class="post-action" data-action="comment" data-id="${item.id}">
-          ${icons.comment} <span>${commentsArr.length || 0}</span>
+        <button class="post-action" data-action="comment" data-id="${item.id}" aria-label="Comments (${commentsArr.length || 0})">
+          ${icons.comment} <span aria-hidden="true">${commentsArr.length || 0}</span>
         </button>
-        <button class="post-action" data-action="tip" data-id="${item.id}">
-          💰 Tip
+        <button class="post-action" data-action="tip" data-id="${item.id}" aria-label="Send Tip">
+          <span aria-hidden="true">💰 Tip</span>
         </button>
-        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;">
+        <button class="post-action ${bookmarked ? 'post-action--active' : ''}" data-action="bookmark" data-id="${item.id}" style="margin-left:auto;" aria-label="${bookmarked ? 'Remove bookmark' : 'Add bookmark'}">
           ${bookmarked ? icons.bookmarkFilled : icons.bookmark}
         </button>
       </div>
@@ -656,6 +656,7 @@ export function renderHome() {
             toggleBookmark(id);
           }
           const isActive = btn.classList.toggle('post-action--active');
+          btn.setAttribute('aria-label', isActive ? 'Remove bookmark' : 'Add bookmark');
           btn.innerHTML = isActive ? icons.bookmarkFilled : icons.bookmark;
         });
       });
@@ -968,7 +969,8 @@ export function renderHome() {
             const countEl = feedCard.querySelector('.like-count');
             if (countEl) countEl.textContent = likesCount;
             feedCard.classList.toggle('post-action--active', liked);
-            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${likesCount}</span>`;
+            feedCard.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} (${likesCount} likes)`);
+            feedCard.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count" aria-hidden="true">${likesCount}</span>`;
           }
         });
 
@@ -1194,7 +1196,8 @@ export function renderHome() {
           if (likeBtn) {
             const liked = !!item.likedByUser;
             likeBtn.classList.toggle('post-action--active', liked);
-            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count">${item.likes || 0}</span>`;
+            likeBtn.setAttribute('aria-label', `${liked ? 'Unlike' : 'Like'} (${item.likes || 0} likes)`);
+            likeBtn.innerHTML = (liked ? icons.heartFilled : icons.heart) + ` <span class="like-count" aria-hidden="true">${item.likes || 0}</span>`;
           }
         });
 

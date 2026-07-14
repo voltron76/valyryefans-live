@@ -1,0 +1,3 @@
+## 2024-03-21 - Accessible Action Buttons with Dynamic Counts
+**Learning:** When using `aria-label` on a button that contains both an icon and dynamic text (like a like count or comment count), screen readers will often read both the `aria-label` AND the text content inside the button, resulting in double-reading or confusing output.
+**Action:** When adding an `aria-label` to replace visual text (or icons + text), wrap the internal text content in an element with `aria-hidden="true"`. Make sure to include the dynamic content (e.g., the exact count) within the `aria-label` itself so the information is still available to screen reader users. Also remember to update the `aria-label` whenever the dynamic state or count changes via JavaScript!
