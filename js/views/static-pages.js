@@ -717,3 +717,54 @@ export function renderBecomeCreator() {
     },
   };
 }
+
+// ============================================================
+// 8. REFUND POLICY
+// ============================================================
+export function renderRefund() {
+  const html = `
+    <section class="section animate-fade-in-up" style="max-width: 800px; margin: 0 auto;">
+      <h1 class="font-display" style="font-size: var(--text-4xl); margin-bottom: var(--space-2);">
+        <span class="text-gradient">Refund Policy</span>
+      </h1>
+      <p style="color: var(--text-muted); font-size: var(--text-sm); margin-bottom: var(--space-8);">Last updated: June 1, 2026</p>
+
+      <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
+        <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">1. Subscription Cancellations</h2>
+        <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
+          You may cancel your Gold VIP subscription at any time. When you cancel, your access to the Gold VIP tier remains active until the end of your current billing period. No further payments will be charged after cancellation. Note that cancellation does not retroactively refund previous subscription charges.
+        </p>
+      </div>
+
+      <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
+        <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">2. No-Refund Policy on Digital Goods</h2>
+        <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
+          Because access to digital items is granted instantly upon subscription or purchase (such as exclusive photos, video streams, or direct chat unlocks), all subscription fees, tips, and custom requests are <strong>non-refundable</strong>. Once access is activated or digital items are unlocked, we are unable to retract access or issue refunds.
+        </p>
+      </div>
+
+      <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
+        <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">3. Exceptions and Special Disputes</h2>
+        <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
+          If you believe there has been a billing error, double authorization, or fraudulent charge on your account, please reach out immediately to our support team at <a href="mailto:support@valyreyes.com" style="color: var(--accent-light);">support@valyreyes.com</a>. We review billing disputes on a case-by-case basis. To resolve duplicate charges, please supply a screenshot of the charges and your account details.
+        </p>
+      </div>
+
+      <div style="${glass} padding: var(--space-8); margin-bottom: var(--space-6);">
+        <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">4. Dispute Prevention</h2>
+        <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
+          Filing a chargeback dispute through your bank or card issuer will immediately block and deactivate your ValyryesFans account. To prevent automatic deactivations and secure your access, please contact us directly at <a href="mailto:billing@valyreyes.com" style="color: var(--accent-light);">billing@valyreyes.com</a> prior to filing card disputes.
+        </p>
+      </div>
+
+      <div style="${glass} padding: var(--space-8);">
+        <h2 class="font-display" style="font-size: var(--text-xl); margin-bottom: var(--space-4); color: var(--accent-light);">5. Support Contact</h2>
+        <p style="color: var(--text-secondary); line-height: 1.8; font-size: var(--text-sm);">
+          For billing questions, refund exceptions, or dispute resolutions, please write to us at <a href="mailto:billing@valyreyes.com" style="color: var(--accent-light);">billing@valyreyes.com</a> or visit our <a href="/support" style="color: var(--accent-light);">Support Center</a>.
+        </p>
+      </div>
+    </section>
+  `;
+
+  return { html, afterRender() {} };
+}

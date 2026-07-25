@@ -24,7 +24,7 @@ const getCorsHeaders = (origin: string | null) => {
 }
 
 interface EmailPayload {
-  event: 'welcome' | 'new_post' | 'new_message' | 'new_subscription' | 'expiring_subscription' | 'custom_bulk';
+  event: 'welcome' | 'new_post' | 'new_message' | 'new_subscription' | 'expiring_subscription' | 'custom_bulk' | 'new_tip';
   recipientId?: string;       // For targeted templates (welcome, new_message, etc.)
   recipientEmail?: string;    // Custom recipient email (for bulk/direct)
   recipientsGroup?: 'subscribers' | 'fans' | 'all'; // For bulk emails

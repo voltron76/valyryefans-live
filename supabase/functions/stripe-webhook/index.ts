@@ -174,6 +174,27 @@ serve(async (req) => {
         }
 
         console.log(`[Webhook] Tip of $${amount} recorded for user ${userId}.`)
+
+        // Trigger New Tip Email Receipt (async, non-blocking)
+        try {
+          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email-notification`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              event: 'new_tip',
+              recipientId: userId,
+              variables: {
+                amount: amount.toFixed(2),
+                message: tipMessage
+              }
+            })
+          }).catch(e => console.error('[Webhook] Failed to trigger new_tip email:', e))
+        } catch (e) {
+          console.error('[Webhook] Error calling notification function:', e)
+        }
       }
 
     } else if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {

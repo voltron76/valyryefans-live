@@ -79,10 +79,13 @@ export function renderCheckout(params = {}) {
             You will be securely redirected to Stripe's payment page to complete your transaction.
           </p>
 
-          <button id="checkout-submit" class="btn btn-primary btn-lg w-full" style="justify-content: center; font-size: var(--text-base); padding: var(--space-4) var(--space-8);">
+          <button id="checkout-submit" class="btn btn-primary btn-lg w-full" style="justify-content: center; font-size: var(--text-base); padding: var(--space-4) var(--space-8); margin-bottom: var(--space-4);">
             <span id="checkout-btn-text">${isTip ? `Pay with Stripe — $${amount}` : `Subscribe with Stripe — $${amount}/month`}</span>
             <span id="checkout-btn-spinner" style="display: none; align-items: center; gap: 8px;">${icons.spinner} Redirecting...</span>
           </button>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); line-height: 1.4;">
+            By continuing, you agree to our <a href="/terms" style="color: var(--accent-light); text-decoration: underline;" target="_blank">Terms of Service</a>, <a href="/privacy" style="color: var(--accent-light); text-decoration: underline;" target="_blank">Privacy Policy</a>, and our <a href="/refund" style="color: var(--accent-light); text-decoration: underline;" target="_blank">Refund Policy</a>.
+          </div>
         </div>
 
         <!-- Trust Badges -->

@@ -17,7 +17,7 @@ import { renderWelcomeGold } from './views/welcome-gold.js';
 import { renderBookmarks } from './views/bookmarks.js';
 import { renderNotifications } from './views/notifications.js';
 import { renderSettings } from './views/settings.js';
-import { renderTerms, renderPrivacy, renderHelpCenter, renderSupport, renderLeaderboard, renderReferrals, renderBecomeCreator } from './views/static-pages.js';
+import { renderTerms, renderPrivacy, renderRefund, renderHelpCenter, renderSupport, renderLeaderboard, renderReferrals, renderBecomeCreator } from './views/static-pages.js';
 import { renderAdmin } from './views/admin.js';
 import { renderAdminLogin } from './views/admin-login.js';
 import { renderPurchases } from './views/purchases.js';
@@ -72,6 +72,7 @@ async function initApp() {
   registerRoute('/purchases', renderPurchases);
   registerRoute('/terms', renderTerms);
   registerRoute('/privacy', renderPrivacy);
+  registerRoute('/refund', renderRefund);
   registerRoute('/help', renderHelpCenter);
   registerRoute('/support', renderSupport);
   registerRoute('/leaderboard', renderLeaderboard);

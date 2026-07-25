@@ -57,6 +57,7 @@ export function renderFooter() {
           <a href="/subscribe">Subscribe</a>
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
+          <a href="/refund">Refund Policy</a>
         </nav>
       </div>
 
