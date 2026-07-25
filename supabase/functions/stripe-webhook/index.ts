@@ -44,9 +44,24 @@ serve(async (req) => {
         throw new Error('Missing userId in session metadata')
       }
 
-      if (type === 'subscription') {
+       if (type === 'subscription') {
         const subscriptionId = session.subscription as string
         const customerId = session.customer as string
+
+        // Idempotency check: verify if the subscription has already been processed
+        const { data: existingSub } = await adminClient
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', subscriptionId)
+          .maybeSingle()
+
+        if (existingSub) {
+          console.log(`[Webhook] Subscription ${subscriptionId} already exists. Skipping processing.`)
+          return new Response(JSON.stringify({ received: true, duplicate: true }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        }
 
         // Retrieve subscription details from Stripe to get period ends
         const subscription = await stripe.subscriptions.retrieve(subscriptionId)
@@ -109,6 +124,7 @@ serve(async (req) => {
         }
 
       } else if (type === 'tip') {
+        const sessionId = session.id
         let amount = parseFloat(metadata.amount || '0');
         if (isNaN(amount) || !Number.isFinite(amount) || amount < 0) {
           amount = 0;
@@ -118,6 +134,21 @@ serve(async (req) => {
         const contentId = metadata.contentId || null
         const tipMessage = metadata.message || 'Paid via Stripe Checkout'
 
+        // Idempotency check: verify if the tip checkout session has already been recorded
+        const { data: existingTip } = await adminClient
+          .from('tips')
+          .select('id')
+          .eq('stripe_session_id', sessionId)
+          .maybeSingle()
+
+        if (existingTip) {
+          console.log(`[Webhook] Tip session ${sessionId} already processed. Skipping processing.`)
+          return new Response(JSON.stringify({ received: true, duplicate: true }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        }
+
         // 1. Record tip in DB
         const { error: tipError } = await adminClient
           .from('tips')
@@ -125,7 +156,8 @@ serve(async (req) => {
             user_id: userId,
             content_id: contentId,
             amount: amount,
-            message: tipMessage
+            message: tipMessage,
+            stripe_session_id: sessionId
           }])
 
         if (tipError) {
