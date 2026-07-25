@@ -104,6 +104,7 @@ serve(async (req) => {
         }],
         mode: 'subscription',
         allow_promotion_codes: true,
+        automatic_tax: { enabled: true },
         success_url: getRedirectUrl(successPath, '/welcome-gold'),
         cancel_url: getRedirectUrl(cancelPath, '/subscribe'),
         metadata: {
@@ -140,6 +141,7 @@ serve(async (req) => {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
+        automatic_tax: { enabled: true },
         success_url: getRedirectUrl(successPath, '/gallery'),
         cancel_url: getRedirectUrl(cancelPath, '/gallery'),
         metadata: {
