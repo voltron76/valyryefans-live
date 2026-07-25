@@ -133,10 +133,45 @@ async function initApp() {
     }
   });
 
-  // Subscribe to auth state changes for auto-refresh
+  // Helper to read cookies
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+
+  // Helper to clear cookie
+  function clearCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  }
+
+  // Subscribe to auth state changes for auto-refresh and session limits enforcement
   const { supabase } = await import('./supabase.js');
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
     const newUserId = session?.user?.id || null;
+
+    if (session) {
+      // Check if session has expired or if the 3-day cookie is missing
+      const expiry = getCookie('vf_session_expiry');
+      if (expiry) {
+        if (Date.now() > parseInt(expiry)) {
+          console.warn('Session hard timeout reached (3 days). Logging out.');
+          await supabase.auth.signOut();
+          clearCookie('vf_session_expiry');
+          localStorage.removeItem('vf-state');
+          window.location.reload();
+          return;
+        }
+      } else {
+        // Set the hard limit for 3 days from the original login
+        const expiryTime = Date.now() + 3 * 24 * 60 * 60 * 1000;
+        document.cookie = `vf_session_expiry=${expiryTime}; max-age=${3 * 24 * 60 * 60}; path=/; Secure; SameSite=Lax`;
+      }
+    } else {
+      clearCookie('vf_session_expiry');
+    }
+
     if (initialized && newUserId !== currentUserId) {
       currentUserId = newUserId;
       localStorage.removeItem('vf-state');
@@ -160,12 +195,24 @@ async function initApp() {
     });
   });
 
-  // Set up periodic store polling every 10 seconds
+  // Set up periodic store polling and 3-day session validation checks every 10 seconds
   setInterval(async () => {
     try {
+      const session = await supabase.auth.getSession();
+      if (session?.data?.session) {
+        const expiry = getCookie('vf_session_expiry');
+        if (!expiry || Date.now() > parseInt(expiry)) {
+          console.warn('Session expired or cookie missing. Enforcing hard logout.');
+          await supabase.auth.signOut();
+          clearCookie('vf_session_expiry');
+          localStorage.removeItem('vf-state');
+          window.location.reload();
+          return;
+        }
+      }
       await initStore();
     } catch (e) {
-      console.error('Periodic store sync failed:', e);
+      console.error('Periodic store sync and session verification failed:', e);
     }
   }, 10000);
 
