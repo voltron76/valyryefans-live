@@ -134,11 +134,14 @@ export function renderContentDetail(params) {
 
   // Unlocked content view
   const html = `
-    <div class="content-detail animate-fade-in-up">
+    <div class="content-detail content-detail--unlocked animate-fade-in-up">
       <!-- Back nav -->
       <a href="/gallery" class="btn btn-ghost" style="margin-bottom: var(--space-6); gap: var(--space-2);">
         ${icons.back} Back to Gallery
       </a>
+
+      <!-- Media + Info (side-by-side on desktop, stacked on mobile) -->
+      <div class="content-detail__layout">
 
       <!-- Media -->
       <div class="content-detail__media animate-fade-in-up stagger-1" style="position:relative;">
@@ -169,6 +172,9 @@ export function renderContentDetail(params) {
         }
         </div>
       </div>
+
+      <!-- Info column -->
+      <div class="content-detail__info">
 
       <!-- Header -->
       <div class="content-detail__header animate-fade-in-up stagger-2">
@@ -204,7 +210,7 @@ export function renderContentDetail(params) {
       </div>
 
       <!-- Creator info mini -->
-      <div class="card-glass animate-fade-in-up stagger-5" style="display: flex; align-items: center; gap: var(--space-4); padding: var(--space-6); border-radius: var(--radius-lg); margin-bottom: var(--space-16);">
+      <div class="content-detail__creator card-glass animate-fade-in-up stagger-5" style="display: flex; align-items: center; gap: var(--space-4); padding: var(--space-6); border-radius: var(--radius-lg); margin-bottom: var(--space-16);">
         <div style="width: 48px; height: 48px; border-radius: var(--radius-full); overflow: hidden; border: 2px solid var(--border-accent); flex-shrink: 0;">
           <img src="${state.creatorProfile.avatar}" alt="${state.creatorProfile.name}" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
@@ -214,6 +220,9 @@ export function renderContentDetail(params) {
         </div>
         <a href="/" class="btn btn-secondary btn-sm">View Creator</a>
       </div>
+
+      </div><!-- /.content-detail__info -->
+      </div><!-- /.content-detail__layout -->
 
       <!-- Related Content -->
       ${related.length ? `

@@ -111,8 +111,8 @@ export function renderSettings() {
   const html = `
     <div style="min-height: calc(100vh - var(--nav-height)); padding-bottom: var(--space-16);">
       <!-- Header -->
-      <div style="max-width: 720px; margin: 0 auto; padding: var(--space-8) var(--space-6);">
-        <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8);">
+      <div class="settings-page" style="max-width: 720px; margin: 0 auto; padding: var(--space-8) var(--space-6);">
+        <div class="settings-span-full" style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8);">
           <a href="/profile" class="btn btn-ghost btn-icon" style="width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
             ${icons.arrowLeft}
           </a>

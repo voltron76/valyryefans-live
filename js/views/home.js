@@ -67,7 +67,7 @@ function renderPromoBanner(promo) {
 function renderCreatorHeader(creatorProfile, isGold) {
   const banners = creatorProfile.banners && creatorProfile.banners.length > 0
     ? creatorProfile.banners
-    : [creatorProfile.banner || 'assets/images/hero-01.jpg'];
+    : [creatorProfile.banner || '/assets/images/hero-01.jpg'];
 
   return `
     <div class="creator-header">
@@ -309,6 +309,46 @@ function renderSuggestedCreators() {
 }
 
 // ------------------------------------
+// Desktop Sidebar (visible ≥ 1100px only — hidden on mobile via CSS)
+// ------------------------------------
+function renderDesktopSidebar(creatorProfile, isGold) {
+  const card = !isGold
+    ? `
+      <div class="home-sub-card card-glass">
+        <div class="home-sub-card__eyebrow">Gold VIP Access</div>
+        <div class="home-sub-card__price">$14.99 <span>/ month</span></div>
+        <ul class="home-sub-card__perks">
+          <li>Unlock every exclusive photo &amp; video</li>
+          <li>Direct messaging with ${escapeHtml(creatorProfile.name || 'the creator')}</li>
+          <li>Members-only stories &amp; drops</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <a href="/subscribe" class="btn btn-primary btn-lg w-full" style="justify-content:center;">Subscribe Now</a>
+      </div>`
+    : `
+      <div class="home-sub-card card-glass">
+        <div class="home-sub-card__eyebrow">Your Membership</div>
+        <div class="home-sub-card__member">✅ Gold Member</div>
+        <p class="home-sub-card__note">You have full access to all exclusive content.</p>
+        <div class="home-sub-card__actions">
+          <a href="/messages" class="btn btn-primary w-full" style="justify-content:center;">Messages</a>
+          <a href="/gallery" class="btn btn-secondary w-full" style="justify-content:center;">Gallery</a>
+        </div>
+      </div>`;
+
+  return `
+    <div class="home-sidebar__desktop-only">
+      ${card}
+      <nav class="home-sidebar__links" aria-label="Legal">
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/refund">Refund Policy</a>
+        <a href="/help">Help</a>
+      </nav>
+    </div>`;
+}
+
+// ------------------------------------
 // Tip Modal (inline)
 // ------------------------------------
 function renderTipModal() {
@@ -366,33 +406,42 @@ export function renderHome() {
     <!-- Creator Header -->
     ${renderCreatorHeader(creatorProfile, isGold)}
 
-    <!-- Stories Bar -->
-    ${renderStoriesBar(allStories, state.isAdmin)}
+    <!-- Two-column layout on desktop; single column on mobile -->
+    <div class="home-layout">
+      <div class="home-main">
+        <!-- Stories Bar -->
+        ${renderStoriesBar(allStories, state.isAdmin)}
 
-    <!-- Feed Tabs -->
-    ${renderFeedTabs()}
+        <!-- Feed Tabs -->
+        ${renderFeedTabs()}
 
-    <!-- Feed Container -->
-    <div class="feed-container" id="feed-container">
+        <!-- Feed Container -->
+        <div class="feed-container" id="feed-container">
 
-      <!-- Pinned Posts -->
-      ${pinnedPosts.map(item => `
-        <div class="pinned-badge-wrap">
-          <span class="pinned-badge">📌 Pinned</span>
-          ${renderPostCard(item, creatorProfile)}
+          <!-- Pinned Posts -->
+          ${pinnedPosts.map(item => `
+            <div class="pinned-badge-wrap">
+              <span class="pinned-badge">📌 Pinned</span>
+              ${renderPostCard(item, creatorProfile)}
+            </div>
+          `).join('')}
+
+          <!-- Poll Cards -->
+          ${pollList.map(poll => renderPollCard(poll, creatorProfile)).join('')}
+
+          <!-- Content Feed -->
+          ${regularPosts.map(item => renderPostCard(item, creatorProfile)).join('')}
+
         </div>
-      `).join('')}
+      </div>
 
-      <!-- Poll Cards -->
-      ${pollList.map(poll => renderPollCard(poll, creatorProfile)).join('')}
+      <aside class="home-sidebar">
+        ${renderDesktopSidebar(creatorProfile, isGold)}
 
-      <!-- Content Feed -->
-      ${regularPosts.map(item => renderPostCard(item, creatorProfile)).join('')}
-
+        <!-- Suggested Creators -->
+        ${renderSuggestedCreators()}
+      </aside>
     </div>
-
-    <!-- Suggested Creators -->
-    ${renderSuggestedCreators()}
 
     <!-- Tip Modal -->
     ${renderTipModal()}

@@ -3941,3 +3941,277 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
     margin-bottom: 64px; /* space for mobile bottom nav */
   }
 }
+
+/* ============================================================
+   DESKTOP LAYOUT LAYER (≥ 1100px)
+   Purely additive: mobile & tablet (< 1100px) render exactly as before.
+   ============================================================ */
+
+/* Desktop-only sidebar card — hidden by default (mobile/tablet) */
+.home-sidebar__desktop-only { display: none; }
+
+.home-sub-card {
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+}
+.home-sub-card__eyebrow {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.home-sub-card__price {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: var(--space-2) 0 var(--space-4);
+}
+.home-sub-card__price span {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.home-sub-card__perks {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.home-sub-card__perks li::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: var(--space-2);
+}
+.home-sub-card__member {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: var(--space-2) 0;
+}
+.home-sub-card__note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+.home-sub-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.home-sidebar__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--space-2) 0;
+  font-size: var(--text-xs);
+}
+.home-sidebar__links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+.home-sidebar__links a:hover { color: var(--accent); }
+
+@media (min-width: 1100px) {
+  :root {
+    --desktop-layout-width: 1140px;
+    --desktop-sidebar-width: 340px;
+  }
+
+  /* ---------- Home: Creator Header ---------- */
+  .creator-header {
+    max-width: var(--desktop-layout-width);
+    padding: var(--space-4) var(--space-6) 0;
+  }
+  /* Promo bar: in normal flow on desktop so it never overlaps the banner */
+  .promo-banner-top {
+    position: relative;
+    top: auto;
+  }
+  .creator-header__banner {
+    height: 340px !important;
+    border-radius: var(--radius-xl) !important;
+  }
+  .creator-header__info {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) var(--desktop-sidebar-width);
+    grid-template-areas: "avatar details stats";
+    column-gap: var(--space-6);
+    align-items: start;
+    margin-top: -64px;
+    padding: 0 0 0 var(--space-8);
+  }
+  .creator-header__avatar-wrap { grid-area: avatar; }
+  .creator-header__avatar {
+    width: 148px;
+    height: 148px;
+    border-width: 5px;
+  }
+  .creator-header .online-dot {
+    bottom: 12px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+  }
+  .creator-header__details {
+    grid-area: details;
+    padding-top: 76px;
+  }
+  .creator-header__name { font-size: var(--text-2xl); }
+  .creator-header__stats {
+    grid-area: stats;
+    margin-top: 76px;
+    justify-content: space-around;
+    padding: var(--space-4) var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+  }
+  /* Subscribe CTA moves to the sticky sidebar on desktop */
+  .creator-header__info > .btn { display: none; }
+
+  /* ---------- Home: Feed + Sidebar grid ---------- */
+  .home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--desktop-sidebar-width);
+    gap: var(--space-8);
+    max-width: var(--desktop-layout-width);
+    margin: var(--space-6) auto 0;
+    padding: 0 var(--space-6);
+    align-items: start;
+  }
+  .home-main .stories-bar,
+  .home-main .feed-tabs,
+  .home-main .post-card {
+    max-width: none;
+  }
+  .home-main .stories-bar {
+    padding: var(--space-2) var(--space-1) var(--space-4);
+  }
+  .home-main .feed-tabs {
+    position: sticky;
+    top: var(--nav-height);
+    z-index: 5;
+    padding: var(--space-2) 0;
+    margin-bottom: var(--space-5);
+    background: var(--nav-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
+  .home-main .post-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-5);
+    padding: var(--space-5) 0;
+  }
+  .home-main .pinned-badge { margin-left: 0; }
+  /* Keep tall portrait carousels within a desktop viewport */
+  .home-main .post-card__carousel-track img { max-height: 760px; }
+
+  .home-sidebar {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-6));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-height: calc(100vh - var(--nav-height) - var(--space-8));
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .home-sidebar::-webkit-scrollbar { display: none; }
+  .home-sidebar__desktop-only { display: block; }
+
+  /* Suggested creators become a vertical list in the sidebar */
+  .home-sidebar .suggested-section {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  .home-sidebar .suggested-list {
+    flex-direction: column;
+    overflow: visible;
+    gap: var(--space-3);
+    padding-bottom: 0;
+  }
+  .home-sidebar .suggested-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "av name btn" "av handle btn";
+    column-gap: var(--space-3);
+    row-gap: 0;
+    align-items: center;
+    text-align: left;
+    min-width: 0;
+    padding: var(--space-3) var(--space-4);
+  }
+  .home-sidebar .suggested-avatar {
+    grid-area: av;
+    width: 44px;
+    height: 44px;
+    font-size: 17px;
+  }
+  .home-sidebar .suggested-name { grid-area: name; align-self: end; }
+  .home-sidebar .suggested-handle { grid-area: handle; align-self: start; }
+  .home-sidebar .suggested-card .btn { grid-area: btn; }
+
+  /* ---------- Content Detail: media left, info right ---------- */
+  .content-detail--unlocked {
+    max-width: var(--desktop-layout-width);
+    padding: var(--space-8) var(--space-6);
+  }
+  .content-detail__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr);
+    gap: var(--space-10);
+    align-items: start;
+  }
+  .content-detail__info {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-6));
+  }
+  .content-detail__info .content-detail__title { font-size: var(--text-2xl); }
+  .content-detail__info .content-detail__creator { margin-bottom: var(--space-8) !important; }
+  .content-detail--unlocked .content-detail-img-wrap > img.content-detail-img,
+  .content-detail--unlocked .content-detail-media video {
+    max-height: calc(100vh - var(--nav-height) - 96px);
+    object-fit: contain;
+  }
+  /* Locked (paywall) preview: keep blurred image within the viewport */
+  .content-detail:not(.content-detail--unlocked) .content-detail__media > img {
+    width: 100%;
+    max-height: 72vh;
+    object-fit: cover;
+  }
+
+  /* ---------- Profile: dashboard grid ---------- */
+  .profile-page {
+    max-width: var(--desktop-layout-width) !important;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+    align-items: start;
+  }
+  .profile-page > .profile-span-full { grid-column: 1 / -1; }
+  .profile-page > .profile-col-main { grid-column: 1; grid-row: span 3; }
+
+  /* ---------- Settings: two-column cards ---------- */
+  .settings-page {
+    max-width: var(--desktop-layout-width) !important;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+    align-items: start;
+  }
+  .settings-page > .settings-span-full { grid-column: 1 / -1; }
+}
+
+/* Wide screens: give grid pages (gallery, sections) more room */
+@media (min-width: 1440px) {
+  :root { --max-content-width: 1320px; }
+}

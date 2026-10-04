@@ -129,10 +129,10 @@ export function renderProfile() {
         opacity: 1;
       }
     </style>
-    <div class="section" style="padding-top: var(--space-10); max-width: 720px; margin: 0 auto;">
+    <div class="section profile-page" style="padding-top: var(--space-10); max-width: 720px; margin: 0 auto;">
 
       <!-- Profile Header -->
-      <div class="card-glass animate-fade-in-up stagger-1" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6); text-align: center;">
+      <div class="card-glass profile-span-full animate-fade-in-up stagger-1" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6); text-align: center;">
         <div class="profile-avatar-container" id="profile-avatar-click" title="Change profile picture">
           <div style="width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid var(--border-accent);" class="${tier === 'gold' ? 'avatar-ring--gold' : ''}">
             ${avatarUrl
@@ -158,7 +158,7 @@ export function renderProfile() {
       </div>
 
       <!-- Stats Row -->
-      <div class="animate-fade-in-up stagger-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6);">
+      <div class="profile-span-full animate-fade-in-up stagger-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6);">
         <div class="card-glass" style="padding: var(--space-5); border-radius: var(--radius-lg); text-align: center;">
           <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--accent-light);">${likedCount}</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);">Posts Liked</div>
@@ -178,7 +178,7 @@ export function renderProfile() {
       </div>
 
       <!-- Liked Posts Section -->
-      <div class="card-glass animate-fade-in-up stagger-2" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6);">
+      <div class="card-glass profile-col-main animate-fade-in-up stagger-2" style="padding: var(--space-8); border-radius: var(--radius-xl); margin-bottom: var(--space-6);">
         <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);">
           <span style="color: var(--accent-light);">${icons.heart}</span>
           <h2 class="font-display" style="font-size: var(--text-xl);">Liked Posts</h2>

@@ -121,7 +121,7 @@ export function renderMessages() {
         <!-- Chat Header -->
         <div class="chat-header" style="background:var(--glass-card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--glass-card-border);padding:var(--space-4) var(--space-6);display:flex;align-items:center;gap:var(--space-4);">
           <div style="position:relative;flex-shrink:0;">
-            <img src="assets/images/avatar.jpg" alt="Valyryes" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">
+            <img src="/assets/images/avatar.jpg" alt="Valyryes" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">
             <span style="position:absolute;bottom:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#4ade80;border:2px solid var(--bg-primary);"></span>
           </div>
           <div style="flex:1;min-width:0;">
