@@ -19,6 +19,6 @@
   },
   "homepage": "https://github.com/voltron76/valyryefans-live#readme",
   "devDependencies": {
-    "wrangler": "^4.100.0"
+    "wrangler": "^4.147.0"
   }
 }

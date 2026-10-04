@@ -71,7 +71,7 @@ function renderCreatorHeader(creatorProfile, isGold) {
 
   return `
     <div class="creator-header">
-      <div class="creator-header__banner" style="position: relative; overflow: hidden; height: 240px; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+      <div class="creator-header__banner" style="position: relative; overflow: hidden;">
         ${banners.map((src, i) => `
           <img src="${src}" alt="Banner ${i+1}" class="creator-header__banner-slide" style="
             position: absolute;

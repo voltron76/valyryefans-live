@@ -2741,10 +2741,7 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
   justify-content: space-between;
   font-size: var(--text-sm);
   font-weight: 600;
-  position: fixed;
-  top: var(--nav-height);
-  left: 0;
-  right: 0;
+  position: relative;
   z-index: 90;
   white-space: nowrap;
   overflow: hidden;
@@ -3423,7 +3420,7 @@ img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: no
 @media (max-width: 768px) {
   .mobile-bottom-nav { display: block; }
   body { padding-bottom: 70px; }
-  .creator-header__banner { height: 160px; }
+  .creator-header__banner { height: 200px; }
   .creator-header__info { padding: 0 var(--space-4); }
   .creator-header__avatar { width: 80px; height: 80px; }
   .creator-header__stats { gap: var(--space-4); }
