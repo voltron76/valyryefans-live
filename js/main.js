@@ -5,7 +5,7 @@
 import './theme.js';
 import { registerRoute, initRouter, navigate } from './router.js';
 import { getState, initStore } from './store.js';
-import { renderNavbar, afterNavRender, renderMobileNav } from './components/navbar.js';
+import { renderNavbar, afterNavRender, renderMobileNav, renderDesktopLeftRail, initDesktopLeftRailEvents, updateDesktopLeftRailActive, syncDesktopRail } from './components/navbar.js';
 import { renderHome } from './views/home.js';
 import { renderGallery } from './views/gallery.js';
 import { renderContentDetail } from './views/content-detail.js';
@@ -34,7 +34,15 @@ async function initApp() {
   const state = getState();
   currentUserId = state.isAuthenticated ? state.user.id : null;
 
-  // Render navbar
+  // Render desktop left rail navigation (PC / Desktop >= 1024px)
+  const desktopRailEl = document.getElementById('desktop-left-rail');
+  if (desktopRailEl) {
+    desktopRailEl.innerHTML = renderDesktopLeftRail();
+    initDesktopLeftRailEvents();
+    updateDesktopLeftRailActive(window.location.pathname);
+  }
+
+  // Render navbar (mobile / tablet < 1024px)
   const navbarEl = document.getElementById('navbar');
   if (navbarEl) {
     navbarEl.innerHTML = renderNavbar();
@@ -51,10 +59,11 @@ async function initApp() {
   }
   mobileNav.innerHTML = renderMobileNav();
 
-  // Update mobile nav on route changes
-  window.addEventListener('routechange', () => {
+  // Update navs on route changes
+  window.addEventListener('routechange', (e) => {
     const mc = document.getElementById('mobile-nav-container');
     if (mc) mc.innerHTML = renderMobileNav();
+    updateDesktopLeftRailActive(e.detail?.path || window.location.pathname);
   });
 
   // Register routes
@@ -192,6 +201,7 @@ async function initApp() {
       if (mobileNav) {
         mobileNav.innerHTML = renderMobileNav();
       }
+      syncDesktopRail();
     });
   });
 
@@ -418,13 +428,14 @@ async function handleRealAuth(mode) {
     showToast('Successfully logged in!', 'success');
     closeAuthModal();
 
-    // Re-render navbar
+    // Re-render navbar and desktop rail
     const navbarEl = document.getElementById('navbar');
     if (navbarEl) {
       navbarEl.innerHTML = renderNavbar();
       initNavbarEvents();
       afterNavRender();
     }
+    syncDesktopRail();
   } catch (err) {
     import('./store.js').then(({ showToast }) => showToast(err.message, 'error'));
   } finally {

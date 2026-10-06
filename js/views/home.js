@@ -339,6 +339,24 @@ function renderDesktopSidebar(creatorProfile, isGold) {
   return `
     <div class="home-sidebar__desktop-only">
       ${card}
+      <div class="home-quick-tip card-glass">
+        <div class="home-quick-tip__header">
+          <span style="font-size:22px;">💝</span>
+          <div>
+            <div style="font-weight:700; font-size:var(--text-sm); color:var(--text-primary);">Support Valerie</div>
+            <div style="font-size:11px; color:var(--text-muted);">Send an instant tip to show love</div>
+          </div>
+        </div>
+        <div class="home-quick-tip__amounts" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:8px 0;">
+          <button class="btn btn-secondary btn-sm home-sidebar-tip" data-amount="5" style="padding:4px 0; justify-content:center; font-size:12px;">$5</button>
+          <button class="btn btn-secondary btn-sm home-sidebar-tip" data-amount="15" style="padding:4px 0; justify-content:center; font-size:12px;">$15</button>
+          <button class="btn btn-secondary btn-sm home-sidebar-tip" data-amount="50" style="padding:4px 0; justify-content:center; font-size:12px;">$50</button>
+          <button class="btn btn-secondary btn-sm home-sidebar-tip" data-amount="100" style="padding:4px 0; justify-content:center; font-size:12px;">$100</button>
+        </div>
+        <button class="btn btn-primary btn-sm w-full home-sidebar-tip-open" style="justify-content:center; font-size:12px; height:32px;">
+          Send Tip →
+        </button>
+      </div>
       <nav class="home-sidebar__links" aria-label="Legal">
         <a href="/terms">Terms</a>
         <a href="/privacy">Privacy</a>
@@ -641,6 +659,25 @@ export function renderHome() {
           tipTargetId = btn.dataset.id;
           if (tipModal) tipModal.style.display = 'flex';
         });
+      });
+
+      // Desktop sidebar quick tip chips & trigger
+      document.querySelectorAll('.home-sidebar-tip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const amt = btn.dataset.amount;
+          tipTargetId = null;
+          if (tipModal) tipModal.style.display = 'flex';
+          document.querySelectorAll('.tip-amount-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.amount === amt);
+          });
+          const customInput = document.getElementById('tip-custom-amount');
+          if (customInput) customInput.value = '';
+        });
+      });
+
+      document.querySelector('.home-sidebar-tip-open')?.addEventListener('click', () => {
+        tipTargetId = null;
+        if (tipModal) tipModal.style.display = 'flex';
       });
 
       document.getElementById('tip-modal-close')?.addEventListener('click', () => {

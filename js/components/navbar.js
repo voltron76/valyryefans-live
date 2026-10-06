@@ -345,3 +345,191 @@ export function renderMobileNav() {
     </div>
   `;
 }
+
+// ============================================================
+// ValyryesFans — Desktop Left Rail (PC / Desktop Navigation >= 1024px)
+// ============================================================
+
+export function renderDesktopLeftRail() {
+  const s = getState();
+  const isAuth = s.isAuthenticated;
+  const user = s.user;
+  const isGold = s.currentTier === 'gold' || s.user?.tier === 'gold';
+  const unreadNotif = s.notifications?.filter(n => !n.read).length || 0;
+  const unreadMsg = s.messages?.filter(m => !m.read && m.sender === 'valyryes').length || 0;
+  const pathname = window.location.pathname;
+  const isDark = getTheme() === 'dark';
+
+  return `
+    <div class="desktop-rail__inner">
+      <!-- Brand Logo -->
+      <a href="/" class="desktop-rail__logo">
+        <span class="logo-icon">V</span>
+        <span class="desktop-rail__brand-text">Valyryes<span class="text-accent">Fans</span></span>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="desktop-rail__nav" role="navigation" aria-label="Desktop Primary">
+        <a href="/" class="desktop-rail__link${pathname === '/' || pathname === '/index.html' ? ' active' : ''}" data-nav="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </a>
+
+        <a href="/gallery" class="desktop-rail__link${pathname === '/gallery' ? ' active' : ''}" data-nav="gallery">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span>Gallery</span>
+        </a>
+
+        <a href="/messages" class="desktop-rail__link${pathname === '/messages' ? ' active' : ''}" data-nav="messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <span>Messages</span>
+          ${unreadMsg > 0 ? `<span class="desktop-rail__badge">${unreadMsg}</span>` : ''}
+        </a>
+
+        <a href="/notifications" class="desktop-rail__link${pathname === '/notifications' ? ' active' : ''}" data-nav="notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Notifications</span>
+          ${unreadNotif > 0 ? `<span class="desktop-rail__badge">${unreadNotif}</span>` : ''}
+        </a>
+
+        <a href="/bookmarks" class="desktop-rail__link${pathname === '/bookmarks' ? ' active' : ''}" data-nav="bookmarks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span>Bookmarks</span>
+        </a>
+
+        <a href="/purchases" class="desktop-rail__link${pathname === '/purchases' ? ' active' : ''}" data-nav="purchases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span>My Collection</span>
+        </a>
+
+        <a href="/subscribe" class="desktop-rail__link${pathname === '/subscribe' ? ' active' : ''}" data-nav="subscribe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>${isGold ? 'VIP Access' : 'Subscribe'}</span>
+          <span class="desktop-rail__badge-gold">VIP</span>
+        </a>
+
+        <a href="/profile" class="desktop-rail__link${pathname === '/profile' ? ' active' : ''}" data-nav="profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </a>
+
+        <a href="/settings" class="desktop-rail__link${pathname === '/settings' ? ' active' : ''}" data-nav="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <!-- Quick Action CTA -->
+      <div class="desktop-rail__cta">
+        ${!isGold ? `
+          <a href="/subscribe" class="btn btn-primary w-full desktop-rail__btn" style="justify-content:center; gap:8px;">
+            👑 <span>Join VIP Access</span>
+          </a>
+        ` : `
+          <a href="/messages" class="btn btn-primary w-full desktop-rail__btn" style="justify-content:center; gap:8px;">
+            💬 <span>Chat with Valerie</span>
+          </a>
+        `}
+      </div>
+
+      <!-- Footer: Theme Toggle & User Info -->
+      <div class="desktop-rail__footer">
+        <button class="desktop-rail__theme-btn" id="desktop-theme-toggle" aria-label="Toggle theme">
+          <span class="desktop-rail__theme-icon" id="desktop-theme-icon">${isDark ? SUN_ICON : MOON_ICON}</span>
+          <span class="desktop-rail__theme-text" id="desktop-theme-text">${isDark ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+
+        ${isAuth ? `
+          <div class="desktop-rail__user-card">
+            <a href="/profile" class="desktop-rail__user-info">
+              <div class="desktop-rail__user-avatar ${isGold ? 'avatar-ring--gold' : ''}">
+                ${user?.avatarUrl
+                  ? `<img src="${user.avatarUrl}" alt="${(user?.name || 'U').charAt(0)}">`
+                  : `<span>${(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</span>`
+                }
+              </div>
+              <div class="desktop-rail__user-meta">
+                <span class="desktop-rail__user-name">${(user?.name || user?.email?.split('@')[0] || 'Subscriber')}</span>
+                <span class="desktop-rail__user-tier">${isGold ? '⭐ Gold VIP' : 'Free Fan'}</span>
+              </div>
+            </a>
+            <button class="desktop-rail__logout-btn" id="desktop-rail-logout" title="Log Out" aria-label="Log Out">
+              ${menuIcons.logout}
+            </button>
+          </div>
+        ` : `
+          <button class="btn btn-secondary w-full desktop-rail__signin-btn" id="desktop-rail-signin" style="justify-content:center;">
+            Sign In
+          </button>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+export function initDesktopLeftRailEvents() {
+  // Theme toggle
+  const themeBtn = document.getElementById('desktop-theme-toggle');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      const newTheme = toggleTheme();
+      const iconEl = document.getElementById('desktop-theme-icon');
+      const textEl = document.getElementById('desktop-theme-text');
+      if (iconEl) iconEl.innerHTML = newTheme === 'dark' ? SUN_ICON : MOON_ICON;
+      if (textEl) textEl.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+
+      // Keep top navbar theme button in sync
+      const navBtn = document.getElementById('theme-toggle-btn');
+      if (navBtn) navBtn.innerHTML = newTheme === 'dark' ? SUN_ICON : MOON_ICON;
+      const check = document.getElementById('dropdown-theme-check');
+      if (check) check.checked = newTheme === 'dark';
+    });
+  }
+
+  // Logout
+  const logoutBtn = document.getElementById('desktop-rail-logout');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        const { supabase } = await import('../supabase.js');
+        await supabase.auth.signOut();
+      } catch(e) {}
+      localStorage.removeItem('vf-state');
+      window.location.href = window.location.origin;
+    });
+  }
+
+  // Sign In
+  const signinBtn = document.getElementById('desktop-rail-signin');
+  if (signinBtn) {
+    signinBtn.addEventListener('click', async () => {
+      const { openAuthModal } = await import('../main.js');
+      openAuthModal('login');
+    });
+  }
+}
+
+export function updateDesktopLeftRailActive(currentPathWithQuery) {
+  const [currentPath] = (currentPathWithQuery || window.location.pathname).split('?');
+  const rail = document.getElementById('desktop-left-rail');
+  if (!rail) return;
+  rail.querySelectorAll('.desktop-rail__link').forEach(link => {
+    let href = link.getAttribute('href');
+    if (href) {
+      if (href.startsWith('#/')) href = href.slice(1);
+      const isActive = currentPath === href ||
+                      (href !== '/' && currentPath.startsWith(href));
+      link.classList.toggle('active', isActive);
+    }
+  });
+}
+
+export function syncDesktopRail() {
+  const rail = document.getElementById('desktop-left-rail');
+  if (rail) {
+    rail.innerHTML = renderDesktopLeftRail();
+    initDesktopLeftRailEvents();
+    updateDesktopLeftRailActive(window.location.pathname);
+  }
+}
+
