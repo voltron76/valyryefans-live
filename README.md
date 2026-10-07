@@ -188,5 +188,5 @@ ISC License — see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  Built with ❤️ for creators
+  Built with ❤️ for creators (c) Voltrax labs
 </p>
